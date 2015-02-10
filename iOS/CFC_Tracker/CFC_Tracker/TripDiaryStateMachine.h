@@ -17,11 +17,15 @@ typedef enum : NSUInteger {
     kTransitionStopTracking
 } TripDiaryStateTransitions;
 
+typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
+
 @interface TripDiaryStateMachine : NSObject <CLLocationManagerDelegate>
+
+@property NSString* currState;
 
 + (NSString*)getTransitionName:(TripDiaryStateTransitions) transition;
 
-- (void)checkGeofenceState:(UILabel*) resultField;
+- (void)checkGeofenceState:(GeofenceStatusCallback) resultField;
 
 - (void)locationManager:(CLLocationManager *)manager
      didUpdateLocations:(NSArray *)locations;

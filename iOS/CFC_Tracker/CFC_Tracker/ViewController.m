@@ -8,9 +8,12 @@
 
 #import "ViewController.h"
 #import "TripDiaryStateMachine.h"
+#import "OngoingTripsDatabase.h"
 #import "AppDelegate.h"
 
-@interface ViewController ()
+@interface ViewController () {
+    NSArray* _transitionMessages;
+}
 
 @end
 
@@ -18,6 +21,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.transitionTable.dataSource = self;
+    self.tdsrmCurrState.adjustsFontSizeToFitWidth = YES;
     // Do any additional setup after loading the view, typically from a nib.
 }
 
@@ -27,7 +32,9 @@
 }
 
 - (IBAction)checkInGeofence {
-    [[self getTDSM] checkGeofenceState:self.geofenceCheckResult];
+    [[self getTDSM] checkGeofenceState:^(NSString *geofenceStatus) {
+        self.geofenceCheckResult.text = geofenceStatus;
+    }];
 }
 
 - (IBAction)forceEndTrip:(id)sender {
@@ -35,14 +42,48 @@
 }
 
 - (IBAction)forceStartTrip:(id)sender {
+    [[self getTDSM] handleTransition:kTransitionExitedGeofence];
+}
+
+- (IBAction)resetStateMachine:(id)sender {
     [[self getTDSM] handleTransition:kTransitionInitialize];
 }
 
+- (IBAction)refreshState:(id)sender {
+    NSString* refreshedState = [self getTDSM].currState;
+    self.tdsrmCurrState.text = refreshedState;
+    [self.transitionTable reloadData];
+}
+
+- (IBAction)clearTransitions:(id)sender {
+    [[OngoingTripsDatabase database] clearTransitions];
+    [self.transitionTable reloadData];
+}
 
 - (TripDiaryStateMachine*) getTDSM {
     UIApplication* currApp = [UIApplication sharedApplication];
     AppDelegate* currDelegate = currApp.delegate;
     return currDelegate.tripDiaryStateMachine;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView
+ numberOfRowsInSection:(NSInteger)section {
+    _transitionMessages = [[OngoingTripsDatabase database] getTransitions];
+    return _transitionMessages.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+         cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger row = indexPath.row;
+    UITableViewCell* retCell = [[UITableViewCell alloc]
+                              initWithStyle: UITableViewCellStyleSubtitle
+                              reuseIdentifier:@"SUBTITLE_CELL"];
+    retCell.textLabel.text = _transitionMessages[row][0];
+    retCell.textLabel.adjustsFontSizeToFitWidth = YES;
+    
+    retCell.detailTextLabel.text = _transitionMessages[row][1];
+    retCell.detailTextLabel.adjustsFontSizeToFitWidth = YES;
+    return retCell;
 }
 
 @end
