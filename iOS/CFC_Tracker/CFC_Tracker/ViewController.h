@@ -8,10 +8,19 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ViewController : UIViewController
+@interface ViewController : UIViewController<UITableViewDataSource, UITableViewDelegate>
 
 @property (weak, nonatomic) IBOutlet UILabel *geofenceCheckResult;
 
+@property (weak, nonatomic) IBOutlet UITableView *transitionTable;
+
+@property (weak, nonatomic) IBOutlet UILabel *tdsrmCurrState;
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+         cellForRowAtIndexPath:(NSIndexPath *)indexPath;
+
+- (NSInteger)tableView:(UITableView *)tableView
+ numberOfRowsInSection:(NSInteger)section;
 
 @end
 
