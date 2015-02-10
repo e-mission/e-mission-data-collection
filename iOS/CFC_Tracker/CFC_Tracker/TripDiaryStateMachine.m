@@ -8,11 +8,13 @@
 
 #import "TripDiaryStateMachine.h"
 #import "LocalNotificationManager.h"
+#import "OngoingTripsDatabase.h"
 #import <CoreMotion/CoreMotion.h>
 
 @interface TripDiaryStateMachine() {
     CLLocationManager *locMgr;
     CMMotionActivityManager *activityMgr;
+    GeofenceStatusCallback currCallback;
 }
 @end
 
@@ -29,8 +31,6 @@ static int FOUR_MINUTES_IN_SECONDS = 4 * 60;
 
 static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 
-NSString * currState;
-UILabel* currResultField;
 
 + (NSString*)getTransitionName:(TripDiaryStateTransitions)transition {
     if (transition == kTransitionInitialize) {
@@ -48,12 +48,12 @@ UILabel* currResultField;
 
 -(id)init{
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    currState = kStartState;
+    self.currState = kStartState;
     [defaults setObject:kStartState forKey:kCurrState];
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Initialized TripDiaryStateMachine when state = %@",
-                                               currState]];
+                                               self.currState]];
     
     locMgr = [[CLLocationManager alloc] init];
     locMgr.delegate = self;
@@ -69,26 +69,31 @@ UILabel* currResultField;
     return [super init];
 }
 
--(void) checkGeofenceState:(UILabel*)resultField {
-    [locMgr requestStateForRegion:locMgr.monitoredRegions.allObjects[0]];
+-(void) checkGeofenceState:(GeofenceStatusCallback) callback {
+    if (locMgr.monitoredRegions.count > 0) {
+        [locMgr requestStateForRegion:locMgr.monitoredRegions.allObjects[0]];
+        currCallback = callback;
+    } else {
+        callback(@"no fence");
+    }
 }
 
 
 -(void)handleTransition:(TripDiaryStateTransitions) transition {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    currState = [defaults stringForKey:kCurrState];
+    self.currState = [defaults stringForKey:kCurrState];
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received transition %@ in state %@",
                                                [TripDiaryStateMachine getTransitionName:transition],
-                                                currState]];
+                                                self.currState]];
     
     if (transition == kTransitionInitialize) {
         [self handleStart:transition];
-    } else if (currState == kStartState) {
+    } else if (self.currState == kStartState) {
         [self handleStart:transition];
-    } else if (currState == kWaitingForTripStartState) {
+    } else if (self.currState == kWaitingForTripStartState) {
         [self handleTripStart:transition];
-    } else if (currState == kOngoingTripState) {
+    } else if (self.currState == kOngoingTripState) {
         [self handleTripEnd:transition];
     }
 }
@@ -99,9 +104,9 @@ UILabel* currResultField;
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Moved from %@ to %@",
-                                               currState, newState]];
+                                               self.currState, newState]];
 
-    currState = newState;
+    self.currState = newState;
 }
 
 /*
@@ -122,7 +127,7 @@ UILabel* currResultField;
         [locMgr startUpdatingLocation];
         // We will receive the first location asynchronously
     } else {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], currState);
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
     }
 }
 
@@ -145,7 +150,7 @@ UILabel* currResultField;
         [self deleteGeofence:locMgr];
         [self setState:kStartState];
     } else  {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], currState);
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
     }
 }
 
@@ -165,7 +170,7 @@ UILabel* currResultField;
         [self stopTrackingActivity:activityMgr];
         [self setState:kStartState];
     } else {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], currState);
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
     }
 }
 
@@ -190,18 +195,104 @@ UILabel* currResultField;
     CLLocation *lastLocation = locations[locations.count - 1];
     NSLog(@"lastLocation is %f, %f", lastLocation.coordinate.longitude, lastLocation.coordinate.latitude);
     
-    if (currState == kStartState) {
+    if (self.currState == kStartState) {
         // Find the last location
         [self stopTrackingLocation:locMgr];
         [self createGeofence:locMgr atLocation:lastLocation];
     }
     
-    if (currState == kOngoingTripState) {
-        // TODO: Need to think about how to determine if a trip has ended if there is a distance filter
-        // and the app runs in the background and is only woken when there is an update
-        // if trip has ended {
-        // DataUtils.endTrip
-        // [self handleTransition:kTransitionStoppedMoving];
+    if (self.currState == kOngoingTripState) {
+        for (CLLocation* currLoc in locations) {
+            NSLog(@"Adding point with timestamp %ld", (long)[currLoc.timestamp timeIntervalSince1970]);
+            [[OngoingTripsDatabase database] addPoint:currLoc];
+        }
+        [self logPastHourCollectionCount];
+        if ([self hasTripEnded]) {
+            // TODO: This needs to be replaced by DataUtils::EndTrip so that we can store the trip!
+            [[OngoingTripsDatabase database] clear];
+            [self handleTransition:kTransitionStoppedMoving];
+        }
+    }
+}
+
+- (void)logPastHourCollectionCount {
+    NSDate* dateNow = [NSDate date];
+    NSCalendar *gregorian = [[NSCalendar alloc]
+                             initWithCalendarIdentifier:NSGregorianCalendar];
+    NSDateComponents* dayHourMinuteComponents = [gregorian components:(NSDayCalendarUnit|NSHourCalendarUnit|NSMinuteCalendarUnit) fromDate:dateNow];
+    
+    if ([dayHourMinuteComponents minute] == 0) {
+        /*
+         * If this turns out to be a performance hassle, replace by
+         */
+        NSDate* hourAgo = [dateNow dateByAddingTimeInterval:-(60 * 60)];
+        NSArray* pastHourTrips = [[OngoingTripsDatabase database]
+                                  getPointsFrom: hourAgo.timeIntervalSince1970
+                                  to:dateNow.timeIntervalSince1970];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Recived = %d updates in the %d hour of %d day",
+                                                   pastHourTrips.count, [dayHourMinuteComponents hour],
+                                                   [dayHourMinuteComponents day]]];
+        
+    }
+}
+
+- (BOOL)hasTripEnded {
+    /*
+     * On iOS, we can't actually get updates based on a time delta. So getting the last n trips is not good enough.
+     * Instead, we need to get trips for the past 3 minutes.
+     */
+    NSDate* dateNow = [NSDate date];
+    NSDate* date_3_mins_ago = [dateNow dateByAddingTimeInterval:-(3 * 60)];
+    NSArray* last3MinLocations = [[OngoingTripsDatabase database] getPointsFrom:date_3_mins_ago.timeIntervalSince1970
+                                                                             to:dateNow.timeIntervalSince1970];
+    
+    if (last3MinLocations.count == 0 || last3MinLocations.count == 1) {
+        NSLog(@"last3MinLocations.count = %d, returning NO", last3MinLocations.count);
+        return NO;
+    }
+    
+    // We are guaranteed to have at least two points
+    NSDate* lastDate = ((CLLocation*)last3MinLocations.firstObject).timestamp;
+    NSDate* firstDate = ((CLLocation*)last3MinLocations.lastObject).timestamp;
+    NSLog(@"firstDate = %@, lastDate = %@", firstDate, lastDate);
+    
+    if ([firstDate timeIntervalSinceDate:lastDate] < (2.5 * 60)) {
+        NSLog(@"interval between last and first dates = %f, returning NO", [firstDate timeIntervalSinceDate:lastDate]);
+        return NO;
+    }
+    
+    /*
+     * I tried to implement this java style by computing the distances first, and then by computing the
+     * max of them. Unfortunately, distances are doubles, which cannot be stored in an NSArray since they are
+     * not objects, and returning a CLLocationDistance[] is not allowed. I could probably use a CLLocationDistance*
+     * instead, but don't want to mess with raw pointers and manual deallocation.
+     * 
+     * Switching to computing the distances and the max in the same loop.
+     */
+    
+    /*
+     * Points are read from the database in reverse order,
+     * so the last point is actually in the first location in the array.
+     */
+    CLLocationDistance maxDistance = 0;
+    
+    CLLocation* lastPoint = last3MinLocations.firstObject;
+    NSArray* lastMinusOnePoint = [last3MinLocations subarrayWithRange:(NSRange){1, last3MinLocations.count - 1}];
+    for(id currLoc in lastMinusOnePoint) {
+        CLLocationDistance currDistance = [lastPoint distanceFromLocation:currLoc];
+        if (currDistance > maxDistance) {
+            NSLog(@"currDistance %f > maxDistance %f, replacing it", currDistance, maxDistance);
+            maxDistance = currDistance;
+        }
+    }
+
+    if (maxDistance < HUNDRED_METERS) {
+        NSLog(@"maxDistance = %f (< 100), returning YES ", maxDistance);
+        return YES;
+    } else {
+        NSLog(@"maxDistance = %f (> 100), returning NO ", maxDistance);
+        return NO;
     }
 }
 
@@ -225,10 +316,10 @@ UILabel* currResultField;
     // Since we are going to keep the geofence around during ongoing tracking to ensure that
     // we are re-initalized, we will keep getting exit messages. We need to ignore if we are not
     // in the "waiting_for_trip_start" state.
-    if (currState == kWaitingForTripStartState) {
+    if (self.currState == kWaitingForTripStartState) {
         [self handleTransition:kTransitionExitedGeofence];
     } else {
-        NSLog(@"Received geofence exit in state %@, ignoring", currState);
+        NSLog(@"Received geofence exit in state %@, ignoring", self.currState);
     }
 }
 
@@ -243,10 +334,12 @@ UILabel* currResultField;
       didDetermineState:(CLRegionState)state forRegion:(CLRegion *)region {
     
     NSString* stateStr = [TripDiaryStateMachine geofenceStateToString:state];
-    currResultField.text = stateStr;
+    if (currCallback != NULL) {
+        currCallback(stateStr);
+    }
     
-    NSLog(@"Current state of region %@ is %d (%@)", region.identifier, state, stateStr);
-    if (currState == kWaitingForTripStartState && state == CLRegionStateOutside) {
+    NSLog(@"Current state of region %@ is %d (%@)", region.identifier, (int)state, stateStr);
+    if (self.currState == kWaitingForTripStartState && state == CLRegionStateOutside) {
         /*
          * So we have created a geofence, and since we in a state where we are yet to start a trip,
          * we expect that we are inside the geofence. But we aren't!
@@ -259,7 +352,7 @@ UILabel* currResultField;
          */
         [self handleTransition:kTransitionExitedGeofence];
     }
-    // currResultField = NULL;
+    currCallback = NULL;
 }
 
 +(NSString*)geofenceStateToString:(CLRegionState)state {
@@ -361,7 +454,7 @@ UILabel* currResultField;
     [manager startActivityUpdatesToQueue:mq
                                  withHandler:^(CMMotionActivity *activity) {
                                      NSString *activityName = [self getActivityName:activity];
-                                     NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, activity.confidence);
+                                     NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence);
                                  }];
 }
 
