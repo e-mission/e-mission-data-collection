@@ -70,8 +70,12 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 }
 
 -(void) checkGeofenceState:(GeofenceStatusCallback) callback {
-    [locMgr requestStateForRegion:locMgr.monitoredRegions.allObjects[0]];
-    currCallback = callback;
+    if (locMgr.monitoredRegions.count > 0) {
+        [locMgr requestStateForRegion:locMgr.monitoredRegions.allObjects[0]];
+        currCallback = callback;
+    } else {
+        callback(@"no fence");
+    }
 }
 
 
