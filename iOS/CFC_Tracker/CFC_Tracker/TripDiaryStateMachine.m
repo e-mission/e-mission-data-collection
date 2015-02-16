@@ -57,9 +57,28 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     
     locMgr = [[CLLocationManager alloc] init];
     locMgr.delegate = self;
+    if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
+        NSLog(@"Current location authorization = %d, always = %d, requesting always",
+              [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
+        [locMgr requestAlwaysAuthorization];
+    } else {
+        NSLog(@"Current location authorization = %d, always = %d",
+              [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
+        [self handleTransition:kTransitionInitialize];
+    }
     
-    activityMgr = [[CMMotionActivityManager alloc] init];
-    [self handleTransition:kTransitionInitialize];
+    if ([CMMotionActivityManager isActivityAvailable] == YES) {
+        activityMgr = [[CMMotionActivityManager alloc] init];
+    } else {
+        NSLog(@"UIAlertView: Activity recognition unavailable");
+        UIAlertView* alert = [[UIAlertView alloc]
+                              initWithTitle:@"Activity recognition disabled"
+                              message:@"Activity recognition is not available on your phone"
+                              delegate: NULL
+                              cancelButtonTitle:@"OK"
+                              otherButtonTitles:nil];
+        [alert show];
+    }
     
     /*
      * Make sure that we start with a clean state, at least while debugging.
@@ -120,8 +139,10 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
  */
 -(void) handleStart:(TripDiaryStateTransitions) transition {
     if (transition == kTransitionInitialize) {
-        // Stop all actions in order to cleanup
-        [locMgr stopMonitoringSignificantLocationChanges];
+        // TODO: Stop all actions in order to cleanup
+        
+        // Start monitoring significant location changes at start and never stop
+        [locMgr startMonitoringSignificantLocationChanges];
     
         // Start location services so that we can get the current location
         [locMgr startUpdatingLocation];
@@ -132,22 +153,21 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 }
 
 - (void) handleTripStart:(TripDiaryStateTransitions) transition {
-    // If we delete the geofence, and we are using the more fine grained location detection mode,
-    // then we won't be relaunched if the app is terminated.
-    // The standard location service ... does not relaunch iOS apps that have been terminated.
-    // And it looks like apps need not be terminated on reboot, they can also be terminated as part of normal
-    // OS operation
-    // The system may still terminate the app at any time to reclaim its memory or other resources.
-    // So we need to keep the geofence around so that we will be re-launched and can re-initialize ourselves
-    // But if we use the significant changes location service, it will relaunch the app and we can remove
-    // the geofence
+    /* If we delete the geofence, and we are using the more fine grained location detection mode, then we won't be relaunched if the app is terminated. "The standard location service ... does not relaunch iOS apps that have been terminated. And it looks like apps need not be terminated on reboot, they can also be terminated as part of normal OS operation. The system may still terminate the app at any time to reclaim its memory or other resources."
+     
+        However, it turns out that keeping the geofence around is not good enough because iOS does not assume that we start within the geofence. So it won't restart until it detects an actual in -> out transition, which will only happen again when we visit the start of the trip. So let's delete the geofence and start both types of location services.
+     */
+    
     // TODO: Make removing the geofence conditional on the type of service
     if (transition == kTransitionExitedGeofence) {
+        [self startTrackingSignificantLocationChanges:locMgr];
+        [self deleteGeofence:locMgr];
         [self startTrackingLocation:locMgr];
         [self startTrackingActivity:activityMgr];
         [self setState:kOngoingTripState];
     } else if (transition == kTransitionStopTracking) {
         [self deleteGeofence:locMgr];
+        [self stopTrackingSignificantLocationChanges:locMgr];
         [self setState:kStartState];
     } else  {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
@@ -158,6 +178,15 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     if (transition == kTransitionStoppedMoving) {
         [self stopTrackingLocation:locMgr];
         [self stopTrackingActivity:activityMgr];
+        
+        /*
+         * Technically, we can turn off the significant location changes here because we
+         * have the geofence in place. But if the phone is turned off and turned on when 
+         * we are outside the geofence, it is unclear that the geofence will still be 
+         * triggered. Seems safe to just have the significant location tracking on all
+         * the time except when the user explicitly requested us to stop.
+         */
+        
         // The location property may have been updated while the app was killed
         // Another caveat is that if the minimum distance filter is large,
         // the returned location may be relatively old. But in our case, we have
@@ -166,6 +195,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
         // because they both have the same identifier
         [self createGeofence:locMgr atLocation:locMgr.location];
     } else if (transition == kTransitionStopTracking) {
+        [self stopTrackingSignificantLocationChanges:locMgr];
         [self stopTrackingLocation:locMgr];
         [self stopTrackingActivity:activityMgr];
         [self setState:kStartState];
@@ -185,7 +215,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 - (void)locationManager:(CLLocationManager *)manager
      didUpdateLocations:(NSArray *)locations {
     NSLog(@"Recieved %ld location updates ", (unsigned long)locations.count);
-
+    
     if (locations.count == 0) {
         NSLog(@"locations.count = %lu in didUpdateLocations, early return", (unsigned long)locations.count);
         return;
@@ -202,6 +232,18 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     }
     
     if (self.currState == kOngoingTripState) {
+        /*
+         * This can be called with either coarse or fine location tracking.
+         * If we are supposed to be in the "ongoing trip" state, but this is
+         * called with only coarse location tracking, then the app must have
+         * been killed and restarted. Let's restart fine location tracking.
+         *
+         * Unfortunately, there is no way to check whether only coarse or
+         * both coarse and fine location tracking is turned on, so we can't do this.
+         * Hopefully, if fine location tracking was turned on, and the app was killed
+         * and restarted then fine location tracking will still be turned on.
+         */
+
         for (CLLocation* currLoc in locations) {
             NSLog(@"Adding point with timestamp %ld", (long)[currLoc.timestamp timeIntervalSince1970]);
             [[OngoingTripsDatabase database] addPoint:currLoc];
@@ -230,7 +272,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
                                   getPointsFrom: hourAgo.timeIntervalSince1970
                                   to:dateNow.timeIntervalSince1970];
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Recived = %d updates in the %d hour of %d day",
+                                                   @"Recived = %ld updates in the %ld hour of %ld day",
                                                    pastHourTrips.count, [dayHourMinuteComponents hour],
                                                    [dayHourMinuteComponents day]]];
         
@@ -248,7 +290,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
                                                                              to:dateNow.timeIntervalSince1970];
     
     if (last3MinLocations.count == 0 || last3MinLocations.count == 1) {
-        NSLog(@"last3MinLocations.count = %d, returning NO", last3MinLocations.count);
+        NSLog(@"last3MinLocations.count = %ld, returning NO", last3MinLocations.count);
         return NO;
     }
     
@@ -355,6 +397,14 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     currCallback = NULL;
 }
 
+- (void)locationManager:(CLLocationManager *)manager
+    didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
+    NSLog(@"New authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways);
+    [self handleTransition:kTransitionInitialize];
+}
+
+
+
 +(NSString*)geofenceStateToString:(CLRegionState)state {
     if (state == CLRegionStateInside) {
         return @"inside";
@@ -447,6 +497,14 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 
 -(void)stopTrackingLocation:(CLLocationManager*) manager {
     [manager stopUpdatingLocation];
+}
+
+-(void)startTrackingSignificantLocationChanges:(CLLocationManager*) manager {
+    [manager startMonitoringSignificantLocationChanges];
+}
+
+-(void)stopTrackingSignificantLocationChanges:(CLLocationManager*) manager {
+    [manager stopMonitoringSignificantLocationChanges];
 }
 
 -(void)startTrackingActivity:(CMMotionActivityManager*) manager {

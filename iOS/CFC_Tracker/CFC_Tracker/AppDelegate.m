@@ -21,6 +21,12 @@
     // Once the application has launched, set up a geofence around the current location
     _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] init];
     
+    if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
+        [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
+                settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
+                categories:nil]];
+    }
+    
     if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Application launched with LaunchOptionsLocationKey = YES"]];
