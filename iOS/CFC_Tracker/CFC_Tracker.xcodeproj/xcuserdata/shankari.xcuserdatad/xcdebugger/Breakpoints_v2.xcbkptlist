@@ -9,13 +9,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "CFC_Tracker/TripDiaryStateMachine.m"
-            timestampString = "445156582.967275"
+            filePath = "CFC_Tracker/OngoingTripsDatabase.m"
+            timestampString = "445143444.127109"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "188"
-            endingLineNumber = "188"
-            landmarkName = "-locationManager:didUpdateLocations:"
+            startingLineNumber = "309"
+            endingLineNumber = "309"
+            landmarkName = "-getTransitions"
             landmarkType = "5">
          </BreakpointContent>
       </BreakpointProxy>
@@ -25,13 +25,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "CFC_Tracker/OngoingTripsDatabase.m"
-            timestampString = "445143444.127109"
+            filePath = "CFC_Tracker/TripDiaryStateMachine.m"
+            timestampString = "445762621.042196"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "309"
-            endingLineNumber = "309"
-            landmarkName = "-getTransitions"
+            startingLineNumber = "379"
+            endingLineNumber = "379"
+            landmarkName = "-locationManager:didDetermineState:forRegion:"
             landmarkType = "5">
          </BreakpointContent>
       </BreakpointProxy>

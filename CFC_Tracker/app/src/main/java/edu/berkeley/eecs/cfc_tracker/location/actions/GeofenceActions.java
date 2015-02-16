@@ -51,8 +51,8 @@ public class GeofenceActions {
     public PendingResult<Status> create() {
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
-        Log.d(TAG, "mLastLocation has elapsed time = "+mLastLocation.getElapsedRealtimeNanos());
         if (mLastLocation != null) {
+            Log.d(TAG, "mLastLocation has elapsed time = "+mLastLocation.getElapsedRealtimeNanos());
             Log.d(TAG, "Last location is " + mLastLocation + " creating geofence");
             // This is also an asynchronous call. We can either wait for the result,
             // or we can provide a callback. Let's provide a callback to keep the async

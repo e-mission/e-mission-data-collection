@@ -39,6 +39,9 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 - (void)locationManager:(CLLocationManager *)manager
       didDetermineState:(CLRegionState)state forRegion:(CLRegion *)region;
 
+- (void)locationManager:(CLLocationManager *)manager
+    didChangeAuthorizationStatus:(CLAuthorizationStatus)status;
+
 -(void)handleTransition:(TripDiaryStateTransitions) transition;
 
 @end
