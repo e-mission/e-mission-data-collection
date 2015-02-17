@@ -25,6 +25,7 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import java.io.IOException;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
+import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
 import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.cfc_tracker.storage.OngoingTripStorageHelper;
 import edu.berkeley.eecs.cfc_tracker.storage.StoredTripHelper;
@@ -309,12 +310,9 @@ public class MainActivity extends Activity {
               if (resultCode == Activity.RESULT_OK) {
                   String userEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
                   Toast.makeText(this, userEmail, Toast.LENGTH_SHORT).show();
-                  SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-                  editor.putString(getString(R.string.user_preferences_key_username), userEmail);
-                  editor.commit();
+                  UserProfile.getInstance(this).setUserEmail(userEmail);
                   Log.d(TAG, "After saving, username is "+
-                          PreferenceManager.getDefaultSharedPreferences(this).getString(
-                                  getString(R.string.user_preferences_key_username), ""));
+                          UserProfile.getInstance(this).getUserEmail());
               } else if (resultCode == Activity.RESULT_CANCELED) {
                   Toast.makeText(this, "You must pick an account", Toast.LENGTH_SHORT).show();
               }

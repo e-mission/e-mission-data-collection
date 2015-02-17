@@ -19,7 +19,7 @@ import edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentSer
  */
 public class ActivityRecognitionActions {
     private static final int ACTIVITY_IN_NUMBERS = 22848489;
-    private static final int ACTIVITY_DETECTION_INTERVAL = Constants.THIRTY_SECONDS * 5;
+    private static final int ACTIVITY_DETECTION_INTERVAL = Constants.THIRTY_SECONDS;
     // ~ 2.5 minutes - the same change that we used to use to detect the end of a trip
 
     private static final String TAG = "ActivityRecognitionHandler";

@@ -8,6 +8,8 @@ import android.preference.PreferenceManager;
 
 import java.io.IOException;
 
+import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
+
 /*
  * Class that allows us to re-register the alarms when the phone is rebooted.
  */
@@ -23,6 +25,13 @@ public class BootReceiver extends BroadcastReceiver {
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             System.out.println("Starting activity in boot receiver");
             ctx.startActivity(i);
+            /*
+             * End any ongoing trips, because the elapsed time will get reset at this
+             * point and invalidate all entries in the database.
+             * TODO: Remove this if we decide to switch back to utc time.
+             */
+            DataUtils.endTrip(ctx);
+
             // Re-initialize the state machine
             ctx.sendBroadcast(new Intent(ctx.getString(R.string.transition_initialize)));
 
