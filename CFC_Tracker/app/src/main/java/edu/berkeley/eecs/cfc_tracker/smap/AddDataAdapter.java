@@ -27,6 +27,7 @@ import edu.berkeley.eecs.cfc_tracker.ConnectionSettings;
 import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
+import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
 import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 import android.accounts.Account;
@@ -105,9 +106,9 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 		}
 
         String emission_host = ConnectionSettings.getConnectURL(mContext);
-        String userName = PreferenceManager.getDefaultSharedPreferences(mContext).getString(
-                mContext.getString(R.string.user_preferences_key_username), ""
-        );
+        System.out.println("About to connect to host "+emission_host);
+
+        String userName = UserProfile.getInstance(mContext).getUserEmail();
         System.out.println("retrieved user name = "+userName);
 
         if (userName == null || userName.trim().equals("")) {

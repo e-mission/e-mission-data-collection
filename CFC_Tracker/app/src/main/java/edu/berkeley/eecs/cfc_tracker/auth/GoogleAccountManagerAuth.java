@@ -9,6 +9,7 @@ import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 
 import edu.berkeley.eecs.cfc_tracker.ConnectionSettings;
+import edu.berkeley.eecs.cfc_tracker.Log;
 import edu.berkeley.eecs.cfc_tracker.R;
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -27,6 +28,7 @@ public class GoogleAccountManagerAuth {
 
     Activity mCtxt;
     int mRequestCode;
+    public static String TAG = "GoogleAccountManagerAuth";
 
 	public GoogleAccountManagerAuth(Activity ctxt, int requestCode) {
 		mCtxt = ctxt;
@@ -70,7 +72,7 @@ public class GoogleAccountManagerAuth {
 	public static String getServerToken(Context context, String userName) {
 		String serverToken = null;
 		try {
-			String AUTH_SCOPE = ConnectionSettings.getGoogleWebAppClientID(context);
+			String AUTH_SCOPE = "audience:server:client_id:"+ConnectionSettings.getGoogleWebAppClientID(context);
 			serverToken = GoogleAuthUtil.getToken(context,
 					userName, AUTH_SCOPE);
 		} catch (UserRecoverableAuthException e) {
