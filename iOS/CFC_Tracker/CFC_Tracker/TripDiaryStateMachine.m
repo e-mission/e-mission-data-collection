@@ -23,14 +23,10 @@
 
 static NSString * const kCurrGeofenceID = @"STATIONARY_GEOFENCE_LOCATION";
 static NSString * const kCurrState = @"CURR_STATE";
-static NSString * const kStartState = @"STATE_START";
-static NSString * const kWaitingForTripStartState = @"STATE_WAITING_FOR_TRIP_START";
-static NSString * const kOngoingTripState = @"STATE_ONGOING_TRIP";
 
 static int FOUR_MINUTES_IN_SECONDS = 4 * 60;
 
 static CLLocationDistance const HUNDRED_METERS = 100; // in meters
-
 
 + (NSString*)getTransitionName:(TripDiaryStateTransitions)transition {
     if (transition == kTransitionInitialize) {
@@ -46,6 +42,18 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     }
 }
 
++ (NSString*)getStateName:(TripDiaryStates)state {
+    if (state == kStartState) {
+        return @"STATE_START";
+    } else if (state == kWaitingForTripStartState) {
+        return @"STATE_WAITING_FOR_TRIP_START";
+    } else if (state == kOngoingTripState) {
+        return @"STATE_ONGOING_TRIP";
+    } else {
+        return @"UNKNOWN";
+    }
+}
+
 -(id)init{
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     self.currState = kStartState;
@@ -53,7 +61,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Initialized TripDiaryStateMachine when state = %@",
-                                               self.currState]];
+                                               [TripDiaryStateMachine getStateName:self.currState]]];
     
     locMgr = [[CLLocationManager alloc] init];
     locMgr.delegate = self;
@@ -71,21 +79,26 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
         activityMgr = [[CMMotionActivityManager alloc] init];
     } else {
         NSLog(@"UIAlertView: Activity recognition unavailable");
-        UIAlertView* alert = [[UIAlertView alloc]
-                              initWithTitle:@"Activity recognition disabled"
-                              message:@"Activity recognition is not available on your phone"
-                              delegate: NULL
-                              cancelButtonTitle:@"OK"
-                              otherButtonTitles:nil];
-        [alert show];
+        [TripDiaryStateMachine showAlert:@"Activity recognition is not available on your phone"
+                               withTitle:@"Activity recognition disabled"];
     }
     
     /*
      * Make sure that we start with a clean state, at least while debugging.
      * TODO: Check how often this is initialized, and whether we should do this even when we are out of debugging.
      */
-    [self deleteGeofence:locMgr];
+    // [self deleteGeofence:locMgr];
     return [super init];
+}
+
++(void) showAlert:(NSString*)message withTitle:(NSString*)title {
+    UIAlertView* alert = [[UIAlertView alloc]
+                          initWithTitle:title
+                          message:message
+                          delegate: NULL
+                          cancelButtonTitle:@"OK"
+                          otherButtonTitles:nil];
+    [alert show];
 }
 
 -(void) checkGeofenceState:(GeofenceStatusCallback) callback {
@@ -100,11 +113,11 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 
 -(void)handleTransition:(TripDiaryStateTransitions) transition {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    self.currState = [defaults stringForKey:kCurrState];
+    self.currState = [defaults integerForKey:kCurrState];
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received transition %@ in state %@",
                                                [TripDiaryStateMachine getTransitionName:transition],
-                                                self.currState]];
+                                               [TripDiaryStateMachine getStateName:self.currState]]];
     
     if (transition == kTransitionInitialize) {
         [self handleStart:transition];
@@ -117,13 +130,14 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     }
 }
 
--(void)setState:(NSString*) newState {
+-(void)setState:(TripDiaryStates) newState {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setObject:newState forKey:kCurrState];
+    [defaults setInteger:newState forKey:kCurrState];
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Moved from %@ to %@",
-                                               self.currState, newState]];
+                                               [TripDiaryStateMachine getStateName:self.currState],
+                                               [TripDiaryStateMachine getStateName:newState]]];
 
     self.currState = newState;
 }
@@ -142,13 +156,17 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
         // TODO: Stop all actions in order to cleanup
         
         // Start monitoring significant location changes at start and never stop
-        [locMgr startMonitoringSignificantLocationChanges];
+        // [locMgr startMonitoringSignificantLocationChanges];
+        [self startTrackingSignificantLocationChanges:locMgr];
+        [self startTrackingVisits:locMgr];
     
         // Start location services so that we can get the current location
-        [locMgr startUpdatingLocation];
+        // [locMgr startUpdatingLocation];
         // We will receive the first location asynchronously
     } else {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring",
+              [TripDiaryStateMachine getTransitionName:transition],
+              [TripDiaryStateMachine getStateName:self.currState]);
     }
 }
 
@@ -160,17 +178,16 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     
     // TODO: Make removing the geofence conditional on the type of service
     if (transition == kTransitionExitedGeofence) {
-        [self startTrackingSignificantLocationChanges:locMgr];
         [self deleteGeofence:locMgr];
         [self startTrackingLocation:locMgr];
         [self startTrackingActivity:activityMgr];
         [self setState:kOngoingTripState];
     } else if (transition == kTransitionStopTracking) {
-        [self deleteGeofence:locMgr];
-        [self stopTrackingSignificantLocationChanges:locMgr];
-        [self setState:kStartState];
+        [self resetFSM:transition];
     } else  {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring",
+              [TripDiaryStateMachine getTransitionName:transition],
+              [TripDiaryStateMachine getStateName:self.currState]);
     }
 }
 
@@ -195,12 +212,22 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
         // because they both have the same identifier
         [self createGeofence:locMgr atLocation:locMgr.location];
     } else if (transition == kTransitionStopTracking) {
-        [self stopTrackingSignificantLocationChanges:locMgr];
+        [self resetFSM:transition];
+    } else {
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring",
+              [TripDiaryStateMachine getTransitionName:transition],
+              [TripDiaryStateMachine getStateName:self.currState]);
+    }
+}
+
+- (void) resetFSM:(TripDiaryStateTransitions) transition {
+    if (transition == kTransitionStopTracking) {
         [self stopTrackingLocation:locMgr];
         [self stopTrackingActivity:activityMgr];
+        [self deleteGeofence:locMgr];
+        [self stopTrackingSignificantLocationChanges:locMgr];
+        [self stopTrackingVisits:locMgr];
         [self setState:kStartState];
-    } else {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring", [TripDiaryStateMachine getTransitionName:transition], self.currState);
     }
 }
 
@@ -227,8 +254,16 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     
     if (self.currState == kStartState) {
         // Find the last location
-        [self stopTrackingLocation:locMgr];
+        // [self stopTrackingLocation:locMgr];
+        NSLog(@"Created geofence at location %@", lastLocation);
         [self createGeofence:locMgr atLocation:lastLocation];
+    }
+    
+    if (self.currState != kOngoingTripState) {
+        for (CLLocation* currLoc in locations) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Recieved location %@, ongoing trip = false", currLoc]];
+        }
     }
     
     if (self.currState == kOngoingTripState) {
@@ -246,6 +281,8 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 
         for (CLLocation* currLoc in locations) {
             NSLog(@"Adding point with timestamp %ld", (long)[currLoc.timestamp timeIntervalSince1970]);
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Recieved location %@, ongoing trip = true", currLoc]];
             [[OngoingTripsDatabase database] addPoint:currLoc];
         }
         [self logPastHourCollectionCount];
@@ -361,7 +398,8 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     if (self.currState == kWaitingForTripStartState) {
         [self handleTransition:kTransitionExitedGeofence];
     } else {
-        NSLog(@"Received geofence exit in state %@, ignoring", self.currState);
+        NSLog(@"Received geofence exit in state %@, ignoring",
+              [TripDiaryStateMachine getStateName:self.currState]);
     }
 }
 
@@ -414,6 +452,39 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
         return @"unknown";
     }
 }
+
+- (void)locationManager:(CLLocationManager *)manager
+               didVisit:(CLVisit *)visit
+{
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Received visit notification = %@",
+                                               visit]];
+}
+
+- (void)locationManagerDidPauseLocationUpdates:(CLLocationManager *)manager
+{
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Location updates PAUSED"]];
+}
+
+- (void)locationManagerDidResumeLocationUpdates:(CLLocationManager *)manager
+{
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Location updates RESUMED"]];
+}
+
+- (void)locationManager:(CLLocationManager *)manager
+        monitoringDidFailForRegion:(CLRegion *)region
+                         withError:(NSError *)error {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Monitoring failed for region %@ with error %@", region, error]];
+}
+
+- (void)locationManager:(CLLocationManager *)manager didUpdateHeading:(CLHeading *)newHeading {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Got new heading %@", newHeading]];
+}
+
 
 /*
  * END: Delegate callbacks
@@ -491,7 +562,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
      * Trying deferred updates instead.
      */
     // locMgr.distanceFilter = HUNDRED_METERS;
-    [locMgr allowDeferredLocationUpdatesUntilTraveled:CLLocationDistanceMax timeout:FOUR_MINUTES_IN_SECONDS];
+    // [locMgr allowDeferredLocationUpdatesUntilTraveled:CLLocationDistanceMax timeout:FOUR_MINUTES_IN_SECONDS];
     [manager startUpdatingLocation];
 }
 
@@ -518,6 +589,18 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
 
 -(void)stopTrackingActivity:(CMMotionActivityManager*) manager {
     [manager stopActivityUpdates];
+}
+
+-(void)startTrackingVisits:(CLLocationManager*) manager {
+    if ([CLLocationManager instancesRespondToSelector:@selector(startMonitoringVisits)]) {
+        [manager startMonitoringVisits];
+    }
+}
+
+-(void)stopTrackingVisits:(CLLocationManager*) manager {
+    if ([CLLocationManager instancesRespondToSelector:@selector(stopMonitoringVisits)]) {
+        [manager stopMonitoringVisits];
+    }
 }
 
 -(NSString*)getActivityName:(CMMotionActivity*) activity {

@@ -50,7 +50,7 @@
 }
 
 - (IBAction)refreshState:(id)sender {
-    NSString* refreshedState = [self getTDSM].currState;
+    NSString* refreshedState = [TripDiaryStateMachine getStateName:[self getTDSM].currState];
     self.tdsrmCurrState.text = refreshedState;
     [self.transitionTable reloadData];
 }
@@ -58,6 +58,10 @@
 - (IBAction)clearTransitions:(id)sender {
     [[OngoingTripsDatabase database] clearTransitions];
     [self.transitionTable reloadData];
+}
+
+- (IBAction)switchStateMachineMode:(id)sender {
+    
 }
 
 - (TripDiaryStateMachine*) getTDSM {

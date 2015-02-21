@@ -17,13 +17,20 @@ typedef enum : NSUInteger {
     kTransitionStopTracking
 } TripDiaryStateTransitions;
 
+typedef enum : NSUInteger {
+    kStartState,
+    kWaitingForTripStartState,
+    kOngoingTripState
+} TripDiaryStates;
+
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 @interface TripDiaryStateMachine : NSObject <CLLocationManagerDelegate>
 
-@property NSString* currState;
+@property TripDiaryStates currState;
 
 + (NSString*)getTransitionName:(TripDiaryStateTransitions) transition;
++ (NSString*)getStateName:(TripDiaryStates) state;
 
 - (void)checkGeofenceState:(GeofenceStatusCallback) resultField;
 
@@ -41,6 +48,20 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 - (void)locationManager:(CLLocationManager *)manager
     didChangeAuthorizationStatus:(CLAuthorizationStatus)status;
+
+- (void)locationManager:(CLLocationManager *)manager
+               didVisit:(CLVisit *)visit;
+
+- (void)locationManagerDidPauseLocationUpdates:(CLLocationManager *)manager;
+
+- (void)locationManagerDidResumeLocationUpdates:(CLLocationManager *)manager;
+
+- (void)locationManager:(CLLocationManager *)manager
+        monitoringDidFailForRegion:(CLRegion *)region
+             withError:(NSError *)error;
+
+- (void)locationManager:(CLLocationManager *)manager
+       didUpdateHeading:(CLHeading *)newHeading;
 
 -(void)handleTransition:(TripDiaryStateTransitions) transition;
 
