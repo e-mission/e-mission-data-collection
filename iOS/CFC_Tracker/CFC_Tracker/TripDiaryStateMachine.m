@@ -66,9 +66,13 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     locMgr = [[CLLocationManager alloc] init];
     locMgr.delegate = self;
     if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
-        NSLog(@"Current location authorization = %d, always = %d, requesting always",
-              [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-        [locMgr requestAlwaysAuthorization];
+        if ([CLLocationManager instancesRespondToSelector:@selector(requestAlwaysAuthorization)]) {
+            NSLog(@"Current location authorization = %d, always = %d, requesting always",
+                  [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
+            [locMgr requestAlwaysAuthorization];
+        } else {
+            NSLog(@"Don't need to request authorization, system will automatically prompt for it");
+        }
     } else {
         NSLog(@"Current location authorization = %d, always = %d",
               [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
@@ -407,6 +411,10 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
     didStartMonitoringForRegion:(CLRegion *)region {
     NSLog(@"started monitoring for region %@", region.identifier);
     [self setState:kWaitingForTripStartState];
+    // Needed in order to avoid getting a failure in the geofence creation by querying it too quickly
+    // http://www.cocoanetics.com/2014/05/radar-monitoring-clregion-immediately-after-removing-one-fails/
+    // Not documented anywhere other than a blog post!!
+    [NSThread sleepForTimeInterval:0.5];
     [locMgr requestStateForRegion:region];
 }
 
@@ -478,6 +486,7 @@ static CLLocationDistance const HUNDRED_METERS = 100; // in meters
                          withError:(NSError *)error {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Monitoring failed for region %@ with error %@", region, error]];
+    NSLog(@"Number of existing geofences = %d", locMgr.monitoredRegions.count);
 }
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateHeading:(CLHeading *)newHeading {

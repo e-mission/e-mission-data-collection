@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>connect_url</key>
+    <string>https://my.host.org/</string>
+    <!--
+      Use this connect string to connect to localhost from the emulator.
+      To connect using a physical phone, determine the external IP address using ifconfig
+      and use the URL http://<external_ip>:8080/
+    <string>http://localhost:8080/</string>
+    -->
+    <key>google_webapp_client_id</key>
+    <string>Get from https://console.developers.google.com</string>
+    <key>google_ios_client_id</key>
+    <string>Get from https://console.developers.google.com</string>
+    <key>google_ios_client_secret</key>
+    <string>Get from https://console.developers.google.com</string>
+    <key>parse_app_id</key>
+    <string>Get from https://www.parse.com</string>
+    <key>parse_client_id</key>
+    <string>Get from https://www.parse.com</string>
+</dict>
+</plist>

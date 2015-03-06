@@ -1,4 +1,4 @@
-//
+    //
 //  AppDelegate.m
 //  CFC_Tracker
 //
@@ -8,6 +8,8 @@
 
 #import "AppDelegate.h"
 #import "LocalNotificationManager.h"
+#import "ConnectionSettings.h"
+#import <Parse/Parse.h>
 
 @interface AppDelegate () {
 //    TripDiaryStateMachine* _stateMachine;
@@ -21,10 +23,21 @@
     // Once the application has launched, set up a geofence around the current location
     _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] init];
     
+    [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
+                  clientKey:[[ConnectionSettings sharedInstance] getParseClientID]];
+    
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
         [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
                 categories:nil]];
+    }
+    
+    if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
+        [[UIApplication sharedApplication] registerForRemoteNotifications];
+    } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
+        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert)];
+    } else {
+        NSLog(@"registering for remote notifications not supported");
     }
     
     if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
@@ -36,6 +49,30 @@
 
     }
     return YES;
+}
+
+- (void)application:(UIApplication *)application
+                    didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    NSLog(@"Finished registering for remote notifications with token %@", deviceToken);
+    // Store the deviceToken in the current installation and save it to Parse.
+    PFInstallation *currentInstallation = [PFInstallation currentInstallation];
+    [currentInstallation setDeviceTokenFromData:deviceToken];
+    [currentInstallation saveInBackground];
+}
+
+- (void)application:(UIApplication *)application
+                    didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+    NSLog(@"Failed to register for remote notifications with error %@", error);
+}
+
+- (void)application:(UIApplication *)application
+                    didReceiveRemoteNotification:(NSDictionary *)userInfo
+                    fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+    NSLog(@"About to check whether a trip has ended");
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Received remote push notification"]];
+    completionHandler(UIBackgroundFetchResultNewData);
+//    [PFPush handlePush:userInfo];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
