@@ -10,6 +10,8 @@
 		D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */; };
 		D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */; };
 		D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */; };
+		D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */; };
+		D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */; };
 		D0A74D7E1AA786CA005BE6B2 /* Bolts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D7D1AA786CA005BE6B2 /* Bolts.framework */; };
 		D0A74D801AA786DB005BE6B2 /* Parse.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D7F1AA786DB005BE6B2 /* Parse.framework */; };
 		D0A74D821AA78CA1005BE6B2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D811AA78CA1005BE6B2 /* AudioToolbox.framework */; };
@@ -44,6 +46,10 @@
 		D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OngoingTripsDatabase.h; sourceTree = "<group>"; };
 		D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OngoingTripsDatabase.m; sourceTree = "<group>"; };
 		D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = OngoingTripsAuto.db; sourceTree = "<group>"; };
+		D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryActions.h; sourceTree = "<group>"; };
+		D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryActions.m; sourceTree = "<group>"; };
+		D06DDA811AAC1F7E00E6CF9B /* TripDiaryDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryDelegate.h; sourceTree = "<group>"; };
+		D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryDelegate.m; sourceTree = "<group>"; };
 		D0A74D7D1AA786CA005BE6B2 /* Bolts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Bolts.framework; sourceTree = "<group>"; };
 		D0A74D7F1AA786DB005BE6B2 /* Parse.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Parse.framework; sourceTree = "<group>"; };
 		D0A74D811AA78CA1005BE6B2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -111,10 +117,14 @@
 		D0A74D871AAA2C1B005BE6B2 /* Location */ = {
 			isa = PBXGroup;
 			children = (
+				D06DDA811AAC1F7E00E6CF9B /* TripDiaryDelegate.h */,
+				D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */,
 				D0EC6B711A7D57D300E8841B /* TripDiaryStateMachine.h */,
 				D0EC6B721A7D57D300E8841B /* TripDiaryStateMachine.m */,
 				D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */,
 				D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */,
+				D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */,
+				D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */,
 			);
 			name = Location;
 			sourceTree = "<group>";
@@ -309,6 +319,8 @@
 				D0EC6B541A7CBEBB00E8841B /* ViewController.m in Sources */,
 				D0EC6B511A7CBEBB00E8841B /* AppDelegate.m in Sources */,
 				D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */,
+				D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */,
+				D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */,
 				D0EC6B4E1A7CBEBB00E8841B /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
