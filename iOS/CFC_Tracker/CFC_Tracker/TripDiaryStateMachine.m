@@ -225,7 +225,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         [TripDiaryActions createGeofenceHere:locMgr inState:self.currState];
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
         NSLog(@"Restarted trip, continuing tracking");
-    } else if (true) {
+    } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
         [TripDiaryActions stopTracking:transition withLocationMgr:locMgr withActivityMgr:activityMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];

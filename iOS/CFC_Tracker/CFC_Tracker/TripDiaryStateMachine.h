@@ -27,7 +27,7 @@
 #define CFCTransitionRecievedSilentPush @"T_RECEIVED_SILENT_PUSH"
 #define CFCTransitionTripEndDetected @"T_TRIP_END_DETECTED"
 #define CFCTransitionTripRestarted @"T_TRIP_RESTARTED"
-#define CFCTransitionEndTripTracking @"T_END_TRIP_TRACKING";
+#define CFCTransitionEndTripTracking @"T_END_TRIP_TRACKING"
 #define CFCTransitionTripEnded @"T_TRIP_ENDED"
 #define CFCTransitionForceStopTracking @"T_FORCE_STOP_TRACKING"
 #define CFCTransitionTrackingStopped @"T_TRACKING_STOPPED"
