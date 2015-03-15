@@ -11,8 +11,10 @@
 #import "ConnectionSettings.h"
 #import <Parse/Parse.h>
 
+typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
+
 @interface AppDelegate () {
-//    TripDiaryStateMachine* _stateMachine;
+    SilentPushCompletionHandler _silentPushHandler;
 }
 @end
 
@@ -20,8 +22,20 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Once the application has launched, set up a geofence around the current location
-    _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] init];
+    BOOL recreateTripDiary = NO;
+    if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Application launched with LaunchOptionsLocationKey = YES"]];
+        recreateTripDiary = YES;
+    } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Application launched with LaunchOptionsLocationKey = NO"]];
+        
+    }
+    
+    if (_tripDiaryStateMachine == NULL || recreateTripDiary) {
+        _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] init];
+    }
     
     [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
                   clientKey:[[ConnectionSettings sharedInstance] getParseClientID]];
@@ -39,16 +53,29 @@
     } else {
         NSLog(@"registering for remote notifications not supported");
     }
+    [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil
+                                                  usingBlock:^(NSNotification *note) {
+                                                      [self handleNotifications:note];
+                                                  }];
     
-    if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Application launched with LaunchOptionsLocationKey = YES"]];
-    } else {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Application launched with LaunchOptionsLocationKey = NO"]];
-
-    }
     return YES;
+}
+
+- (void)handleNotifications:(NSNotification*)note {
+    if (_silentPushHandler != nil) {
+        // we only care about notifications when we are processing a silent remote push notification
+        if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
+            // if we got a trip end detected, we want to wait until the geofence is created
+        } else {
+            // for everything else, we don't need to wait for processing
+            _silentPushHandler(UIBackgroundFetchResultNewData);
+        }
+        // TODO: Figure out whether we should set it to NULL here or whether parts of
+        // the system will still try to access the handler.
+        // _silentPushHandler = nil;
+    } else {
+        // Not processing a silent remote push notification
+    }
 }
 
 - (void)application:(UIApplication *)application
@@ -69,9 +96,8 @@
                     didReceiveRemoteNotification:(NSDictionary *)userInfo
                     fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     NSLog(@"About to check whether a trip has ended");
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Received remote push notification"]];
-    completionHandler(UIBackgroundFetchResultNewData);
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush];
+    _silentPushHandler = completionHandler;
 //    [PFPush handlePush:userInfo];
 }
 

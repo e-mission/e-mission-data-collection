@@ -38,15 +38,18 @@
 }
 
 - (IBAction)forceEndTrip:(id)sender {
-    [[self getTDSM] handleTransition:kTransitionStoppedMoving];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                        object:CFCTransitionForceStopTracking];
 }
 
 - (IBAction)forceStartTrip:(id)sender {
-    [[self getTDSM] handleTransition:kTransitionExitedGeofence];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                        object:CFCTransitionExitedGeofence];
 }
 
 - (IBAction)resetStateMachine:(id)sender {
-    [[self getTDSM] handleTransition:kTransitionInitialize];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                        object:CFCTransitionInitialize];
 }
 
 - (IBAction)refreshState:(id)sender {
