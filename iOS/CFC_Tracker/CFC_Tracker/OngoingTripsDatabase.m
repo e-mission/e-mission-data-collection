@@ -136,8 +136,6 @@ static OngoingTripsDatabase *_database;
         NSLog(@"Got error code %ld while executing statement %@", (long)execCode, insertStatement);
     }
     sqlite3_finalize(compiledStatement);
-    
-    // The location information is made available as a callback, so we'll update it when we get it
 }
 
 
@@ -221,9 +219,10 @@ static OngoingTripsDatabase *_database;
     return @[firstPoint, endPoint];
 }
 
--(NSArray*) getPointsFrom:(NSInteger)startTs to:(NSInteger)endTs {
-    NSString* matchQuery = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ >= %ld AND %@ < %ld",
-                            TABLE_ONGOING_TRIP, KEY_TS, (long)startTs, KEY_TS, (long)endTs];
+-(NSArray*) getPointsFrom:(NSDate*)startTime to:(NSDate*)endTime {
+    NSString* matchQuery = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ >= %f AND %@ < %f",
+                            TABLE_ONGOING_TRIP, KEY_TS, (double)startTime.timeIntervalSince1970,
+                                                KEY_TS, (double)endTime.timeIntervalSince1970];
     return [self getPointsForQuery:matchQuery];
 }
 

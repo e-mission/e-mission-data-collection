@@ -10,6 +10,7 @@
 #import "TripDiaryStateMachine.h"
 #import "OngoingTripsDatabase.h"
 #import "LocalNotificationManager.h"
+#import "DataUtils.h"
 
 @implementation TripDiaryActions
 
@@ -203,9 +204,10 @@
  * occurred. If the update was greater than the time for detecting the end of a trip (10 minutes), then the trip has ended,
  * otherwise, it has not.
  * TODO: Add a "machine" or "state" parameter if we want to check the current state.
+ * Also, it seems like this would be a good fit for DataUtils instead of being here...
  */
 
-+ (BOOL)hasTripEnded {
++ (BOOL) hasTripEnded {
 
     NSArray* last3Points = [[OngoingTripsDatabase database] getLastPoints:3];
     if (last3Points.count == 0) {
@@ -232,6 +234,13 @@
             return NO;
         }
     }
+}
+
++ (void) pushTripToServer {
+    [DataUtils endTrip];
+    NSArray* tripsToPush = [DataUtils getTripsToPush];
+    // Push the trips here
+    [DataUtils deletePushedTrips:tripsToPush];
 }
 
 

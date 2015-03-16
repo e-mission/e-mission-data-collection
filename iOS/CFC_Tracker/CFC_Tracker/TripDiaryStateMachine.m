@@ -44,9 +44,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 
 -(id)init{
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    self.currState = kStartState;
-    // TODO: Think about whether we should do this everytime
-    [defaults setObject:kStartState forKey:kCurrState];
+    self.currState = [defaults integerForKey:kCurrState];
     
     // Register for notifications related to the state machine
     [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil usingBlock:^(NSNotification* note) {
@@ -71,7 +69,18 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else {
         NSLog(@"Current location authorization = %d, always = %d",
               [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionInitialize];
+        /* The only times we should get here are:
+         * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
+         * - another option might be a re-launch of the app when the user has manually stopped tracking.
+         * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
+         * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
+         * Another way would be to just remove this transition from here...
+         * TODO: Figure out how to deal with it.
+         */
+        if (self.currState == kStartState) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionInitialize];
+        }
     }
     
     if ([CMMotionActivityManager isActivityAvailable] == YES) {
@@ -192,6 +201,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         // NOP at this time
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:locMgr withActivityMgr:activityMgr];
+    } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
+        [self setState:kStartState];
     } else  {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
@@ -231,7 +242,13 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
         [self setState:kWaitingForTripStartState];
-    }else {
+        // TODO: Should this be here, or in EndTripTracking
+        [TripDiaryActions pushTripToServer];
+    } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
+        [TripDiaryActions resetFSM:transition withLocationMgr:locMgr withActivityMgr:activityMgr];
+    } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
+        [self setState:kStartState];
+    } else {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
               [TripDiaryStateMachine getStateName:self.currState]);

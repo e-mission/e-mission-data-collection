@@ -73,16 +73,6 @@
                                                        @"Recieved location %@, ongoing trip = true", currLoc]];
             [[OngoingTripsDatabase database] addPoint:currLoc];
         }
-
-//        [self logPastHourCollectionCount];
-        /*
-        if ([self hasTripEnded]) {
-            // TODO: This needs to be replaced by DataUtils::EndTrip so that we can store the trip!
-            [[OngoingTripsDatabase database] clear];
-            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                                object:CFCTransitionTripEndDetected];
-        }
-        */
     }
 }
 
@@ -98,12 +88,12 @@
          */
         NSDate* hourAgo = [dateNow dateByAddingTimeInterval:-(60 * 60)];
         NSArray* pastHourTrips = [[OngoingTripsDatabase database]
-                                  getPointsFrom: hourAgo.timeIntervalSince1970
-                                  to:dateNow.timeIntervalSince1970];
+                                  getPointsFrom: hourAgo
+                                  to:dateNow];
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Recived = %ld updates in the %ld hour of %ld day",
-                                                   pastHourTrips.count, [dayHourMinuteComponents hour],
-                                                   [dayHourMinuteComponents day]]];
+                                                   (long)pastHourTrips.count, (long)[dayHourMinuteComponents hour],
+                                                   (long)[dayHourMinuteComponents day]]];
         
     }
 }
@@ -191,8 +181,10 @@
 - (void)locationManager:(CLLocationManager *)manager
             didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
     NSLog(@"New authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways);
-    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                        object:CFCTransitionInitialize];
+    if (_tdsm.currState == kStartState) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionInitialize];
+    }
 }
 
 

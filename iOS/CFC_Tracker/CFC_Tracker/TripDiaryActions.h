@@ -35,4 +35,6 @@
 
 + (BOOL)hasTripEnded;
 
++ (void) pushTripToServer;
+
 @end
