@@ -30,7 +30,7 @@
     
     // Do any additional setup after loading the view, typically from a nib.
     self.signInViewController = [[SignInViewController alloc] initWithNibName:nil bundle:nil];
-    self.navigationController = [[UINavigationController alloc] initWithRootViewController:self];
+    self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.signInViewController];
     self.navigationController.navigationBarHidden = NO;
 
     NSLog(@"navigation bar = %@, hidden = %d",

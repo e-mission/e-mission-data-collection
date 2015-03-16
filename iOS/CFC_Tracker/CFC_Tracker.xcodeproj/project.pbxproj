@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B61AB75172009373BF /* StoredTripsAuto.db */; };
 		D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */; };
 		D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */; };
 		D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */; };
@@ -52,6 +53,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D062E7B61AB75172009373BF /* StoredTripsAuto.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = StoredTripsAuto.db; sourceTree = "<group>"; };
 		D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OngoingTripsDatabase.h; sourceTree = "<group>"; };
 		D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OngoingTripsDatabase.m; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 		D0EC6B4B1A7CBEBB00E8841B /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				D062E7B61AB75172009373BF /* StoredTripsAuto.db */,
 				D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */,
 				D0EC6B4C1A7CBEBB00E8841B /* Info.plist */,
 				D0EC6B4D1A7CBEBB00E8841B /* main.m */,
@@ -363,6 +366,7 @@
 			files = (
 				D0EC6B571A7CBEBB00E8841B /* Main.storyboard in Resources */,
 				D0A74D8C1AAA2F57005BE6B2 /* connect.plist in Resources */,
+				D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */,
 				D0EC6B5C1A7CBEBB00E8841B /* LaunchScreen.xib in Resources */,
 				D0EC6B591A7CBEBB00E8841B /* Images.xcassets in Resources */,
 				D06DDA991AB510BD00E6CF9B /* SignInViewController.xib in Resources */,
