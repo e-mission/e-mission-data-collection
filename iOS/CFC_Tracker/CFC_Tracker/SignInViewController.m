@@ -150,7 +150,7 @@ static NSString * const kSignOutAlertConfirmTitle = @"Continue";
             NSLog(@"In %@, there was a conversion error from JSON to NSDictionary!", TAG);
         }
         // We are going to ignore the resultJSON for now, but won't ignore it in the future, when we improve error handling
-        [self fetchCustomSettings];
+        // [self fetchCustomSettings];
     }];
 }
 

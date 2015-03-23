@@ -11,6 +11,7 @@
 #import "OngoingTripsDatabase.h"
 #import "LocalNotificationManager.h"
 #import "DataUtils.h"
+#import "CommunicationHelper.h"
 
 @implementation TripDiaryActions
 
@@ -102,7 +103,7 @@
     }
 }
 
-+ (void)deleteGeofence:(CLLocationManager*)manager {
++ (CLCircularRegion*)getGeofence:(CLLocationManager *)manager {
     /*
      * TODO: Determine whether we need to get the existing region from the region list,
      * or whether it is sufficient to create a new region with the same identifier
@@ -120,7 +121,11 @@
             selRegion = currRegion;
         }
     }
-    
+    return selRegion;
+}
+
++ (void)deleteGeofence:(CLLocationManager*)manager {
+    CLCircularRegion* selRegion = [TripDiaryActions getGeofence:manager];
     if (selRegion != NULL) {
         [manager stopMonitoringForRegion:selRegion];
     } else {
@@ -239,7 +244,15 @@
 + (void) pushTripToServer {
     [DataUtils endTrip];
     NSArray* tripsToPush = [DataUtils getTripsToPush];
-    // Push the trips here
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"pushing %ld trips to the server",
+                                               (unsigned long)tripsToPush.count]];
+    [CommunicationHelper storeTripsForUser:tripsToPush
+                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                  @"successfully pushed %ld trips to the server",
+                                                   (unsigned long)tripsToPush.count]];
+    }];
     [DataUtils deletePushedTrips:tripsToPush];
 }
 

@@ -53,6 +53,7 @@
     StoredTripsDatabase* storedDb = [StoredTripsDatabase database];
     
     NSArray* endPoints = [ongoingDb getEndPoints];
+    NSLog(@"endPoints = %@ with count %ld", endPoints, (unsigned long)endPoints.count);
     CLLocation* startPoint = endPoints[0];
     CLLocation* endPoint = endPoints[1];
     

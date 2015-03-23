@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B61AB75172009373BF /* StoredTripsAuto.db */; };
+		D062E7B91AB802CB009373BF /* GTMOAuth2ViewTouch.xib in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */; };
+		D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */; };
 		D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */; };
 		D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */; };
 		D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */; };
@@ -54,6 +56,8 @@
 
 /* Begin PBXFileReference section */
 		D062E7B61AB75172009373BF /* StoredTripsAuto.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = StoredTripsAuto.db; sourceTree = "<group>"; };
+		D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = GTMOAuth2ViewTouch.xib; sourceTree = "<group>"; };
+		D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryStateMachineTests.m; sourceTree = "<group>"; };
 		D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OngoingTripsDatabase.h; sourceTree = "<group>"; };
 		D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OngoingTripsDatabase.m; sourceTree = "<group>"; };
@@ -149,6 +153,7 @@
 		D06DDA8E1AB4D0FA00E6CF9B /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */,
 				D06DDA951AB510BD00E6CF9B /* SignInViewController.h */,
 				D06DDA961AB510BD00E6CF9B /* SignInViewController.m */,
 				D06DDA971AB510BD00E6CF9B /* SignInViewController.xib */,
@@ -258,6 +263,7 @@
 			isa = PBXGroup;
 			children = (
 				D0EC6B671A7CBEBB00E8841B /* CFC_TrackerTests.m */,
+				D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */,
 				D0EC6B651A7CBEBB00E8841B /* Supporting Files */,
 				D0EC6B741A7D5FAC00E8841B /* TripDiaryStates.plist */,
 			);
@@ -364,6 +370,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D062E7B91AB802CB009373BF /* GTMOAuth2ViewTouch.xib in Resources */,
 				D0EC6B571A7CBEBB00E8841B /* Main.storyboard in Resources */,
 				D0A74D8C1AAA2F57005BE6B2 /* connect.plist in Resources */,
 				D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */,
@@ -413,6 +420,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */,
 				D0EC6B681A7CBEBB00E8841B /* CFC_TrackerTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -576,7 +584,7 @@
 				INFOPLIST_FILE = CFC_TrackerTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CFC_Tracker.app/CFC_Tracker";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/cfctracker.app/cfctracker";
 			};
 			name = Debug;
 		};
@@ -591,7 +599,7 @@
 				INFOPLIST_FILE = CFC_TrackerTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CFC_Tracker.app/CFC_Tracker";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/cfctracker.app/cfctracker";
 			};
 			name = Release;
 		};

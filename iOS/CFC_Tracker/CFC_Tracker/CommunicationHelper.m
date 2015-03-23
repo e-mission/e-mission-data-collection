@@ -101,7 +101,7 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
     [executor execute];
 }
 
-+(void)storeTripsForUser:(NSDictionary *)tripJSON completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
++(void)storeTripsForUser:(NSArray *)tripJSON completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
     NSMutableDictionary *toPush = [[NSMutableDictionary alloc] init];
     [toPush setObject:tripJSON forKey:@"sections"];
     

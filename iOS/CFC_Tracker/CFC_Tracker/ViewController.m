@@ -30,16 +30,17 @@
     
     // Do any additional setup after loading the view, typically from a nib.
     self.signInViewController = [[SignInViewController alloc] initWithNibName:nil bundle:nil];
-    self.navigationController = [[UINavigationController alloc] initWithRootViewController:self.signInViewController];
-    self.navigationController.navigationBarHidden = NO;
+    self.navigationController = (UINavigationController*)self.parentViewController;
+    // self.navigationController = [[UINavigationController alloc] initWithRootViewController:self];
+    // self.navigationController.navigationBarHidden = NO;
 
-    NSLog(@"navigation bar = %@, hidden = %d",
+    NSLog(@"navigationController = %@, navigation bar = %@, hidden = %d",
+          self.navigationController,
           self.navigationController.navigationBar,
           self.navigationController.navigationBarHidden);
     
 //    self.signInViewController.delegate = self;
-//    [self initializeAuthResultBarButtons];
-    
+    [self initializeAuthResultBarButtons];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -55,20 +56,12 @@
 
 - (void)showSignInView:(id)sender
 {
-    /*
     if ([self.navigationController.viewControllers containsObject:self.signInViewController]) {
         // the sign in view is already visible, don't need to push it again
         NSLog(@"sign in view is already in the navigation chain, skipping the push to the controller...");
-    } else { */
-        [self presentViewController:self.navigationController animated:YES completion:^{
-            NSLog(@"Finished loading sign in screen");
-        }];
-        // [self.navigationController pushViewController:self.signInViewController animated:YES];
-    // }
-}
-
-- (IBAction)showConfig:(id)sender {
-    [self showSignInView:sender];
+    } else {
+        [self.navigationController pushViewController:self.signInViewController animated:YES];
+    }
 }
 
 - (IBAction)checkInGeofence {
