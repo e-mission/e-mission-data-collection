@@ -10,6 +10,8 @@
 #import "TripDiaryStateMachine.h"
 #import "OngoingTripsDatabase.h"
 #import "LocalNotificationManager.h"
+#import "DataUtils.h"
+#import "CommunicationHelper.h"
 
 @implementation TripDiaryActions
 
@@ -101,7 +103,7 @@
     }
 }
 
-+ (void)deleteGeofence:(CLLocationManager*)manager {
++ (CLCircularRegion*)getGeofence:(CLLocationManager *)manager {
     /*
      * TODO: Determine whether we need to get the existing region from the region list,
      * or whether it is sufficient to create a new region with the same identifier
@@ -119,7 +121,11 @@
             selRegion = currRegion;
         }
     }
-    
+    return selRegion;
+}
+
++ (void)deleteGeofence:(CLLocationManager*)manager {
+    CLCircularRegion* selRegion = [TripDiaryActions getGeofence:manager];
     if (selRegion != NULL) {
         [manager stopMonitoringForRegion:selRegion];
     } else {
@@ -203,9 +209,10 @@
  * occurred. If the update was greater than the time for detecting the end of a trip (10 minutes), then the trip has ended,
  * otherwise, it has not.
  * TODO: Add a "machine" or "state" parameter if we want to check the current state.
+ * Also, it seems like this would be a good fit for DataUtils instead of being here...
  */
 
-+ (BOOL)hasTripEnded {
++ (BOOL) hasTripEnded {
 
     NSArray* last3Points = [[OngoingTripsDatabase database] getLastPoints:3];
     if (last3Points.count == 0) {
@@ -232,6 +239,21 @@
             return NO;
         }
     }
+}
+
++ (void) pushTripToServer {
+    [DataUtils endTrip];
+    NSArray* tripsToPush = [DataUtils getTripsToPush];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"pushing %ld trips to the server",
+                                               (unsigned long)tripsToPush.count]];
+    [CommunicationHelper storeTripsForUser:tripsToPush
+                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                  @"successfully pushed %ld trips to the server",
+                                                   (unsigned long)tripsToPush.count]];
+    }];
+    [DataUtils deletePushedTrips:tripsToPush];
 }
 
 

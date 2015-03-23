@@ -7,11 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B61AB75172009373BF /* StoredTripsAuto.db */; };
+		D062E7B91AB802CB009373BF /* GTMOAuth2ViewTouch.xib in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */; };
+		D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */; };
 		D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */; };
 		D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */; };
 		D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */; };
 		D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */; };
 		D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */; };
+		D06DDA871AAE44CB00E6CF9B /* DataUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA861AAE44CB00E6CF9B /* DataUtils.m */; };
+		D06DDA8D1AAE576A00E6CF9B /* StoredTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA8C1AAE576A00E6CF9B /* StoredTripsDatabase.m */; };
+		D06DDA931AB510AF00E6CF9B /* AuthCompletionHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */; };
+		D06DDA941AB510AF00E6CF9B /* AuthInspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA921AB510AF00E6CF9B /* AuthInspectorViewController.m */; };
+		D06DDA981AB510BD00E6CF9B /* SignInViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA961AB510BD00E6CF9B /* SignInViewController.m */; };
+		D06DDA991AB510BD00E6CF9B /* SignInViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D06DDA971AB510BD00E6CF9B /* SignInViewController.xib */; };
+		D06DDA9B1AB5116C00E6CF9B /* GoogleOpenSource.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D06DDA9A1AB5116C00E6CF9B /* GoogleOpenSource.framework */; };
+		D06DDAA11AB512DB00E6CF9B /* CommunicationHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA9E1AB512DB00E6CF9B /* CommunicationHelper.m */; };
+		D06DDAA21AB512DB00E6CF9B /* CustomSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDAA01AB512DB00E6CF9B /* CustomSettings.m */; };
+		D06DDAA51AB516B900E6CF9B /* Constants.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDAA41AB516B900E6CF9B /* Constants.m */; };
 		D0A74D7E1AA786CA005BE6B2 /* Bolts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D7D1AA786CA005BE6B2 /* Bolts.framework */; };
 		D0A74D801AA786DB005BE6B2 /* Parse.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D7F1AA786DB005BE6B2 /* Parse.framework */; };
 		D0A74D821AA78CA1005BE6B2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D811AA78CA1005BE6B2 /* AudioToolbox.framework */; };
@@ -42,6 +55,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D062E7B61AB75172009373BF /* StoredTripsAuto.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = StoredTripsAuto.db; sourceTree = "<group>"; };
+		D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = GTMOAuth2ViewTouch.xib; sourceTree = "<group>"; };
+		D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryStateMachineTests.m; sourceTree = "<group>"; };
 		D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OngoingTripsDatabase.h; sourceTree = "<group>"; };
 		D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OngoingTripsDatabase.m; sourceTree = "<group>"; };
@@ -50,6 +66,24 @@
 		D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryActions.m; sourceTree = "<group>"; };
 		D06DDA811AAC1F7E00E6CF9B /* TripDiaryDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryDelegate.h; sourceTree = "<group>"; };
 		D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryDelegate.m; sourceTree = "<group>"; };
+		D06DDA851AAE44CB00E6CF9B /* DataUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataUtils.h; sourceTree = "<group>"; };
+		D06DDA861AAE44CB00E6CF9B /* DataUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DataUtils.m; sourceTree = "<group>"; };
+		D06DDA8B1AAE576A00E6CF9B /* StoredTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StoredTripsDatabase.h; sourceTree = "<group>"; };
+		D06DDA8C1AAE576A00E6CF9B /* StoredTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StoredTripsDatabase.m; sourceTree = "<group>"; };
+		D06DDA8F1AB510AF00E6CF9B /* AuthCompletionHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AuthCompletionHandler.h; sourceTree = "<group>"; };
+		D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AuthCompletionHandler.m; sourceTree = "<group>"; };
+		D06DDA911AB510AF00E6CF9B /* AuthInspectorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AuthInspectorViewController.h; sourceTree = "<group>"; };
+		D06DDA921AB510AF00E6CF9B /* AuthInspectorViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AuthInspectorViewController.m; sourceTree = "<group>"; };
+		D06DDA951AB510BD00E6CF9B /* SignInViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SignInViewController.h; sourceTree = "<group>"; };
+		D06DDA961AB510BD00E6CF9B /* SignInViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SignInViewController.m; sourceTree = "<group>"; };
+		D06DDA971AB510BD00E6CF9B /* SignInViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SignInViewController.xib; sourceTree = "<group>"; };
+		D06DDA9A1AB5116C00E6CF9B /* GoogleOpenSource.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = GoogleOpenSource.framework; sourceTree = "<group>"; };
+		D06DDA9D1AB512DB00E6CF9B /* CommunicationHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommunicationHelper.h; sourceTree = "<group>"; };
+		D06DDA9E1AB512DB00E6CF9B /* CommunicationHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CommunicationHelper.m; sourceTree = "<group>"; };
+		D06DDA9F1AB512DB00E6CF9B /* CustomSettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomSettings.h; sourceTree = "<group>"; };
+		D06DDAA01AB512DB00E6CF9B /* CustomSettings.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomSettings.m; sourceTree = "<group>"; };
+		D06DDAA31AB516B900E6CF9B /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
+		D06DDAA41AB516B900E6CF9B /* Constants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Constants.m; sourceTree = "<group>"; };
 		D0A74D7D1AA786CA005BE6B2 /* Bolts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Bolts.framework; sourceTree = "<group>"; };
 		D0A74D7F1AA786DB005BE6B2 /* Parse.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Parse.framework; sourceTree = "<group>"; };
 		D0A74D811AA78CA1005BE6B2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -84,6 +118,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D0A74D861AA78D9A005BE6B2 /* MobileCoreServices.framework in Frameworks */,
+				D06DDA9B1AB5116C00E6CF9B /* GoogleOpenSource.framework in Frameworks */,
 				D0A74D841AA78D2C005BE6B2 /* SystemConfiguration.framework in Frameworks */,
 				D0A74D821AA78CA1005BE6B2 /* AudioToolbox.framework in Frameworks */,
 				D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */,
@@ -102,9 +137,49 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D06DDA841AAE449500E6CF9B /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */,
+				D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */,
+				D06DDA851AAE44CB00E6CF9B /* DataUtils.h */,
+				D06DDA861AAE44CB00E6CF9B /* DataUtils.m */,
+				D06DDA8B1AAE576A00E6CF9B /* StoredTripsDatabase.h */,
+				D06DDA8C1AAE576A00E6CF9B /* StoredTripsDatabase.m */,
+			);
+			name = Storage;
+			sourceTree = "<group>";
+		};
+		D06DDA8E1AB4D0FA00E6CF9B /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */,
+				D06DDA951AB510BD00E6CF9B /* SignInViewController.h */,
+				D06DDA961AB510BD00E6CF9B /* SignInViewController.m */,
+				D06DDA971AB510BD00E6CF9B /* SignInViewController.xib */,
+				D06DDA8F1AB510AF00E6CF9B /* AuthCompletionHandler.h */,
+				D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */,
+				D06DDA911AB510AF00E6CF9B /* AuthInspectorViewController.h */,
+				D06DDA921AB510AF00E6CF9B /* AuthInspectorViewController.m */,
+			);
+			name = Auth;
+			sourceTree = "<group>";
+		};
+		D06DDA9C1AB512C300E6CF9B /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				D06DDA9D1AB512DB00E6CF9B /* CommunicationHelper.h */,
+				D06DDA9E1AB512DB00E6CF9B /* CommunicationHelper.m */,
+				D06DDA9F1AB512DB00E6CF9B /* CustomSettings.h */,
+				D06DDAA01AB512DB00E6CF9B /* CustomSettings.m */,
+			);
+			name = Sync;
+			sourceTree = "<group>";
+		};
 		D0A74D7C1AA786B6005BE6B2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D06DDA9A1AB5116C00E6CF9B /* GoogleOpenSource.framework */,
 				D0A74D851AA78D9A005BE6B2 /* MobileCoreServices.framework */,
 				D0A74D831AA78D2C005BE6B2 /* SystemConfiguration.framework */,
 				D0A74D811AA78CA1005BE6B2 /* AudioToolbox.framework */,
@@ -121,8 +196,6 @@
 				D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */,
 				D0EC6B711A7D57D300E8841B /* TripDiaryStateMachine.h */,
 				D0EC6B721A7D57D300E8841B /* TripDiaryStateMachine.m */,
-				D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */,
-				D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */,
 				D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */,
 				D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */,
 			);
@@ -152,6 +225,11 @@
 		D0EC6B4A1A7CBEBB00E8841B /* CFC_Tracker */ = {
 			isa = PBXGroup;
 			children = (
+				D06DDAA31AB516B900E6CF9B /* Constants.h */,
+				D06DDAA41AB516B900E6CF9B /* Constants.m */,
+				D06DDA9C1AB512C300E6CF9B /* Sync */,
+				D06DDA8E1AB4D0FA00E6CF9B /* Auth */,
+				D06DDA841AAE449500E6CF9B /* Storage */,
 				D0A74D8B1AAA2F57005BE6B2 /* connect.plist */,
 				D0A74D881AAA2F45005BE6B2 /* ConnectionSettings.h */,
 				D0A74D891AAA2F45005BE6B2 /* ConnectionSettings.m */,
@@ -173,6 +251,7 @@
 		D0EC6B4B1A7CBEBB00E8841B /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				D062E7B61AB75172009373BF /* StoredTripsAuto.db */,
 				D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */,
 				D0EC6B4C1A7CBEBB00E8841B /* Info.plist */,
 				D0EC6B4D1A7CBEBB00E8841B /* main.m */,
@@ -184,6 +263,7 @@
 			isa = PBXGroup;
 			children = (
 				D0EC6B671A7CBEBB00E8841B /* CFC_TrackerTests.m */,
+				D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */,
 				D0EC6B651A7CBEBB00E8841B /* Supporting Files */,
 				D0EC6B741A7D5FAC00E8841B /* TripDiaryStates.plist */,
 			);
@@ -290,10 +370,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D062E7B91AB802CB009373BF /* GTMOAuth2ViewTouch.xib in Resources */,
 				D0EC6B571A7CBEBB00E8841B /* Main.storyboard in Resources */,
 				D0A74D8C1AAA2F57005BE6B2 /* connect.plist in Resources */,
+				D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */,
 				D0EC6B5C1A7CBEBB00E8841B /* LaunchScreen.xib in Resources */,
 				D0EC6B591A7CBEBB00E8841B /* Images.xcassets in Resources */,
+				D06DDA991AB510BD00E6CF9B /* SignInViewController.xib in Resources */,
 				D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -313,13 +396,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D06DDA981AB510BD00E6CF9B /* SignInViewController.m in Sources */,
+				D06DDA931AB510AF00E6CF9B /* AuthCompletionHandler.m in Sources */,
 				D0EC6B781A80984500E8841B /* LocalNotificationManager.m in Sources */,
+				D06DDA941AB510AF00E6CF9B /* AuthInspectorViewController.m in Sources */,
+				D06DDAA11AB512DB00E6CF9B /* CommunicationHelper.m in Sources */,
 				D0EC6B731A7D57D300E8841B /* TripDiaryStateMachine.m in Sources */,
 				D0A74D8A1AAA2F45005BE6B2 /* ConnectionSettings.m in Sources */,
+				D06DDAA21AB512DB00E6CF9B /* CustomSettings.m in Sources */,
+				D06DDAA51AB516B900E6CF9B /* Constants.m in Sources */,
 				D0EC6B541A7CBEBB00E8841B /* ViewController.m in Sources */,
 				D0EC6B511A7CBEBB00E8841B /* AppDelegate.m in Sources */,
+				D06DDA871AAE44CB00E6CF9B /* DataUtils.m in Sources */,
 				D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */,
 				D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */,
+				D06DDA8D1AAE576A00E6CF9B /* StoredTripsDatabase.m in Sources */,
 				D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */,
 				D0EC6B4E1A7CBEBB00E8841B /* main.m in Sources */,
 			);
@@ -329,6 +420,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */,
 				D0EC6B681A7CBEBB00E8841B /* CFC_TrackerTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -492,7 +584,7 @@
 				INFOPLIST_FILE = CFC_TrackerTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CFC_Tracker.app/CFC_Tracker";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/cfctracker.app/cfctracker";
 			};
 			name = Debug;
 		};
@@ -507,7 +599,7 @@
 				INFOPLIST_FILE = CFC_TrackerTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CFC_Tracker.app/CFC_Tracker";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/cfctracker.app/cfctracker";
 			};
 			name = Release;
 		};

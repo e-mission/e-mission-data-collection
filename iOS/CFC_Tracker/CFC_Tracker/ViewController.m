@@ -9,12 +9,16 @@
 #import "ViewController.h"
 #import "TripDiaryStateMachine.h"
 #import "OngoingTripsDatabase.h"
+#import "AuthInspectorViewController.h"
+#import "SignInViewController.h"
+#import "AuthCompletionHandler.h"
 #import "AppDelegate.h"
 
 @interface ViewController () {
     NSArray* _transitionMessages;
 }
-
+@property(strong, nonatomic) SignInViewController *signInViewController;
+@property(strong, nonatomic) UINavigationController *navigationController;
 @end
 
 @implementation ViewController
@@ -23,12 +27,41 @@
     [super viewDidLoad];
     self.transitionTable.dataSource = self;
     self.tdsrmCurrState.adjustsFontSizeToFitWidth = YES;
+    
     // Do any additional setup after loading the view, typically from a nib.
+    self.signInViewController = [[SignInViewController alloc] initWithNibName:nil bundle:nil];
+    self.navigationController = (UINavigationController*)self.parentViewController;
+    // self.navigationController = [[UINavigationController alloc] initWithRootViewController:self];
+    // self.navigationController.navigationBarHidden = NO;
+
+    NSLog(@"navigationController = %@, navigation bar = %@, hidden = %d",
+          self.navigationController,
+          self.navigationController.navigationBar,
+          self.navigationController.navigationBarHidden);
+    
+//    self.signInViewController.delegate = self;
+    [self initializeAuthResultBarButtons];
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (void)initializeAuthResultBarButtons
+{
+    UIBarButtonItem *authButton = [[UIBarButtonItem alloc] initWithTitle:@"Auth" style:UIBarButtonItemStyleBordered target: self action:@selector(showSignInView:)];
+    self.navigationItem.leftBarButtonItems = @[authButton];
+}
+
+- (void)showSignInView:(id)sender
+{
+    if ([self.navigationController.viewControllers containsObject:self.signInViewController]) {
+        // the sign in view is already visible, don't need to push it again
+        NSLog(@"sign in view is already in the navigation chain, skipping the push to the controller...");
+    } else {
+        [self.navigationController pushViewController:self.signInViewController animated:YES];
+    }
 }
 
 - (IBAction)checkInGeofence {

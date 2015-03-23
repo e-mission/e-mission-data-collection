@@ -24,7 +24,7 @@
 -(void) addPoint:(CLLocation*) location;
 -(NSArray*) getLastPoints:(int) nPoints;
 -(NSArray*) getEndPoints;
--(NSArray*) getPointsFrom:(NSInteger)startTs to:(NSInteger)endTs;
+-(NSArray*) getPointsFrom:(NSDate*)startTs to:(NSDate*)endTs;
 -(void)clear;
 
 -(void)addTransition:(NSString*) transition;

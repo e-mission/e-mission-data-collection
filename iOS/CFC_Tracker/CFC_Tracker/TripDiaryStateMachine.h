@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 #import <UIKit/UIKit.h>
+#import <CoreMotion/CoreMotion.h>
 
 /*
  * public static String constants for the transition notifications.
@@ -52,6 +53,9 @@ typedef enum : NSUInteger {
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 @interface TripDiaryStateMachine : NSObject
+
+@property CLLocationManager *locMgr;
+@property CMMotionActivityManager *activityMgr;
 
 @property TripDiaryStates currState;
 

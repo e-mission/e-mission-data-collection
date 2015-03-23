@@ -33,6 +33,10 @@
 
 + (void)deleteGeofence:(CLLocationManager*)manager;
 
++ (CLCircularRegion*)getGeofence:(CLLocationManager*)manager;
+
 + (BOOL)hasTripEnded;
+
++ (void) pushTripToServer;
 
 @end

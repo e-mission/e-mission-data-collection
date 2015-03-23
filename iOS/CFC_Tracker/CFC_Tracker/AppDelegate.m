@@ -9,6 +9,7 @@
 #import "AppDelegate.h"
 #import "LocalNotificationManager.h"
 #import "ConnectionSettings.h"
+#import "AuthCompletionHandler.h"
 #import <Parse/Parse.h>
 
 typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
@@ -34,6 +35,8 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
     }
     
     if (_tripDiaryStateMachine == NULL || recreateTripDiary) {
+        NSLog(@"tripDiaryStateMachine = %@, recreateTripDiary = %d, recreating the state machine",
+              _tripDiaryStateMachine, recreateTripDiary);
         _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] init];
     }
     
@@ -58,6 +61,9 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                                                       [self handleNotifications:note];
                                                   }];
     
+    // Handle google+ sign on
+    [AuthCompletionHandler sharedInstance].clientId = [[ConnectionSettings sharedInstance] getGoogleiOSClientID];
+    [AuthCompletionHandler sharedInstance].clientSecret = [[ConnectionSettings sharedInstance] getGoogleiOSClientSecret];
     return YES;
 }
 
