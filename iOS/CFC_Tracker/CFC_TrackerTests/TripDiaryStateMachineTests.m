@@ -8,11 +8,14 @@
 
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
+
+#import "TestUtils.h"
+
 #import "TripDiaryDelegate.h"
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
 #import "AppDelegate.h"
-#import "OngoingTripsDatabase.h"
+#import "DataUtils.h"
 
 @interface TripDiaryStateMachineTests : XCTestCase
 @property TripDiaryStateMachine* testStateMachine;
@@ -48,6 +51,9 @@ typedef void(^ExecutionStep)();
     [super setUp];
     // We could set this to the delegate of the state machine
     // But that is not available publicly
+    [DataUtils clearOngoingDb];
+    [DataUtils clearStoredDb];
+
     UIApplication* currApp = [UIApplication sharedApplication];
     AppDelegate* currDelegate = currApp.delegate;
     self.testStateMachine = currDelegate.tripDiaryStateMachine;
@@ -104,11 +110,6 @@ typedef void(^ExecutionStep)();
     }
 }
 
-+ (CLLocation*)getLocation:(CLLocationDegrees) lat andLng:(CLLocationDegrees) lng {
-    CLLocationCoordinate2D coords = CLLocationCoordinate2DMake(lat, lng);
-    return [[CLLocation alloc] initWithCoordinate:coords altitude:10 horizontalAccuracy:50 verticalAccuracy:50 course:90 speed:15 timestamp:[NSDate date]];
-}
-
 - (void)testInitNormal {
     NSMutableArray* steps = [[NSMutableArray alloc] init];
     [steps addObject:^(void) {
@@ -117,7 +118,7 @@ typedef void(^ExecutionStep)();
     }];
     [steps addObject:^(void) {
         XCTAssert(self.testStateMachine.currState == kStartState, @"State check passed");
-        NSArray* locArray = @[[TripDiaryStateMachineTests getLocation:10 andLng:20]];
+        NSArray* locArray = @[[TestUtils getLocation:@[@10, @20, @1]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray];
         [self executeNextStep];
     }];
@@ -130,7 +131,7 @@ typedef void(^ExecutionStep)();
 
     [steps addObject:^(void) {
         XCTAssert(self.testStateMachine.currState == kStartState, @"State check passed");
-        NSArray* locArray = @[[TripDiaryStateMachineTests getLocation:10 andLng:20]];
+        NSArray* locArray = @[[TestUtils getLocation:@[@10, @20, @1]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didDetermineState:CLRegionStateInside
                                  forRegion:[TripDiaryActions getGeofence:self.testStateMachine.locMgr]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray];
@@ -161,7 +162,7 @@ typedef void(^ExecutionStep)();
         self.waitForTransition = YES;
     }];
     [steps addObject:^(void) {
-        NSArray* locArray = @[[TripDiaryStateMachineTests getLocation:10 andLng:20]];
+        NSArray* locArray = @[[TestUtils getLocation:@[@10, @20, @1]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray];
         [self executeNextStep];
     }];
@@ -183,7 +184,7 @@ typedef void(^ExecutionStep)();
     
     [steps addObject:^(void) {
         XCTAssert(self.testStateMachine.currState == kStartState, @"State check passed");
-        NSArray* locArray = @[[TripDiaryStateMachineTests getLocation:10 andLng:20]];
+        NSArray* locArray = @[[TestUtils getLocation:@[@10, @20, @1]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didDetermineState:CLRegionStateOutside
                                  forRegion:[TripDiaryActions getGeofence:self.testStateMachine.locMgr]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray];
@@ -232,7 +233,6 @@ typedef void(^ExecutionStep)();
               @"Current state is %lu, expecting %lu", self.testStateMachine.currState, kOngoingTripState);
 }
 
-/*
 - (void) testOngoingTrip {
     NSLog(@"At the beginning of the test, currState = %lu", self.testStateMachine.currState);
     NSMutableArray* steps = [[NSMutableArray alloc] init];
@@ -240,41 +240,111 @@ typedef void(^ExecutionStep)();
     [self testStartNormal];
     
     [steps addObject:^(void) {
-        NSArray* locArray1 = @[[TripDiaryStateMachineTests getLocation:10 andLng:20]];
+        NSArray* locArray1 = @[[TestUtils getLocation:@[@10, @20, @1]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray1];
         
-        NSArray* locArray2 = @[[TripDiaryStateMachineTests getLocation:12 andLng:22]];
+        NSArray* locArray2 = @[[TestUtils getLocation:@[@12, @22, @2]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray2];
         
-        NSArray* locArray3 = @[[TripDiaryStateMachineTests getLocation:14 andLng:24]];
+        NSArray* locArray3 = @[[TestUtils getLocation:@[@14, @24, @3]]];
         [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray3];
     }];
 
-    NSArray* retPoints = [[OngoingTripsDatabase database] getLastPoints:5];
+    [self executeSteps:steps];
+    
+    NSArray* retPoints = [DataUtils getLastPoints:5];
     XCTAssert(retPoints.count == 3, @"ret Points.count = %lu, expected 3", retPoints.count);
     
-    CLLocation* firstPoint = (CLLocation*)retPoints[0];
-    XCTAssert(firstPoint.coordinate.latitude == 10, @"lastPoint.coordinate.latitude = %f, expected 10",
+    CLLocation* firstPoint = (CLLocation*)retPoints[2];
+    XCTAssert(firstPoint.coordinate.latitude == 10, @"firstPoint.coordinate.latitude = %f, expected 10",
               firstPoint.coordinate.latitude);
-    XCTAssert(firstPoint.coordinate.longitude == 20, @"lastPoint.coordinate.latitude = %f, expected 20",
+    XCTAssert(firstPoint.coordinate.longitude == 20, @"firstPoint.coordinate.latitude = %f, expected 20",
               firstPoint.coordinate.longitude);
     
-    CLLocation* lastPoint = (CLLocation*)retPoints[2];
+    CLLocation* lastPoint = (CLLocation*)retPoints[0];
     XCTAssert(lastPoint.coordinate.latitude == 14, @"lastPoint.coordinate.latitude = %f, expected 14", lastPoint.coordinate.latitude);
     XCTAssert(lastPoint.coordinate.longitude == 24, @"lastPoint.coordinate.latitude = %f, expected 24",
               lastPoint.coordinate.longitude);
 }
-*/ 
 
-- (void) testTripEnd {
+- (void) testTripNotEnded {
+    NSLog(@"At the beginning of the test, currState = %lu", self.testStateMachine.currState);
+    [self testStartNormal];
+
+    NSMutableArray* steps = [[NSMutableArray alloc] init];
+    NSDate* hourAgo = [NSDate dateWithTimeIntervalSinceNow:(-60 * 60)];
     
+    [steps addObject:^(void) {
+        NSArray* locArray1 = @[[TestUtils getLocation:@[@10, @20,
+                                          [NSNumber numberWithDouble:hourAgo.timeIntervalSince1970]]]];
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray1];
+        
+        NSArray* locArray2 = @[[TestUtils getLocation:@[@12, @22,
+                                          [NSNumber numberWithDouble:(hourAgo.timeIntervalSince1970 + 10 * 60)]]]];
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray2];
+        
+        NSArray* locArray3 = @[[TestUtils getLocation:@[@14, @24,
+                                          [NSNumber numberWithDouble:(hourAgo.timeIntervalSince1970 + 50 * 60)]]]];
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray3];
+    }];
+    
+    [self executeSteps:steps];
+    [self.defaultCenter postNotificationName:CFCTransitionNotificationName
+                                      object:CFCTransitionRecievedSilentPush];
+    
+    // Trip hasn't ended, we will stay in the ongoing state
+    XCTAssert(self.testStateMachine.currState == kOngoingTripState,
+              @"Current state is %lu, expecting %lu", self.testStateMachine.currState, kOngoingTripState);
 }
 
-- (void)testPerformanceExample {
-    // This is an example of a performance test case.
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
+- (void) testTripEnded {
+    NSLog(@"At the beginning of the test, currState = %lu", self.testStateMachine.currState);
+    [self testStartNormal];
+    
+    NSMutableArray* steps = [[NSMutableArray alloc] init];
+    NSDate* hourAgo = [NSDate dateWithTimeIntervalSinceNow:(-60 * 60)];
+    
+    [steps addObject:^(void) {
+        NSArray* locArray1 = @[[TestUtils getLocation:@[@10, @20,
+                                                        [NSNumber numberWithDouble:hourAgo.timeIntervalSince1970]]]];
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray1];
+        
+        NSArray* locArray2 = @[[TestUtils getLocation:@[@12, @22,
+                                                        [NSNumber numberWithDouble:(hourAgo.timeIntervalSince1970 + 5 * 60)]]]];
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray2];
+        
+        NSArray* locArray3 = @[[TestUtils getLocation:@[@14, @24,
+                                                        [NSNumber numberWithDouble:(hourAgo.timeIntervalSince1970 + 10 * 60)]]]];
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didUpdateLocations:locArray3];
+        [self executeNextStep];
     }];
+    [steps addObject:^(void) {
+        self.transitionWaitingFor = CFCTransitionTripEndDetected;
+        self.waitForTransition = YES;
+    }];
+    [steps addObject:^(void) {
+        XCTAssert(self.testStateMachine.currState == kOngoingTripState, @"State check passed");
+        [self.testDelegate locationManager:self.testStateMachine.locMgr didDetermineState:CLRegionStateInside
+                                 forRegion:[TripDiaryActions getGeofence:self.testStateMachine.locMgr]];
+    }];
+    /*
+     * Note that we wait for trip ended instead of EndTripTracking because TripEnded is generated while handling
+     * EndTripTracking and that reverses the order for the test code (see testInitInMotion above). Since
+     * EndTripTracking is an intermediate transition, we just check for the final transition instead.
+     */
+    [steps addObject:^(void) {
+        self.transitionWaitingFor = CFCTransitionTripEnded;
+        self.waitForTransition = YES;
+    }];
+
+    
+    [self executeSteps:steps];
+    [self.defaultCenter postNotificationName:CFCTransitionNotificationName
+                                      object:CFCTransitionRecievedSilentPush];
+    
+    // Trip hasn't ended, we will stay in the ongoing state
+    XCTAssert(self.testStateMachine.currState == kWaitingForTripStartState,
+              @"Current state is %lu, expecting %lu", self.testStateMachine.currState, kWaitingForTripStartState);
 }
 
 @end

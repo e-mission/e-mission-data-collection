@@ -214,9 +214,17 @@ static OngoingTripsDatabase *_database;
                              TABLE_ONGOING_TRIP, KEY_TS];
     NSString* endQuery = [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY %@ DESC LIMIT 1",
                              TABLE_ONGOING_TRIP, KEY_TS];
-    CLLocation* firstPoint = [self getPointsForQuery:startQuery][0];
-    CLLocation* endPoint = [self getPointsForQuery:endQuery][1];
-    return @[firstPoint, endPoint];
+    
+    NSArray* startPoint = [self getPointsForQuery:startQuery];
+    NSArray* endPoint = [self getPointsForQuery:endQuery];
+    
+    if (startPoint.count == 0 || endPoint.count == 0) {
+        return @[];
+    } else {
+        // Each array will have at most one entry because of the LIMIT 1
+        assert(startPoint.count == 1 && endPoint.count == 1);
+        return @[startPoint[0], endPoint[0]];
+    }
 }
 
 -(NSArray*) getPointsFrom:(NSDate*)startTime to:(NSDate*)endTime {
