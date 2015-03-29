@@ -11,7 +11,6 @@ import edu.berkeley.eecs.cfc_tracker.storage.StoredTripHelper;
 
 import android.content.Context;
 import android.location.Location;
-import android.test.ActivityTestCase;
 import android.test.AndroidTestCase;
 import android.test.RenamingDelegatingContext;
 import android.text.format.DateFormat;
@@ -57,16 +56,12 @@ public class DataUtilsTest extends AndroidTestCase {
 		return retLoc;
 	}
 	
-	private Location[] addFourPoints() {
+	private Location[] getFourPoints() {
 		Location[] fourPoints = new Location[4];
 		fourPoints[0] = makeLoc(34, -122, 1);
 		fourPoints[1] = makeLoc(34, -121, 2);
 		fourPoints[2] = makeLoc(34, -120, 3);
 		fourPoints[3] = makeLoc(33, -120, 4);
-		
-		for (int i = 0; i < 4; i++) {
-			DataUtils.addPoint(testCtxt, fourPoints[i]);
-		}
 		return fourPoints;
 	}
 	
@@ -78,8 +73,11 @@ public class DataUtilsTest extends AndroidTestCase {
 	
 	public void testMultipleAddPoints() throws Exception {
 		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 0);
-		addFourPoints();
-		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 4);
+		Location[] fourPoints = getFourPoints();
+        for (int i = 0; i < 4; i++) {
+            DataUtils.addPoint(testCtxt, fourPoints[i]);
+        }
+        assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 4);
 	}
 	
 	// We have already tested getLastPoints as part of the testAddPoint() and testMultipleAddPoints() tests above
@@ -143,8 +141,12 @@ public class DataUtilsTest extends AndroidTestCase {
 		// First try with no entries in the ongoing trip DB
 		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 0);
 
-		Location[] fourPoints = addFourPoints();
-		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 4);
+		Location[] fourPoints = getFourPoints();
+        for (int i = 0; i < 4; i++) {
+            DataUtils.addPoint(testCtxt, fourPoints[i]);
+        }
+
+        assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 4);
 		
 		// Add in mode changes so that we get activities
 		// Do we need to deal with this case that there are no mode changes but GPS points?
@@ -201,8 +203,12 @@ public class DataUtilsTest extends AndroidTestCase {
 	public void testEndTrip() throws JSONException {
 		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 0);
 		
-		addFourPoints();
-		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 4);
+		Location[] fourPoints = getFourPoints();
+        for (int i = 0; i < 4; i++) {
+            DataUtils.addPoint(testCtxt, fourPoints[i]);
+        }
+
+        assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 4);
 
 		DataUtils.endTrip(testCtxt);
 		assertEquals(DataUtils.getLastPoints(testCtxt, 5).length, 0);	
