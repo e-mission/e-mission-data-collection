@@ -8,7 +8,6 @@
 
 #import "TripDiaryActions.h"
 #import "TripDiaryStateMachine.h"
-#import "OngoingTripsDatabase.h"
 #import "LocalNotificationManager.h"
 #import "DataUtils.h"
 #import "CommunicationHelper.h"
@@ -214,7 +213,7 @@
 
 + (BOOL) hasTripEnded {
 
-    NSArray* last3Points = [[OngoingTripsDatabase database] getLastPoints:3];
+    NSArray* last3Points = [DataUtils getLastPoints:3];
     if (last3Points.count == 0) {
         /*
          * There are no points in the database. This means that no trip has been started in the past 30 minutes.

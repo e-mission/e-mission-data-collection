@@ -7,12 +7,24 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <CoreLocation/CoreLocation.h>
 
 @interface DataUtils : NSObject
++ (NSString*)dateToString:(NSDate*)date;
++ (NSDate*)dateFromString:(NSString*)string;
++ (NSDate*) getMidnight;
+
++ (void) addPoint:(CLLocation*) currLoc;
++ (NSArray*) getLastPoints:(int) nPoints;
++ (void) clearOngoingDb;
++ (void) clearStoredDb;
 
 + (void) endTrip;
++ (void) convertOngoingToStored;
 + (NSArray*) getTripsToPush;
 + (void) deletePushedTrips:(NSArray*) tripsToPush;
 + (void) deleteAllStoredTrips;
 
++ (NSMutableDictionary*) getJSONPlace:(CLLocation*) loc;
++ (NSMutableDictionary*) getTrackPoint:(CLLocation*) loc;
 @end

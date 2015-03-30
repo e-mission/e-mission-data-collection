@@ -145,20 +145,33 @@ static StoredTripsDatabase *_database;
 /*
  * Returns all stored trips. If there are no trips, returns a zero length array.
  */
+
 - (NSArray*) getAllStoredTrips {
     NSMutableArray* retVal = [[NSMutableArray alloc] init];
+    /*
     NSString* selectQuery = [NSString stringWithFormat:@"SELECT %@ FROM %@ ORDER BY %@ DESC",
                              KEY_TRIP_JSON, TABLE_STORED_TRIP, KEY_TS];
+    */
+     NSString* selectQuery = [NSString stringWithFormat:@"SELECT %@ FROM %@",
+                              KEY_TRIP_JSON, TABLE_STORED_TRIP];
+
     
     sqlite3_stmt *compiledStatement;
     NSInteger selPrepCode = sqlite3_prepare_v2(_database, [selectQuery UTF8String], -1, &compiledStatement, NULL);
     if (selPrepCode == SQLITE_OK) {
         while (sqlite3_step(compiledStatement) == SQLITE_ROW) {
-            // We know that there will be only one entry because of the LIMIT 1 in the select statement
-            NSString* currTripJSON = [[NSString alloc] initWithUTF8String:(char*)sqlite3_column_text(compiledStatement, 0)];
-            [retVal addObject:currTripJSON];
+            char* rawChars = (char*)sqlite3_column_text(compiledStatement, 0);
+            if (rawChars != NULL) {
+                NSString* currTripJSON = [[NSString alloc] initWithUTF8String:rawChars];
+                NSLog(@"adding object %@ of length %lu when curr list count = %lu",
+                      currTripJSON, (unsigned long)currTripJSON.length, (unsigned long)retVal.count);
+                [retVal addObject:currTripJSON];
+            } else {
+                NSLog(@"rawChars == NULL, skipping");
+            }
         }
     }
+    NSLog(@"Returning array %@", retVal);
     return retVal;
 }
 

@@ -14,14 +14,32 @@
 
 + (NSString*)dateToString:(NSDate*)date {
     NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-    [dateFormat setDateFormat:@"yyyyMMddTHHmmssz"];
+    [dateFormat setDateFormat:@"yyyyMMdd'T'HHmmssZ"];
     return [dateFormat stringFromDate:date];
 }
 
 + (NSDate*)dateFromString:(NSString*)string {
     NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-    [dateFormat setDateFormat:@"yyyyMMddTHHmmssz"];
+    [dateFormat setDateFormat:@"yyyyMMdd'T'HHmmssZ"];
     return [dateFormat dateFromString:string];
+}
+
++ (void) addPoint:(CLLocation*) currLoc {
+    NSLog(@"addPoint(%@) called", currLoc);
+    [[OngoingTripsDatabase database] addPoint:currLoc];
+}
+
++ (NSArray*) getLastPoints:(int) nPoints {
+    NSLog(@"addLastPoints(%d) called", nPoints);
+    return [[OngoingTripsDatabase database] getLastPoints:nPoints];
+}
+
++ (void) clearOngoingDb {
+    [[OngoingTripsDatabase database] clear];
+}
+
++ (void) clearStoredDb {
+    [[StoredTripsDatabase database] clear];
 }
 
 + (void) endTrip {
@@ -54,6 +72,10 @@
     
     NSArray* endPoints = [ongoingDb getEndPoints];
     NSLog(@"endPoints = %@ with count %ld", endPoints, (unsigned long)endPoints.count);
+    if (endPoints.count == 0) {
+        // The trip has no points, so we can't store anything
+        return;
+    }
     CLLocation* startPoint = endPoints[0];
     CLLocation* endPoint = endPoints[1];
     
@@ -63,7 +85,7 @@
         return;
     }
     
-    NSDictionary* startPlace = NULL;
+    NSMutableDictionary* startPlace = NULL;
     NSString* lastTripString = [storedDb getLastTrip];
     NSLog(@"lastTripString = %@", lastTripString);
     if (lastTripString == NULL) {
@@ -74,19 +96,26 @@
         NSTimeInterval midnightTs = midnightDate.timeIntervalSince1970;
         [startPlace setValue:[self dateToString:midnightDate] forKey:@"startTime"];
         [startPlace setValue:[NSNumber numberWithDouble:midnightTs] forKey:@"startTimeTs"];
+        NSString* startPlaceJSON = [self saveToJSONString:startPlace];
+        
+        /*
+         * This is a variation from the android code because it looks like update works like upsert on
+         * android but not on iOS. May want to fix the android code in the same way for better maintainability.
+         * In android, we call updateTrip for both newly created trips, and old ones.
+         */
+        [storedDb addTrip:startPlaceJSON atTime:midnightDate];
     } else {
         startPlace = [self loadFromJSONString:[storedDb getLastTrip]];
     }
-    
 
-    NSLog(@"updated startPlace = %@", startPlace);
-    NSDate* startPlaceStartDate = [self dateFromString:[startPlace objectForKey:@"startTime"]];
     // Our end point in the start place is when this trip starts
     [startPlace setValue:[self dateToString:startPoint.timestamp] forKey:@"endTime"];
     
+    // Update the current stored value with the end time
+    NSDate* startPlaceStartDate = [self dateFromString:[startPlace objectForKey:@"startTime"]];
     [storedDb updateTrip:[self saveToJSONString:startPlace] atTime:startPlaceStartDate];
-    
-    NSDictionary* completedTrip = [[NSDictionary alloc] init];
+
+    NSMutableDictionary* completedTrip = [[NSMutableDictionary alloc] init];
     [completedTrip setValue:@"move" forKey:@"type"];
     [completedTrip setValue:[self dateToString:startPoint.timestamp] forKey:@"startTime"];
     [completedTrip setValue:[NSNumber numberWithDouble:startPoint.timestamp.timeIntervalSince1970] forKey:@"startTimeTs"];
@@ -102,28 +131,29 @@
      * Since we don't have an iPhone6, we currently don't have any activities stored, so we will create one activity/section of
      * type "unknown"
      */
-    NSDictionary* oneSection = [self createSection:@"unknown" withStart:startPoint.timestamp withEnd:endPoint.timestamp
-                                            fromDb:ongoingDb];
+    NSMutableDictionary* oneSection = [self createSection:@"unknown"
+                                                withStart:startPoint.timestamp withEnd:endPoint.timestamp
+                                                   fromDb:ongoingDb];
     [activityArray addObject:oneSection];
     [storedDb addTrip:[self saveToJSONString:completedTrip] atTime:startPoint.timestamp];
     
     // We are in the end place starting now.
     // Dunno when we will stop.
     // But when we do, this will be the startPlace and we will set the endTime above
-    NSDictionary* endPlace = [self getJSONPlace:endPoint];
+    NSMutableDictionary* endPlace = [self getJSONPlace:endPoint];
     NSLog(@"endPlace = %@", endPlace);
     [storedDb addTrip:[self saveToJSONString:endPlace] atTime:endPoint.timestamp];
 }
 
-+ (NSDictionary*) getTrackPoint:(CLLocation*) loc {
++ (NSMutableDictionary*) getTrackPoint:(CLLocation*) loc {
     NSLog(@"getTrackPoint(%@) called", loc);
     
-    NSDictionary* retObject = [[NSDictionary alloc] init];
+    NSMutableDictionary* retObject = [[NSMutableDictionary alloc] init];
     [retObject setValue:[self dateToString:loc.timestamp] forKey:@"time"];
     [retObject setValue:[NSNumber numberWithDouble:loc.coordinate.latitude] forKey:@"lat"];
     [retObject setValue:[NSNumber numberWithDouble:loc.coordinate.longitude] forKey:@"lon"];
     
-    NSDictionary* extrasObject = [[NSDictionary alloc] init];
+    NSMutableDictionary* extrasObject = [[NSMutableDictionary alloc] init];
     [extrasObject setValue:[NSNumber numberWithDouble:loc.horizontalAccuracy] forKey:@"hAccuracy"];
     [extrasObject setValue:[NSNumber numberWithDouble:loc.verticalAccuracy] forKey:@"vAccuracy"];
     [extrasObject setValue:[NSNumber numberWithDouble:loc.altitude] forKey:@"altitude"];
@@ -132,12 +162,12 @@
     return retObject;
 }
 
-+ (NSDictionary*) createSection:(NSString*)activityType
++ (NSMutableDictionary*) createSection:(NSString*)activityType
                       withStart:(NSDate*) startSectionTime
                         withEnd:(NSDate*) endSectionTime
                          fromDb:(OngoingTripsDatabase*) ongoingDb {
     
-    NSDictionary* currSection = [[NSDictionary alloc] init];
+    NSMutableDictionary* currSection = [[NSMutableDictionary alloc] init];
     // TODO: Switch to timestamps throughout system
     [currSection setValue:[self dateToString:startSectionTime] forKey:@"startTime"];
     [currSection setValue:[self dateToString:endSectionTime] forKey:@"endTime"];
@@ -149,24 +179,26 @@
     NSMutableArray* trackPoints = [[NSMutableArray alloc] init];
     double distance = 0;
     for(int j = 0; j < pointsForSection.count; j++) {
-        NSDictionary* currPoint = [self getTrackPoint:pointsForSection[j]];
+        NSMutableDictionary* currPoint = [self getTrackPoint:pointsForSection[j]];
         [trackPoints addObject:currPoint];
-        distance = distance + [pointsForSection[j] distanceFromLocation:pointsForSection[j+1]];
+        /*
+         * While calculating distance, say we have 3 points, we find the distance between the 0th and first point when 
+         * j = 0, the first and second point when j = 1. We don't need to find any distance when j = 2.
+         */
+        if (j < pointsForSection.count - 1) {
+            distance = distance + [pointsForSection[j] distanceFromLocation:pointsForSection[j+1]];
+        }
     }
     [currSection setValue:trackPoints forKey:@"trackPoints"];
     [currSection setValue:[NSNumber numberWithDouble:distance] forKey:@"distance"];
     return currSection;
 }
 
-+ (void) clearOngoingDb {
-    [[OngoingTripsDatabase database] clear];
-}
-
 // Seriously, what is the equivalent of throws JSONException in Objective C?
-+ (NSDictionary*) getJSONPlace:(CLLocation*) loc {
++ (NSMutableDictionary*) getJSONPlace:(CLLocation*) loc {
     NSLog(@"getJSONPlace(%@) called", loc);
     
-    NSDictionary* retObj = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary* retObj = [[NSMutableDictionary alloc] init];
     [retObj setValue:@"place" forKey:@"type"];
     [retObj setValue:[self dateToString:loc.timestamp] forKey:@"startTime"];
     
@@ -174,11 +206,10 @@
     // app which also expects string formatted dates.
     // TODO: Change everything to millisecond timestamps to avoid confusion
     [retObj setValue:[NSNumber numberWithDouble:loc.timestamp.timeIntervalSince1970] forKey:@"startTimeTs"];
-    // retObj.put("startTimeTs", loc.getTime());
     
-    NSDictionary* placeObj = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary* placeObj = [[NSMutableDictionary alloc] init];
     
-    NSDictionary* locationObj = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary* locationObj = [[NSMutableDictionary alloc] init];
     [locationObj setValue:[NSNumber numberWithDouble:loc.coordinate.latitude] forKey:@"lat"];
     [locationObj setValue:[NSNumber numberWithDouble:loc.coordinate.longitude] forKey:@"lon"];
     
@@ -192,7 +223,7 @@
 
 
 // TODO: Refactor this to be common with the TripSection loading code when we merge this into e-mission
-+ (NSDictionary*)loadFromJSONData:(NSData*)jsonData {
++ (NSMutableDictionary*)loadFromJSONData:(NSData*)jsonData {
     NSError *error;
     NSMutableDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:jsonData
                                                                     options:NSJSONReadingMutableContainers
@@ -203,21 +234,27 @@
     return jsonDict;
 }
 
-+ (NSDictionary*)loadFromJSONString:(NSString *)jsonString {
++ (NSMutableDictionary*)loadFromJSONString:(NSString *)jsonString {
     NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
     return [self loadFromJSONData:jsonData];
 }
 
-+ (NSData*)saveToJSONData:(NSDictionary*) jsonDict {
++ (NSData*)saveToJSONData:(NSMutableDictionary*) jsonDict {
     NSError *error;
     NSData *bytesToSend = [NSJSONSerialization dataWithJSONObject:jsonDict
                                                           options:kNilOptions error:&error];
     return bytesToSend;
 }
 
-+ (NSString*)saveToJSONString:(NSDictionary*) jsonDict {
++ (NSString*)saveToJSONString:(NSMutableDictionary*) jsonDict {
     NSData *bytesToSend = [self saveToJSONData:jsonDict];
-    NSString *strToSend = [NSString stringWithUTF8String:[bytesToSend bytes]];
+    
+    // This is copied from the earlier code, but doesn't seem to work here!
+    // Need to recheck original code in e-mission-phone as well
+    // NSString *strToSend = [NSString stringWithUTF8String:[bytesToSend bytes]];
+    NSString *strToSend = [[NSString alloc] initWithData:bytesToSend encoding:NSUTF8StringEncoding];
+    
+    NSLog(@"data has %lu bytes, str has size %lu", bytesToSend.length, strToSend.length);
     return strToSend;
 }
 
@@ -232,6 +269,12 @@
     // Right now, return a single place that extends from 8pm to 8am to make the code easier
     
     NSArray* allTrips = [storedDb getAllStoredTrips];
+    // TODO: Difference from the android code. Need to unify.
+    if (allTrips.count == 0) {
+        
+        return allTrips;
+    }
+    
     NSMutableArray* retVal = [[NSMutableArray alloc] init];
     for (int i = 0; i < allTrips.count - 1; i++) {
         [retVal addObject:[self loadFromJSONString:allTrips[i]]];
