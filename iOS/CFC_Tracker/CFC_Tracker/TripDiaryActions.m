@@ -11,6 +11,8 @@
 #import "LocalNotificationManager.h"
 #import "DataUtils.h"
 #import "CommunicationHelper.h"
+#import "EMActivity.h"
+
 
 @implementation TripDiaryActions
 
@@ -46,7 +48,7 @@
 + (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
                                              withActivityMgr:(CMMotionActivityManager*)activityMgr {
     [self stopTrackingLocation:locMgr];
-    [self stopTrackingActivity:activityMgr];
+//    [self stopTrackingActivity:activityMgr];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionTripEnded];
 }
@@ -165,11 +167,19 @@
     [manager stopMonitoringSignificantLocationChanges];
 }
 
+/*
+ Since we are not actually doing any real-time tweaking on the phone at this point, it is
+ sufficient to read the activity list at the end of the trip. It looks like motion data is
+ always being collected, even if we haven't registered for activity updates. I'm leaving this
+ commented out in case we do want to get ongoing activity updates and do more processing on the
+ phone going forward...
+*/
+ 
 + (void)startTrackingActivity:(CMMotionActivityManager*) manager {
     NSOperationQueue* mq = [NSOperationQueue mainQueue];
     [manager startActivityUpdatesToQueue:mq
                              withHandler:^(CMMotionActivity *activity) {
-                                 NSString *activityName = [self getActivityName:activity];
+                                 NSString *activityName = [EMActivity getActivityName:[EMActivity getRelevantActivity:activity]];
                                  NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence);
                              }];
 }
@@ -187,18 +197,6 @@
 +(void)stopTrackingVisits:(CLLocationManager*) manager {
     if ([CLLocationManager instancesRespondToSelector:@selector(stopMonitoringVisits)]) {
         [manager stopMonitoringVisits];
-    }
-}
-
-+(NSString*)getActivityName:(CMMotionActivity*) activity {
-    if(activity.walking) {
-        return @"walking";
-    } else if (activity.cycling) {
-        return @"cycling";
-    } else if (activity.automotive) {
-        return @"transport";
-    } else {
-        return @"unknown";
     }
 }
 

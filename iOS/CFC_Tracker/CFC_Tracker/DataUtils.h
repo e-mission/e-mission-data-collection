@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
+#import "EMActivity.h"
 
 @interface DataUtils : NSObject
 + (NSString*)dateToString:(NSDate*)date;
@@ -16,6 +17,9 @@
 
 + (void) addPoint:(CLLocation*) currLoc;
 + (NSArray*) getLastPoints:(int) nPoints;
+
++ (void) addModeChange:(EMActivity*) activity;
+
 + (void) clearOngoingDb;
 + (void) clearStoredDb;
 

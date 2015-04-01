@@ -131,7 +131,7 @@
 /*
  * Also tests getTripsToPush and deletePushedTrips
  */
-- (void) testConvertOngoingToStored {
+- (void) testConvertOngoingToStoredNoActivities {
     // First try with no entries in the ongoing trip DB
     XCTAssertEqual([DataUtils getLastPoints:5].count, 0);
     
@@ -141,8 +141,6 @@
     }
     XCTAssertEqual([DataUtils getLastPoints:5].count, 4);
     
-    // Add in mode changes so that we get activities
-    // TODO: Add it once we implement activity detection
     [DataUtils convertOngoingToStored];
 
     XCTAssertEqual([[StoredTripsDatabase database] getAllStoredTrips].count, 3);
@@ -153,7 +151,6 @@
     NSLog(@"toPush[1] = %@", toPush[1]);
     
     XCTAssertNotNil([toPush[0] objectForKey:@"place"]);
-
     
     XCTAssert([[toPush[0] objectForKey:@"endTime"] isEqualToString:[TestUtils dateToString:
                                                                    ((CLLocation*)fourPoints[0]).timestamp]]);
@@ -189,6 +186,106 @@
     
     [DataUtils deletePushedTrips:toPush];
     XCTAssertEqual([[StoredTripsDatabase database] getAllStoredTrips].count, 1);
+}
+
+- (EMActivity*) getMockEMA:(TripActivityStates) mode startsAt:(NSDate*) startDate {
+    EMActivity* ema1 = [[EMActivity alloc] init];
+    ema1.mode = mode;
+    ema1.confidence = CMMotionActivityConfidenceHigh;
+    ema1.startDate = startDate;
+    return ema1;
+}
+
+- (void) testConvertOngoingToStoredWithActivities {
+    // First try with no entries in the ongoing trip DB
+    XCTAssertEqual([DataUtils getLastPoints:5].count, 0);
+    
+    NSArray* fourPoints = [self getFourPoints];
+    for (int i = 0; i < fourPoints.count; i++) {
+        [DataUtils addPoint:fourPoints[i]];
+    }
+    XCTAssertEqual([DataUtils getLastPoints:5].count, 4);
+    
+    // Add in mode changes so that we get activities
+    
+    [DataUtils addModeChange:[self getMockEMA:kWalkingActivity
+                                     startsAt:((CLLocation*)fourPoints[0]).timestamp]];
+    [DataUtils addModeChange:[self getMockEMA:kTransportActivity
+                                     startsAt:((CLLocation*)fourPoints[1]).timestamp]];
+    [DataUtils addModeChange:[self getMockEMA:kWalkingActivity
+                                     startsAt:((CLLocation*)fourPoints[2]).timestamp]];
+    
+    [DataUtils convertOngoingToStored];
+    
+    XCTAssertEqual([[StoredTripsDatabase database] getAllStoredTrips].count, 3);
+    NSArray* toPush = [DataUtils getTripsToPush];
+    
+    XCTAssertEqual(toPush.count, 2);
+    NSLog(@"toPush[0] = %@", toPush[0]);
+    NSLog(@"toPush[1] = %@", toPush[1]);
+    
+    XCTAssertNotNil([toPush[0] objectForKey:@"place"]);
+    
+    
+    XCTAssert([[toPush[0] objectForKey:@"endTime"] isEqualToString:[TestUtils dateToString:
+                                                                    ((CLLocation*)fourPoints[0]).timestamp]]);
+    
+    XCTAssert([[toPush[1] objectForKey:@"type"] isEqualToString:@"move"]);
+    
+    NSArray* sectionArray = [toPush[1] objectForKey:@"activities"];
+    XCTAssertEqual(sectionArray.count, 3);
+    
+    for (int i = 0; i < sectionArray.count; i++) {
+        NSDictionary* currSection = sectionArray[i];
+        XCTAssertTrue(currSection[@"duration"]);
+        XCTAssertTrue(currSection[@"distance"]);
+    }
+    
+    for (int i = 0; i < sectionArray.count; i++) {
+        NSDictionary* currSection = sectionArray[i];
+        NSArray* pointsArray = currSection[@"trackPoints"];
+        NSLog(@"pointsArray[%d] = %@", i, pointsArray);
+        /*
+         * Our sections are
+         * - start of trip -> point 2, which contains point 1
+         * - point 2 -> point 3, which contains point 2
+         * - point 3 -> end, which contains point 3
+         * So every section has one point
+         */
+        XCTAssertEqual(pointsArray.count, 1);
+    }
+    
+    [DataUtils deletePushedTrips:toPush];
+    XCTAssertEqual([[StoredTripsDatabase database] getAllStoredTrips].count, 1);
+}
+
+- (CLLocation*) dateHoursAgo:(int)hours {
+    NSDate* hoursAgo = [NSDate dateWithTimeIntervalSinceNow:(-hours*60*60)];
+    NSTimeInterval timeAgo = hoursAgo.timeIntervalSince1970;
+    NSNumber* numberTimeAgo = [NSNumber numberWithDouble:timeAgo];
+    return [self makeLoc:@[@(37+hours), @(-122-hours), numberTimeAgo]];
+}
+
+- (void) testActivityQuery {
+    // First try with no entries in the ongoing trip DB
+    XCTAssertEqual([DataUtils getLastPoints:5].count, 0);
+    
+    NSMutableArray* fourPoints = [[NSMutableArray alloc] init];
+    [fourPoints addObject:[self dateHoursAgo:1]];
+    [fourPoints addObject:[self dateHoursAgo:2]];
+    [fourPoints addObject:[self dateHoursAgo:3]];
+    [fourPoints addObject:[self dateHoursAgo:4]];
+
+
+    for (int i = 0; i < fourPoints.count; i++) {
+        [DataUtils addPoint:fourPoints[i]];
+    }
+    XCTAssertEqual([DataUtils getLastPoints:5].count, 4);
+    
+    [DataUtils convertOngoingToStored];
+    
+    // Sleep for a while to give the activity tracking a chance to catch up
+    // [[NSThread defaultThread] sleepForTimeInterval:(10)];
 }
 
 - (void) testEndTrip {

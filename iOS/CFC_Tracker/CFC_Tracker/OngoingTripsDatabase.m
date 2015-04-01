@@ -12,8 +12,9 @@
 // Table name
 #define TABLE_ONGOING_TRIP @"TRACK_POINTS"
 #define TABLE_TRANSITIONS @"TRANSITIONS"
+#define TABLE_MODE_CHANGES @"MODE_CHANGES"
 
-// Column names
+// Column names for TRACK_POINTS
 #define KEY_TS @"TIMESTAMP"
 #define KEY_LAT @"LAT"
 #define KEY_LNG @"LNG"
@@ -21,7 +22,10 @@
 #define KEY_HORIZ_ACCURACY @"HORIZ_ACCURACY"
 #define KEY_VERT_ACCURACY @"VERT_ACCURACY"
 #define KEY_MESSAGE @"MESSAGE"
-// #define KEY_MODE @"mode"
+
+// Column names for MODE_CHANGES
+#define KEY_TYPE @"type"
+#define KEY_CONFIDENCE @"confidence"
 
 #define DB_FILE_NAME @"OngoingTripsAuto.db"
 
@@ -139,70 +143,6 @@ static OngoingTripsDatabase *_database;
 }
 
 
-
-/*
-
--(void)getAndStoreLocation {
-    CLLocationManager* locationManager = [[CLLocationManager alloc] init];
-    locationManager.delegate = self;
-    locationManager.desiredAccuracy = kCLLocationAccuracyKilometer; //meters
-    locationManager.distanceFilter = 100; //meters
-    if ([locationManager respondsToSelector:@selector(requestWhenInUseAuthorization)]) {
-        [locationManager requestWhenInUseAuthorization];
-    }
-    [locationManager startUpdatingLocation];
-}
-
-- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
-    // There is only one entry, so no WHERE clause is needed
-    NSString *updateStatement = [NSString stringWithFormat:@"UPDATE %@ SET %@ = ?, %@ = ?",
-                                 TABLE_ONGOING_TRIP, KEY_LAT, KEY_LNG];
-    sqlite3_stmt *compiledStatement;
-    if(sqlite3_prepare_v2(_database, [updateStatement UTF8String], -1, &compiledStatement, NULL) == SQLITE_OK) {
-        sqlite3_bind_double(compiledStatement, 1, newLocation.coordinate.latitude);
-        sqlite3_bind_double(compiledStatement, 2, newLocation.coordinate.longitude);
-    }
-    NSInteger execCode = sqlite3_step(compiledStatement);
-    if (execCode != SQLITE_DONE) {
-        NSLog(@"Got error code %ld while executing statement %@", execCode, updateStatement);
-    }
-    sqlite3_finalize(compiledStatement);
-}
-
-
-
-- (NSDictionary*)getOngoingTrip {
-    NSMutableDictionary* retVal = [[NSMutableDictionary alloc] init];
-
-    // There is only one entry, so no WHERE clause is needed
-    NSString *selectQuery = [NSString stringWithFormat:@"SELECT * FROM %@", TABLE_ONGOING_TRIP];
-
-    sqlite3_stmt *compiledStatement;
-    NSInteger selPrepCode = sqlite3_prepare_v2(_database, [selectQuery UTF8String], -1, &compiledStatement, NULL);
-    if (selPrepCode == SQLITE_OK) {
-        while (sqlite3_step(compiledStatement) == SQLITE_ROW) {
-            // Remember that while reading results, the index starts from 0
-            NSString* startDate = [[NSString alloc] initWithUTF8String:(char*)sqlite3_column_text(compiledStatement, 0)];
-            [retVal setObject:startDate forKey:KEY_START_TIME];
-            NSArray *coords = @[@(sqlite3_column_double(compiledStatement, 1)),
-                                @(sqlite3_column_double(compiledStatement, 2))];
-            [retVal setObject:coords forKey:@"section_start_point"];
-            NSString* mode = [[NSString alloc] initWithUTF8String:(char*)sqlite3_column_text(compiledStatement, 3)];
-            [retVal setObject:mode forKey:KEY_MODE];
-        }
-    } else {
-        NSLog(@"Error code %ld while compiling query %@", selPrepCode, selectQuery);
-    }
-    sqlite3_finalize(compiledStatement);
-    assert(retVal.count == 0 || retVal.count == 3);
-    if (retVal.count == 0) {
-        return NULL;
-    } else {
-        return retVal;
-    }
-}
-*/
-
 -(NSArray*) getLastPoints:(int) nPoints {
     NSString* selectQuery = [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY %@ DESC LIMIT %d",
                              TABLE_ONGOING_TRIP, KEY_TS, nPoints];
@@ -263,14 +203,72 @@ static OngoingTripsDatabase *_database;
  * so this refactoring is likely to be non-trivial
  */
 
-- (void)clear {
-    NSString *deleteQuery = [NSString stringWithFormat:@"DELETE FROM %@", TABLE_ONGOING_TRIP];
+- (void)deleteTable:(NSString*) tableName {
+    NSString *deleteQuery = [NSString stringWithFormat:@"DELETE FROM %@", tableName];
     sqlite3_stmt *compiledStatement;
     NSInteger delPrepCode = sqlite3_prepare_v2(_database, [deleteQuery UTF8String], -1, &compiledStatement, NULL);
     if (delPrepCode == SQLITE_OK) {
         sqlite3_step(compiledStatement);
     }
     sqlite3_finalize(compiledStatement);
+}
+
+-(void)clear{
+    [self deleteTable:TABLE_ONGOING_TRIP];
+    [self deleteTable:TABLE_MODE_CHANGES];
+}
+
+-(void) addModeChange:(EMActivity*) activity {
+    NSString *insertStatement = [NSString stringWithFormat:@"INSERT INTO %@ (%@, %@, %@) VALUES (?, ?, ?)",
+                                 TABLE_MODE_CHANGES, KEY_TS, KEY_TYPE, KEY_CONFIDENCE];
+    
+    sqlite3_stmt *compiledStatement;
+    if(sqlite3_prepare_v2(_database, [insertStatement UTF8String], -1, &compiledStatement, NULL) == SQLITE_OK) {
+        // The SQLITE_TRANSIENT is used to indicate that the raw data (userMode, tripId, sectionId
+        // is not permanent data and the SQLite library should make a copy
+        sqlite3_bind_int64(compiledStatement, 1, activity.startDate.timeIntervalSince1970);
+        sqlite3_bind_int64(compiledStatement, 2, activity.mode);
+        sqlite3_bind_int64(compiledStatement, 3, activity.confidence);
+    }
+    // Shouldn't this be within the prior if?
+    // Shouldn't we execute the compiled statement only if it was generated correctly?
+    // This is code copied from
+    // http://stackoverflow.com/questions/2184861/how-to-insert-data-into-a-sqlite-database-in-iphone
+    // Need to check from the raw sources and see where we get
+    // Create a new sqlite3 database like so:
+    // http://www.raywenderlich.com/902/sqlite-tutorial-for-ios-creating-and-scripting
+    NSInteger execCode = sqlite3_step(compiledStatement);
+    if (execCode != SQLITE_DONE) {
+        NSLog(@"Got error code %ld while executing statement %@", (long)execCode, insertStatement);
+    }
+    sqlite3_finalize(compiledStatement);
+}
+
+
+-(NSArray*) getModeChanges:(NSDate*) fromDate toDate:(NSDate*) toDate {
+    NSMutableArray* retVal = [[NSMutableArray alloc] init];
+    
+    // We're going to get all of them, so no WHERE clause is needed
+    NSString *selectQuery = [NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@ >= %f AND %@ < %f",
+                             TABLE_MODE_CHANGES, KEY_TS, fromDate.timeIntervalSince1970,
+                                                KEY_TS, toDate.timeIntervalSince1970];
+    
+    sqlite3_stmt *compiledStatement;
+    NSInteger selPrepCode = sqlite3_prepare_v2(_database, [selectQuery UTF8String], -1, &compiledStatement, NULL);
+    if (selPrepCode == SQLITE_OK) {
+        while (sqlite3_step(compiledStatement) == SQLITE_ROW) {
+            // Remember that while reading results, the index starts from 0
+            EMActivity* readActivity = [[EMActivity alloc] init];
+            readActivity.startDate = [NSDate dateWithTimeIntervalSince1970:sqlite3_column_int64(compiledStatement, 0)];
+            readActivity.mode = sqlite3_column_int64(compiledStatement, 1);
+            readActivity.confidence = sqlite3_column_int64(compiledStatement, 2);
+            [retVal addObject:readActivity];
+        }
+    } else {
+        NSLog(@"Error code %ld while compiling query %@", (long)selPrepCode, selectQuery);
+    }
+    sqlite3_finalize(compiledStatement);
+    return retVal;
 }
 
 /*
