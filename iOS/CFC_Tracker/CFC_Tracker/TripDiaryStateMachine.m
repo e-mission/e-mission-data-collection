@@ -236,6 +236,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
+        // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];        
         [TripDiaryActions pushTripToServer];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {

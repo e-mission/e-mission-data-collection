@@ -48,7 +48,7 @@
 + (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
                                              withActivityMgr:(CMMotionActivityManager*)activityMgr {
     [self stopTrackingLocation:locMgr];
-//    [self stopTrackingActivity:activityMgr];
+    [self stopTrackingActivity:activityMgr];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionTripEnded];
 }
