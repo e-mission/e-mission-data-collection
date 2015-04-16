@@ -34,12 +34,61 @@
     return [[OngoingTripsDatabase database] getLastPoints:nPoints];
 }
 
+
++ (void) addModeChange:(EMActivity*) activity {
+    [[OngoingTripsDatabase database] addModeChange:activity];
+}
+
 + (void) clearOngoingDb {
     [[OngoingTripsDatabase database] clear];
 }
 
 + (void) clearStoredDb {
     [[StoredTripsDatabase database] clear];
+}
+
+/*
+ * Return a list of activities along with the intervals for them.
+ */
+
++(void)storeMotionActivities:(CMMotionActivityManager*) manager
+                    fromDate:(NSDate*) fromDate
+                      toDate:(NSDate*) toDate {
+    NSOperationQueue* mq = [NSOperationQueue mainQueue];
+    [manager queryActivityStartingFromDate:fromDate toDate:toDate toQueue:mq withHandler:^(NSArray *activities, NSError *error) {
+        if (error != NULL) {
+            /*
+             * This conversion allows us to unit test this code, since we cannot create valid CMMotionActivity
+             * segments. We can create a CMMotionActivity, but we cannot set any of its properties.
+             */
+            NSMutableArray* convertedActivities = [[NSMutableArray alloc] init];
+            for (int i = 0; i < activities.count; i++) {
+                CMMotionActivity* activity = (CMMotionActivity*)activities[i];
+                EMActivity* convertedActivity = [[EMActivity alloc] init];
+                convertedActivity.mode = [EMActivity getRelevantActivity:activity];
+                convertedActivity.confidence = activity.confidence;
+                convertedActivity.startDate = activity.startDate;
+            }
+            [self saveActivityList:convertedActivities];
+        }
+    }];
+}
+
++ (void) saveActivityList:(NSArray*) activities {
+    EMActivity* oldActivity = NULL;
+    
+    for (int i = 0; i < activities.count; i++) {
+        EMActivity* activity = (EMActivity*)activities[i];
+        // TODO: Figure out a better way to detect use the complexity in the activities.
+        // Right now, let us do something stupid and easy.
+        if (activity.confidence == CMMotionActivityConfidenceHigh) {
+            if (oldActivity == NULL ||
+                oldActivity.mode != activity.mode) {
+                [DataUtils addModeChange:activity];
+                oldActivity = activity;
+            }
+        }
+    }
 }
 
 + (void) endTrip {
@@ -59,7 +108,7 @@
 
 + (NSDate*) getMidnight {
     NSDate* now = [NSDate date];
-    NSCalendar* cal = [NSCalendar calendarWithIdentifier:NSGregorianCalendar];
+    NSCalendar* cal = [NSCalendar autoupdatingCurrentCalendar];
     unsigned unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit;
     NSDateComponents* midnightComponents = [cal components:unitFlags fromDate:now];
     return [cal dateFromComponents:midnightComponents];
@@ -83,6 +132,24 @@
     if (startPoint == NULL && endPoint == NULL) {
         // The trip has no points, so we can't store anything
         return;
+    }
+    
+    /*
+     * Now, we need to get the set of activities. If we are just using the iOS activity
+     * detection, we can just read them and process them in real time. But we first save
+     * to the database and then read from the database. This allows us greater flexibility:
+     * - in terms of unit testing, we can test the segmentation by manually storing entries
+     * to the database.
+     * -  Gives us more flexibility to switch to our own mode detection, as opposed to the
+     * iOS mode detection, we will have read/load built in and won't have to change the trip
+     * formatting code.
+     */
+    
+    if ([CMMotionActivityManager isActivityAvailable] == YES) {
+        CMMotionActivityManager* activityMgr = [[CMMotionActivityManager alloc] init];
+        [self storeMotionActivities:activityMgr fromDate:startPoint.timestamp toDate:endPoint.timestamp];
+    } else {
+        NSLog(@"Activity recognition unavailable, skipping segmentation");
     }
     
     NSMutableDictionary* startPlace = NULL;
@@ -115,6 +182,7 @@
     NSDate* startPlaceStartDate = [self dateFromString:[startPlace objectForKey:@"startTime"]];
     [storedDb updateTrip:[self saveToJSONString:startPlace] atTime:startPlaceStartDate];
 
+    
     NSMutableDictionary* completedTrip = [[NSMutableDictionary alloc] init];
     [completedTrip setValue:@"move" forKey:@"type"];
     [completedTrip setValue:[self dateToString:startPoint.timestamp] forKey:@"startTime"];
@@ -127,14 +195,23 @@
     [completedTrip setValue:[self dateToString:endPoint.timestamp] forKey:@"endTime"];
 
     NSMutableArray* activityArray = [[NSMutableArray alloc] init];
-    /* 
-     * Since we don't have an iPhone6, we currently don't have any activities stored, so we will create one activity/section of
-     * type "unknown"
-     */
-    NSMutableDictionary* oneSection = [self createSection:@"unknown"
-                                                withStart:startPoint.timestamp withEnd:endPoint.timestamp
-                                                   fromDb:ongoingDb];
-    [activityArray addObject:oneSection];
+    NSArray* modeChanges = [[OngoingTripsDatabase database] getModeChanges:startPoint.timestamp toDate:endPoint.timestamp];
+    if (modeChanges.count > 0) {
+        activityArray = [self createSections:modeChanges withStartPoint:startPoint withEndPoint:endPoint];
+    } else {
+        /*
+         * Since we don't have an iPhone6, we currently don't have any activities stored, so we will create one activity/section of
+         * type "unknown"
+         */
+        NSMutableDictionary* oneSection = [self createSection:@"unknown"
+                                                    withStart:startPoint.timestamp withEnd:endPoint.timestamp
+                                                       fromDb:ongoingDb];
+        [activityArray addObject:oneSection];
+    }
+    if (activityArray.count > 0) {
+        completedTrip[@"activities"] = activityArray;
+    }
+
     [storedDb addTrip:[self saveToJSONString:completedTrip] atTime:startPoint.timestamp];
     
     // We are in the end place starting now.
@@ -192,6 +269,62 @@
     [currSection setValue:trackPoints forKey:@"trackPoints"];
     [currSection setValue:[NSNumber numberWithDouble:distance] forKey:@"distance"];
     return currSection;
+}
+
++ (NSMutableArray*) createSections:(NSArray*)modeChanges
+                 withStartPoint:(CLLocation*)startPoint
+                   withEndPoint:(CLLocation*)endPoint {
+    NSMutableArray* retVal = [[NSMutableArray alloc] init];
+    if (modeChanges.count == 0) {
+        NSLog(@"Found zero mode changes, creating one unknown section");
+
+        NSMutableDictionary* currSection = [self createSection:@"unknown"
+                                                     withStart:startPoint.timestamp
+                                                       withEnd:endPoint.timestamp
+                                                        fromDb:[OngoingTripsDatabase database]];
+        [retVal addObject:currSection];
+        return retVal;
+    } else if (modeChanges.count == 1) {
+        EMActivity* theChange = modeChanges[0];
+        NSLog(@"Found one mode change, creating one section of type %@", [theChange getActivityName]);
+    
+        NSMutableDictionary* currSection = [self createSection:[theChange getActivityName]
+                                                     withStart:startPoint.timestamp
+                                                       withEnd:startPoint.timestamp
+                                                        fromDb:[OngoingTripsDatabase database]];
+        [retVal addObject:currSection];
+        return retVal;
+    } else {
+        assert(modeChanges.count > 1);
+        NSLog(@"Found more than one mode change, iterating through them");
+        for (int i = 0; i < modeChanges.count; i++) {
+            EMActivity* currActivity = (EMActivity*)modeChanges[i];
+            NSDate* sectionStartTime = NULL;
+            if (i == 0) {
+                // If this is the first point, we want to count points from the start of the trip
+                // but we won't know what activity they are in. Let us assume that they are merged
+                // with the current activity.
+                sectionStartTime = startPoint.timestamp;
+            } else {
+                sectionStartTime = currActivity.startDate;
+            }
+            
+            NSDate* sectionEndTime = NULL;
+            if (i == modeChanges.count - 1) {
+                sectionEndTime = endPoint.timestamp;
+            } else {
+                EMActivity* nextActivity = (EMActivity*)modeChanges[i+1];
+                sectionEndTime = nextActivity.startDate;
+            }
+            
+            NSMutableDictionary* currSection = [self createSection:[currActivity getActivityName]
+                                                         withStart:sectionStartTime
+                                                           withEnd:sectionEndTime
+                                                            fromDb:[OngoingTripsDatabase database]];
+            [retVal addObject:currSection];
+        }
+        return retVal;
+    }
 }
 
 // Seriously, what is the equivalent of throws JSONException in Objective C?

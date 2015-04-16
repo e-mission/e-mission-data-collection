@@ -15,16 +15,6 @@
 #import "OngoingTripsDatabase.h"
 #import <CoreMotion/CoreMotion.h>
 
-
-/*
-@interface TripDiaryStateMachine() {
-    CLLocationManager *locMgr;
-    CMMotionActivityManager *activityMgr;
-    TripDiaryDelegate* _locDelegate;
-}
-@end
-*/
-
 @interface TripDiaryStateMachine() {
     TripDiaryDelegate* _locDelegate;
 }
@@ -48,7 +38,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
--(id)init{
+-(id)init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     self.currState = [defaults integerForKey:kCurrState];
     
@@ -89,14 +79,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         }
     }
     
-    if ([CMMotionActivityManager isActivityAvailable] == YES) {
-        self.activityMgr = [[CMMotionActivityManager alloc] init];
-    } else {
-        NSLog(@"UIAlertView: Activity recognition unavailable");
-        [TripDiaryStateMachine showAlert:@"Activity recognition is not available on your phone"
-                               withTitle:@"Activity recognition disabled"];
-    }
-
     /*
      * Make sure that we start with a clean state, at least while debugging.
      * TODO: Check how often this is initialized, and whether we should do this even when we are out of debugging.
@@ -254,8 +236,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
-        [self setState:kWaitingForTripStartState];
         // TODO: Should this be here, or in EndTripTracking
+        [self setState:kWaitingForTripStartState];        
         [TripDiaryActions pushTripToServer];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];

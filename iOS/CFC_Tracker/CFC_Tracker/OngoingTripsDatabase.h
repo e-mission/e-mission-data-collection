@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <sqlite3.h>
 #import <CoreLocation/CoreLocation.h>
-#import <CoreMotion/CoreMotion.h>
+#import "EMActivity.h"
 
 @interface OngoingTripsDatabase : NSObject {
     sqlite3 *_database;
@@ -31,15 +31,10 @@
 -(NSArray*)getTransitions;
 -(void)clearTransitions;
 
-// It is unclear whether we need to store the modes on iOS, or whether we can just use
-// the existing query method to read the modes that iOS has already stored.
-// In particular,
-// -(void) addModeChange:(CMMotionActivity*) activity;
-// -(NSArray*) getModeChanges;
+// We can use the existing query method to read the activities that iOS has already stored.
+// However, it is not possible for
 
+-(void) addModeChange:(EMActivity*) activity;
+-(NSArray*) getModeChanges:(NSDate*) date toDate:(NSDate*) toDate;
 
-/*
-- (void) startTrip:(NSString*) mode;
-- (NSDictionary*) getOngoingTrip;
-*/
 @end
