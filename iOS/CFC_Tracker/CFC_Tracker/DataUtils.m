@@ -9,6 +9,7 @@
 #import "DataUtils.h"
 #import "OngoingTripsDatabase.h"
 #import "StoredTripsDatabase.h"
+#import "LocalNotificationManager.h"
 
 @implementation DataUtils
 
@@ -196,6 +197,9 @@
 
     NSMutableArray* activityArray = [[NSMutableArray alloc] init];
     NSArray* modeChanges = [[OngoingTripsDatabase database] getModeChanges:startPoint.timestamp toDate:endPoint.timestamp];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"In DataUtils, found %lu mode changes", modeChanges.count]];
+
     if (modeChanges.count > 0) {
         activityArray = [self createSections:modeChanges withStartPoint:startPoint withEndPoint:endPoint];
     } else {

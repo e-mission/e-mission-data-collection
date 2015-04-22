@@ -76,6 +76,12 @@
     }
 }
 
+- (void)locationManager:(CLLocationManager *)manager
+       didFailWithError:(NSError *)error {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Location tracking failed with error %@", error]];
+}
+
 - (void)logPastHourCollectionCount {
     NSDate* dateNow = [NSDate date];
     NSCalendar *gregorian = [[NSCalendar alloc]

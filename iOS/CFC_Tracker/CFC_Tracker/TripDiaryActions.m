@@ -145,8 +145,10 @@
  */
 
 + (void)startTrackingLocation:(CLLocationManager*) manager {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"started fine location tracking"]];
     // Switch to a more fine grained tracking during the trip
-    manager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters;
+    manager.desiredAccuracy = kCLLocationAccuracyHundredMeters;
     /* If we use a distance filter, we can lower the power consumption because we will get updates less
      * frequently. HOWEVER, we won't be able to detect a trip end because of the above.
      * Going with the push notification route...
@@ -156,6 +158,9 @@
 }
 
 + (void)stopTrackingLocation:(CLLocationManager*) manager {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"stopped fine location tracking"]];
+
     [manager stopUpdatingLocation];
 }
 
@@ -180,7 +185,9 @@
     [manager startActivityUpdatesToQueue:mq
                              withHandler:^(CMMotionActivity *activity) {
                                  NSString *activityName = [EMActivity getActivityName:[EMActivity getRelevantActivity:activity]];
-                                 NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence);
+                                 [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                                            @"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence]];
+//                                 NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence);
                              }];
 }
 
@@ -240,17 +247,12 @@
 
 + (void) pushTripToServer {
     [DataUtils endTrip];
-    NSArray* tripsToPush = [DataUtils getTripsToPush];
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"pushing %ld trips to the server",
-                                               (unsigned long)tripsToPush.count]];
-    [CommunicationHelper storeTripsForUser:tripsToPush
-                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                  @"successfully pushed %ld trips to the server",
-                                                   (unsigned long)tripsToPush.count]];
+    /*
+    UIApplication *theApp = [UIApplication sharedApplication];
+    [theApp.delegate application:theApp performFetchWithCompletionHandler:^(UIBackgroundFetchResult result) {
+        NSLog(@"Completion handler result = %u", result);
     }];
-    [DataUtils deletePushedTrips:tripsToPush];
+     */
 }
 
 

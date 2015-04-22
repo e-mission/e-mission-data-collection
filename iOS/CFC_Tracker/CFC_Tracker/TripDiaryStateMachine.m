@@ -232,13 +232,13 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
         NSLog(@"Restarted trip, continuing tracking");
     } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
+        [TripDiaryActions pushTripToServer];
         [TripDiaryActions stopTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
         // TODO: Should this be here, or in EndTripTracking
-        [self setState:kWaitingForTripStartState];        
-        [TripDiaryActions pushTripToServer];
+        [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
