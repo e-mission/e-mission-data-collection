@@ -24,12 +24,14 @@ static int notificationCount = 0;
     notificationCount++;
     [[OngoingTripsDatabase database] addTransition:notificationMessage];
 
+    /*
     UILocalNotification *localNotif = [[UILocalNotification alloc] init];
     if (localNotif) {
         localNotif.alertBody = notificationMessage;
         localNotif.applicationIconBadgeNumber = notificationCount;
         [[UIApplication sharedApplication] presentLocalNotificationNow:localNotif];
     }
+     */ 
 }
 
 @end

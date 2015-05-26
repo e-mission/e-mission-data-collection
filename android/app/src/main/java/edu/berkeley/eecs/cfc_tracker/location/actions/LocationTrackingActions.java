@@ -42,7 +42,8 @@ public class LocationTrackingActions {
         LocationRequest defaultRequest = LocationRequest.create();
         Log.d(TAG, "default request is " + defaultRequest);
         return defaultRequest
-                .setInterval(30 * 1000);
+                .setInterval(30 * 1000)
+                .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
     }
 
     ResultCallback<Status> startCallback = new ResultCallback<Status>() {
