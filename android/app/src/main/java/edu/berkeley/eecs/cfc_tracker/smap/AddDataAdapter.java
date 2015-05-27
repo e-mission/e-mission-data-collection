@@ -3,15 +3,22 @@
  */
 package edu.berkeley.eecs.cfc_tracker.smap;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.util.Enumeration;
-import java.util.HashMap;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
@@ -34,11 +41,16 @@ import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.net.http.AndroidHttpClient;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
+
 import edu.berkeley.eecs.cfc_tracker.Log;
 
 /**
@@ -61,7 +73,7 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 	Random pseudoRandom;
 	boolean syncSkip = false;
     private Context mContext = null;
-	
+
 	public AddDataAdapter(Context context, boolean autoInitialize) {
 		super(context, autoInitialize);
 		privateFileDir = context.getFilesDir();
@@ -117,6 +129,7 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
         }
         // First, get a token so that we can make the authorized calls to the server
         String userToken = GoogleAccountManagerAuth.getServerToken(mContext, userName);
+		//userToken = null;
 		/*
 		 * We send almost all pending trips to the server
 		 */
@@ -231,20 +244,58 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 	
 	public boolean pushTripsToServer(String emissionServer, JSONObject data)
 			throws IOException {
-		HttpPost msg = new HttpPost(emissionServer+"/tripManager/storeSensedTrips");
 
-		System.out.println("Posting data to "+msg);
-		msg.setHeader("Content-Type", "application/json");
-		msg.setEntity(new StringEntity(data.toString()));
-		AndroidHttpClient connection = AndroidHttpClient.newInstance(projectName);
-		HttpResponse response = connection.execute(msg);
-		System.out.println("Got response "+response+" with status "+response.getStatusLine());
-		connection.close();
-        if (response.getStatusLine().getStatusCode() == 200) {
-            return true;
-        } else {
-            return false;
-        }
+		// TODO: Recover from errors better
+		// TODO: Provide some better documentation of how this works
+
+		//final String hostIp = mContext.getResources().getString(R.string.remote_host_name);
+		final String hostIp = ConnectionSettings.getConnectURL(mContext);
+		try {
+
+			HttpsURLConnection urlConnection =
+					ConnectionSettings.getConnection("/tripManager/storeSensedTrips", mContext);
+
+			urlConnection.setRequestMethod("POST");
+			urlConnection.addRequestProperty("Content-Type", "application/json");
+			urlConnection.setDoOutput(true);
+
+			DataOutputStream wr = new DataOutputStream(urlConnection.getOutputStream());
+			wr.writeBytes(data.toString());
+			wr.flush();
+			wr.close();
+
+			int responseCode = urlConnection.getResponseCode();
+			Log.d(TAG, "Post parameters : " + data.toString());
+			Log.d(TAG, "Response Code : " + responseCode + ", Response Message : " + urlConnection.getResponseMessage());
+
+			BufferedReader in = new BufferedReader(
+					new InputStreamReader(urlConnection.getInputStream()));
+
+			StringBuffer response = new StringBuffer();
+			String inputLine;
+			while ((inputLine = in.readLine()) != null) response.append(inputLine);
+
+			in.close();
+
+			//print result
+			Log.d(TAG, "Response string: " + response.toString());
+			Log.d(TAG, "Response message: " + urlConnection.getResponseMessage());
+			Log.d(TAG, "Response code: " + urlConnection.getResponseCode());
+
+			urlConnection.disconnect();
+			if (urlConnection.getResponseCode() == HttpURLConnection.HTTP_OK)
+				return true;
+			else
+				return false;
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+
+		}
+
+		// There must have been an error, return false
+		return false;
 	}
 
     /*
