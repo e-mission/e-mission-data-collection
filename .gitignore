@@ -1,4 +1,4 @@
 **/*.xcuserdata
 **/*.xcuserstate
 **/xcuserdata/*
-connect.plist
+**/.DS_Store

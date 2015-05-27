@@ -20,6 +20,9 @@
 
 @end
 
+// static NSString *const kKeychainItemName = @"OAuth: Google Email";
+#define kKeychainItemName @"OAuth: Google Email"
+
 @interface AuthCompletionHandler : NSObject<AuthCompletionDelegate>
 
 @property GTMOAuth2Authentication* currAuth;
@@ -29,6 +32,8 @@
 @property(nonatomic, copy) NSString* clientSecret;
 
 +(AuthCompletionHandler*) sharedInstance;
++ (GTMOAuth2Authentication*) createFakeAuth:(NSString*) userEmail;
+
 -(void)registerFinishDelegate:(id<AuthCompletionDelegate>) delegate;
 -(void)unregisterFinishDelegate:(id<AuthCompletionDelegate>) delegate;
 
@@ -37,6 +42,11 @@
 -(void)signOut;
 
 - (NSString*)getIdToken;
+
+- (void)viewController:(GTMOAuth2ViewControllerTouch *)viewController
+      finishedWithAuth:(GTMOAuth2Authentication *)auth
+                 error:(NSError *)error;
+
 
 /*
  * Both the refresh token methods will call all registered listeners with the new token

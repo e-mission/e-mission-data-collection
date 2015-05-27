@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>connect_url</key>
+	<string>http://my.laptop.ip:8080/</string>
+    <!-- As long as you are connecting to a HTTP server, we skip
+        authentication, so you do not need any of the google keys. However, the keys from parse are 
+        required for the end of a trip to be detected accurately, there is no
+        substitute. However, we can get started even without that in place... -->
+	<key>google_webapp_client_id</key>
+	<string>Get from https://console.developers.google.com</string>
+	<key>google_ios_client_id</key>
+	<string>Get from https://console.developers.google.com</string>
+	<key>google_ios_client_secret</key>
+	<string>Get from https://console.developers.google.com</string>
+	<key>parse_app_id</key>
+	<string>Get from https://www.parse.com</string>
+	<key>parse_client_id</key>
+	<string>Get from https://www.parse.com</string>
+</dict>
+</plist>

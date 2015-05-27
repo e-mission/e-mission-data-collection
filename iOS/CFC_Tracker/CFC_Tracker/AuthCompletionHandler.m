@@ -12,17 +12,15 @@
  */
 
 #import "AuthCompletionHandler.h"
+#import "ConnectionSettings.h"
+#import "SkipAuthEmailViewController.h"
 #import <GoogleOpenSource/GoogleOpenSource.h>
 #import <GoogleOpenSource/GTMOAuth2ViewControllerTouch.h>
 
-static NSString *const kKeychainItemName = @"OAuth: Google Email";
 
 @interface AuthCompletionHandler() {
     NSMutableArray* listeners;
 }
-- (void)viewController:(GTMOAuth2ViewControllerTouch *)viewController
-      finishedWithAuth:(GTMOAuth2Authentication *)auth
-                 error:(NSError *)error;
 @end
 
 @implementation AuthCompletionHandler
@@ -98,6 +96,11 @@ static AuthCompletionHandler *sharedInstance;
 }
 
 -(UIViewController*)getSigninController {
+    if ([[ConnectionSettings sharedInstance] isSkipAuth]) {
+        // Display a simple view where you can enter the email address
+        SkipAuthEmailViewController* controller = [[SkipAuthEmailViewController alloc] initWithNibName:nil bundle:nil];
+        return controller;
+    }
     // Display the autentication view.
     SEL finishedSel = @selector(viewController:finishedWithAuth:error:);
     
@@ -114,6 +117,7 @@ static AuthCompletionHandler *sharedInstance;
     return viewController;
 }
 
+
 - (void)signOut {
     if ([self.currAuth.serviceProvider isEqual:kGTMOAuth2ServiceProviderGoogle]) {
         // remove the token from Google's servers
@@ -128,6 +132,21 @@ static AuthCompletionHandler *sharedInstance;
     
     // Discard our retained authentication object.
     self.currAuth = nil;
+}
+
++ (GTMOAuth2Authentication*) createFakeAuth:(NSString*) userEmail {
+    GTMOAuth2Authentication* retAuth = [[GTMOAuth2Authentication alloc] init];
+    retAuth.userEmail = userEmail;
+    retAuth.refreshToken = userEmail;
+    retAuth.accessToken = userEmail;
+    // Make sure that it expires way in the future
+    retAuth.expirationDate = [NSDate dateWithTimeIntervalSinceNow:3600 * 365];
+    retAuth.parameters = [[NSMutableDictionary alloc] initWithDictionary:@{@"id_token" : retAuth.userEmail,
+                                                                           @"refresh_token" : retAuth.refreshToken,
+                                                                           @"access_token" : retAuth.accessToken,
+                                                                           @"email": retAuth.userEmail,
+                                                                           }];
+    return retAuth;
 }
 
 - (void)viewController:(GTMOAuth2ViewControllerTouch *)viewController
@@ -161,7 +180,7 @@ static AuthCompletionHandler *sharedInstance;
         //
         // or store the authentication object into a fetcher or a Google API service
         // object like
-        //
+        ///
         //   [fetcher setAuthorizer:auth];
         
         // save the authentication object
