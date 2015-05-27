@@ -36,6 +36,8 @@
 		D0A74D861AA78D9A005BE6B2 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0A74D851AA78D9A005BE6B2 /* MobileCoreServices.framework */; };
 		D0A74D8A1AAA2F45005BE6B2 /* ConnectionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A74D891AAA2F45005BE6B2 /* ConnectionSettings.m */; };
 		D0A74D8C1AAA2F57005BE6B2 /* connect.plist in Resources */ = {isa = PBXBuildFile; fileRef = D0A74D8B1AAA2F57005BE6B2 /* connect.plist */; };
+		D0B0669C1B153DE40023DA44 /* SkipAuthEmailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D0B0669A1B153DE40023DA44 /* SkipAuthEmailViewController.m */; };
+		D0B0669D1B153DE40023DA44 /* SkipAuthEmailViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D0B0669B1B153DE40023DA44 /* SkipAuthEmailViewController.xib */; };
 		D0EC6B4E1A7CBEBB00E8841B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D0EC6B4D1A7CBEBB00E8841B /* main.m */; };
 		D0EC6B511A7CBEBB00E8841B /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D0EC6B501A7CBEBB00E8841B /* AppDelegate.m */; };
 		D0EC6B541A7CBEBB00E8841B /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D0EC6B531A7CBEBB00E8841B /* ViewController.m */; };
@@ -101,6 +103,9 @@
 		D0A74D881AAA2F45005BE6B2 /* ConnectionSettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConnectionSettings.h; sourceTree = "<group>"; };
 		D0A74D891AAA2F45005BE6B2 /* ConnectionSettings.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ConnectionSettings.m; sourceTree = "<group>"; };
 		D0A74D8B1AAA2F57005BE6B2 /* connect.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = connect.plist; sourceTree = "<group>"; };
+		D0B066991B153DE40023DA44 /* SkipAuthEmailViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SkipAuthEmailViewController.h; sourceTree = "<group>"; };
+		D0B0669A1B153DE40023DA44 /* SkipAuthEmailViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SkipAuthEmailViewController.m; sourceTree = "<group>"; };
+		D0B0669B1B153DE40023DA44 /* SkipAuthEmailViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SkipAuthEmailViewController.xib; sourceTree = "<group>"; };
 		D0EC6B481A7CBEBB00E8841B /* cfctracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cfctracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0EC6B4C1A7CBEBB00E8841B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D0EC6B4D1A7CBEBB00E8841B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -170,6 +175,9 @@
 				D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */,
 				D06DDA911AB510AF00E6CF9B /* AuthInspectorViewController.h */,
 				D06DDA921AB510AF00E6CF9B /* AuthInspectorViewController.m */,
+				D0B066991B153DE40023DA44 /* SkipAuthEmailViewController.h */,
+				D0B0669A1B153DE40023DA44 /* SkipAuthEmailViewController.m */,
+				D0B0669B1B153DE40023DA44 /* SkipAuthEmailViewController.xib */,
 			);
 			name = Auth;
 			sourceTree = "<group>";
@@ -386,6 +394,7 @@
 			files = (
 				D062E7B91AB802CB009373BF /* GTMOAuth2ViewTouch.xib in Resources */,
 				D0EC6B571A7CBEBB00E8841B /* Main.storyboard in Resources */,
+				D0B0669D1B153DE40023DA44 /* SkipAuthEmailViewController.xib in Resources */,
 				D0A74D8C1AAA2F57005BE6B2 /* connect.plist in Resources */,
 				D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */,
 				D0EC6B5C1A7CBEBB00E8841B /* LaunchScreen.xib in Resources */,
@@ -412,6 +421,7 @@
 			files = (
 				D07790811ACB04C700634A05 /* EMActivity.m in Sources */,
 				D06DDA981AB510BD00E6CF9B /* SignInViewController.m in Sources */,
+				D0B0669C1B153DE40023DA44 /* SkipAuthEmailViewController.m in Sources */,
 				D06DDA931AB510AF00E6CF9B /* AuthCompletionHandler.m in Sources */,
 				D0EC6B781A80984500E8841B /* LocalNotificationManager.m in Sources */,
 				D06DDA941AB510AF00E6CF9B /* AuthInspectorViewController.m in Sources */,
