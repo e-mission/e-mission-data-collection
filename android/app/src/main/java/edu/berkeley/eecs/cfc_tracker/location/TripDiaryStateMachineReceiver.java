@@ -127,6 +127,11 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 		// mApiClient.disconnect();
 	}
 
+    public static String getState(Context ctxt) {
+        SharedPreferences sPrefs = PreferenceManager.getDefaultSharedPreferences(ctxt);
+        return sPrefs.getString(CURR_STATE_KEY, ctxt.getString(R.string.state_start));
+    }
+
     public void setNewState(String newState) {
         Log.d(TAG, "newState after handling action is "+newState);
         SharedPreferences.Editor prefsEditor =

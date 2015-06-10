@@ -23,8 +23,10 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 
+import edu.berkeley.eecs.cfc_tracker.BootReceiver;
 import edu.berkeley.eecs.cfc_tracker.MainActivity;
 import edu.berkeley.eecs.cfc_tracker.R;
+import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.cfc_tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.LocationTrackingActions;
@@ -229,6 +231,55 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
         assertTrue(exitChecker.hasReceivedBroadcast());
         appCtxt.unregisterReceiver(exitChecker2);
 	}
+
+    public void testReboot() throws Exception {
+        long startTime = System.currentTimeMillis();
+        long WAIT_TIME = 120 * 1000; // 120 secs = 2 mins
+
+        final String initString = appCtxt.getString(R.string.transition_exited_geofence);
+        final String stopString = appCtxt.getString(R.string.transition_stopped_moving);
+
+        assertEquals(DataUtils.getLastPoints(appCtxt, 2).length, 0);
+
+        // TODO: Move the way points out of LocationUtils (generic code) into
+        // something that the test controls, so that we can reuse the same mechanism
+        // for multiple location based tests
+
+        startService(LocationUtils.ACTION_START_ONCE);
+
+        final BroadcastChecker firstPointChecker = new BroadcastChecker(LocationUtils.ACTION_SERVICE_MESSAGE);
+        LocalBroadcastManager.getInstance(appCtxt).registerReceiver(firstPointChecker,
+                new IntentFilter(LocationUtils.ACTION_SERVICE_MESSAGE));
+
+        synchronized(firstPointChecker) {
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            while ((firstPointChecker.hasReceivedBroadcast() == false) && (elapsedTime < WAIT_TIME)) {
+                firstPointChecker.wait(WAIT_TIME - elapsedTime);
+            }
+        }
+
+        // Now that we know that the first point has been sent, there will be a last location,
+        // for the geofence, and we can initialize the FSM.
+        BootReceiver startupReceiver = new BootReceiver();
+        Intent startupIntent = new Intent(Intent.ACTION_BOOT_COMPLETED);
+        startupReceiver.onReceive(appCtxt, startupIntent);
+
+        final BroadcastChecker exitChecker = new BroadcastChecker(initString);
+
+        appCtxt.registerReceiver(exitChecker, new IntentFilter(initString));
+
+        synchronized(exitChecker) {
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            while ((exitChecker.hasReceivedBroadcast() == false) && (elapsedTime < WAIT_TIME)) {
+                exitChecker.wait(WAIT_TIME - elapsedTime);
+            }
+        }
+        // Received the "initialize" transition
+        assertTrue(exitChecker.hasReceivedBroadcast());
+        String currState = TripDiaryStateMachineReceiver.getState(appCtxt);
+        System.out.println("In testReboot, current state = " + currState);
+        assertTrue(currState.equals(appCtxt.getString(R.string.state_waiting_for_trip_start)));
+    }
 
     public void testGeofenceWithActivityChanges() throws Exception {
         long startTime = System.currentTimeMillis();
