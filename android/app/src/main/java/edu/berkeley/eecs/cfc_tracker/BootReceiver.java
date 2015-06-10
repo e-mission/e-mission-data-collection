@@ -21,10 +21,7 @@ public class BootReceiver extends BroadcastReceiver {
 	public void onReceive(Context ctx, Intent intent) {
         if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
         	System.out.println("BootReceiver.onReceive called");
-            Intent i = new Intent(ctx, MainActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            System.out.println("Starting activity in boot receiver");
-            ctx.startActivity(i);
+
             /*
              * End any ongoing trips, because the elapsed time will get reset at this
              * point and invalidate all entries in the database.

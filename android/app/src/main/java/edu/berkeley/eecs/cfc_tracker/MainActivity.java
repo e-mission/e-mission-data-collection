@@ -95,18 +95,6 @@ public class MainActivity extends Activity {
 	    ContentResolver.addPeriodicSync(mAccount, AUTHORITY, new Bundle(), SYNC_INTERVAL);
 	    System.out.println("Setting the resolver to sync automatically");
 
-        /*
-        TripDiaryStateMachineReceiver stateMachineReceiver = new TripDiaryStateMachineReceiver(this);
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(getString(R.string.transition_initialize));
-        filter.addAction(getString(R.string.transition_exited_geofence));
-        filter.addAction(getString(R.string.transition_stopped_moving));
-        filter.addAction(getString(R.string.transition_stop_tracking));
-
-        LocalBroadcastManager.getInstance(this)
-                .registerReceiver(stateMachineReceiver, filter);
-        */
-
         // Initialize the state transitions
         // We want to initialize the first time the app is launched, but not on
         // subsequent creates. We keep track of that in the shared preferences,
