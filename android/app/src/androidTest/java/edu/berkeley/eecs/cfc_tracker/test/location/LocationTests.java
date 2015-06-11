@@ -232,12 +232,23 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
         appCtxt.unregisterReceiver(exitChecker2);
 	}
 
+    public void verifyTDSMState(int expectedStateId) {
+        // Before we get the broadcast, the state should be "START"
+        String currState = TripDiaryStateMachineReceiver.getState(appCtxt);
+        String expectedState = null;
+        if (expectedStateId != -1) {
+            expectedState = appCtxt.getString(expectedStateId);
+        }
+        System.out.println("In testReboot, current state = " + currState);
+        assertTrue("Found state "+currState+" expecting something else",
+                currState.equals(expectedState));
+    }
+
     public void testReboot() throws Exception {
         long startTime = System.currentTimeMillis();
         long WAIT_TIME = 120 * 1000; // 120 secs = 2 mins
 
         final String initString = appCtxt.getString(R.string.transition_exited_geofence);
-        final String stopString = appCtxt.getString(R.string.transition_stopped_moving);
 
         assertEquals(DataUtils.getLastPoints(appCtxt, 2).length, 0);
 
@@ -260,25 +271,33 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 
         // Now that we know that the first point has been sent, there will be a last location,
         // for the geofence, and we can initialize the FSM.
+
+        // First register the receiver so that we will get the transition correctly
+        // Let's force the state to be ongoing trip at the beginning to that we can ensure
+        // that it actually changes as part of the test
+        final BroadcastChecker exitChecker = new BroadcastChecker(initString);
+        appCtxt.registerReceiver(exitChecker, new IntentFilter(initString));
+
+        TripDiaryStateMachineReceiver tdsm = new TripDiaryStateMachineReceiver(appCtxt);
+        verifyTDSMState(R.string.state_start);
+
         BootReceiver startupReceiver = new BootReceiver();
         Intent startupIntent = new Intent(Intent.ACTION_BOOT_COMPLETED);
         startupReceiver.onReceive(appCtxt, startupIntent);
 
-        final BroadcastChecker exitChecker = new BroadcastChecker(initString);
-
-        appCtxt.registerReceiver(exitChecker, new IntentFilter(initString));
+        startTime = System.currentTimeMillis();
 
         synchronized(exitChecker) {
             long elapsedTime = System.currentTimeMillis() - startTime;
             while ((exitChecker.hasReceivedBroadcast() == false) && (elapsedTime < WAIT_TIME)) {
                 exitChecker.wait(WAIT_TIME - elapsedTime);
+                elapsedTime = System.currentTimeMillis() - startTime;
             }
         }
         // Received the "initialize" transition
         assertTrue(exitChecker.hasReceivedBroadcast());
-        String currState = TripDiaryStateMachineReceiver.getState(appCtxt);
-        System.out.println("In testReboot, current state = " + currState);
-        assertTrue(currState.equals(appCtxt.getString(R.string.state_waiting_for_trip_start)));
+
+        verifyTDSMState(R.string.state_waiting_for_trip_start);
     }
 
     public void testGeofenceWithActivityChanges() throws Exception {
