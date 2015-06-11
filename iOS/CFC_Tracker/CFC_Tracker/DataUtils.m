@@ -57,7 +57,7 @@
                       toDate:(NSDate*) toDate {
     NSOperationQueue* mq = [NSOperationQueue mainQueue];
     [manager queryActivityStartingFromDate:fromDate toDate:toDate toQueue:mq withHandler:^(NSArray *activities, NSError *error) {
-        if (error != NULL) {
+        if (error == nil) {
             /*
              * This conversion allows us to unit test this code, since we cannot create valid CMMotionActivity
              * segments. We can create a CMMotionActivity, but we cannot set any of its properties.
@@ -71,6 +71,11 @@
                 convertedActivity.startDate = activity.startDate;
             }
             [self saveActivityList:convertedActivities];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Got error %@ while querying activity from %@ to %@",
+                                                       error, fromDate, toDate]];
+            NSLog(@"Got error %@ while querying activity from %@ to %@", error, fromDate, toDate);
         }
     }];
 }

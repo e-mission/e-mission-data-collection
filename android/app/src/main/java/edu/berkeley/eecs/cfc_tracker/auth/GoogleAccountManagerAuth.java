@@ -71,6 +71,10 @@ public class GoogleAccountManagerAuth {
 	
 	public static String getServerToken(Context context, String userName) {
 		String serverToken = null;
+        if (ConnectionSettings.isSkipAuth(context)) {
+            System.out.println("isSkipAuth = true, serverToken = "+userName);
+            return userName;
+        }
 		try {
 			String AUTH_SCOPE = "audience:server:client_id:"+ConnectionSettings.getGoogleWebAppClientID(context);
 			serverToken = GoogleAuthUtil.getToken(context,

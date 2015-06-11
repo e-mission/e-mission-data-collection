@@ -35,6 +35,15 @@ static ConnectionSettings *sharedInstance;
     return [NSURL URLWithString:[connSettingDict objectForKey: @"connect_url"]];
 }
 
+- (BOOL)isSkipAuth
+{
+    if([[self getConnectUrl].scheme isEqualToString:@"http"]) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 - (NSString*)getGoogleWebAppClientID
 {
     return [connSettingDict objectForKey: @"google_web_app_client_id"];

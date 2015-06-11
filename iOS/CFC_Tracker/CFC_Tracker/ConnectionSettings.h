@@ -11,6 +11,7 @@
 @interface ConnectionSettings : NSObject
 +(ConnectionSettings*) sharedInstance;
 -(NSURL*) getConnectUrl;
+-(BOOL)isSkipAuth;
 -(NSString*) getGoogleWebAppClientID;
 -(NSString*) getGoogleiOSClientID;
 -(NSString*) getGoogleiOSClientSecret;
