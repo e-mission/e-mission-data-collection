@@ -47,6 +47,17 @@ public class LocationChangeIntentService extends IntentService {
         Log.d(TAG, "Intent Action is "+intent);
 
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+
+		/*
+		It seems that newer version of Google Play will send along an intent that does not have the
+		KEY_LOCATION_CHANGED extra, but rather an EXTRA_LOCATION_AVAILABILITY. The original code
+		assumed KEY_LOCATION_CHANGED would always be there, and didn't check for this other type
+		of extra. I think we can safely ignore these intents and just return when loc is null.
+
+		see http://stackoverflow.com/questions/29960981/why-does-android-fusedlocationproviderapi-requestlocationupdates-send-updates-wi
+		 */
+		if (loc == null) return;
+
 		DataUtils.addPoint(this, loc);
 		if (isTripEnded()) {
 			// Stop listening to more updates
