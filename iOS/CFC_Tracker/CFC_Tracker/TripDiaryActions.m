@@ -58,10 +58,11 @@
     
     NSEnumerator *enumerator = [manager.monitoredRegions objectEnumerator];
     while ((currRegion = [enumerator nextObject])) {
-        NSLog(@"Found geofence with id %@, coordinates %f %f",
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Found geofence with id %@, coordinates %f %f",
               currRegion.identifier,
               currRegion.center.longitude,
-              currRegion.center.latitude);
+              currRegion.center.latitude]];
     }
 }
 
@@ -78,9 +79,11 @@
      * let's punt for now ( )
      */
     
-    NSLog(@"At method CREATION");
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In createGeofenceHere"]];
     CLLocation* currLoc = manager.location;
-    if (currLoc == nil || (currState == kStartState && abs(currLoc.timestamp.timeIntervalSinceNow) > kTripEndStationaryMins * 60)) {
+    if (currLoc == nil || (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > kTripEndStationaryMins * 60)) {
+        [LocalNotificationManager addNotification:[NSString
+                                                   stringWithFormat:@"currLoc = %@, which is stale, restarting location updates", currLoc]];
         [self startTrackingLocation:manager];
         [self stopTrackingLocation:manager];
         // TODO: Figure out if we will get an update even if we stop tracking right here
@@ -95,11 +98,11 @@
     
         geofenceRegion.notifyOnEntry = YES;
         geofenceRegion.notifyOnExit = YES;
-        NSLog(@"BEFORE creating region");
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"BEFORE creating region"]];
         [self printGeofences:manager];
     
         [manager startMonitoringForRegion:geofenceRegion];
-        NSLog(@"AFTER creating region");
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"AFTER creating region"]];
         [self printGeofences:manager];
     }
 }
@@ -113,12 +116,13 @@
     CLCircularRegion* currRegion;
     CLCircularRegion* selRegion = NULL;
     while ((currRegion = [enumerator nextObject])) {
-        NSLog(@"Considering region with id = %@, location %f, %f",
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Considering region with id = %@, location %f, %f",
               currRegion.identifier,
               currRegion.center.longitude,
-              currRegion.center.latitude);
+              currRegion.center.latitude]];
         if ([currRegion.identifier compare:kCurrGeofenceID] == NSOrderedSame) {
-            NSLog(@"Deleting it!!");
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Deleting it!!"]];
             selRegion = currRegion;
         }
     }
@@ -130,7 +134,8 @@
     if (selRegion != NULL) {
         [manager stopMonitoringForRegion:selRegion];
     } else {
-        NSLog(@"No geofence found to delete, skipping...");
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"No geofence found to delete, skipping..."]];
     }
 }
 
@@ -235,7 +240,7 @@
         NSDate* firstDate = ((CLLocation*)last3Points.lastObject).timestamp;
         NSLog(@"firstDate = %@, lastDate = %@", firstDate, lastDate);
         
-        if (abs(lastDate.timeIntervalSinceNow) > kTripEndStationaryMins * 60) {
+        if (fabs(lastDate.timeIntervalSinceNow) > kTripEndStationaryMins * 60) {
             NSLog(@"interval to the last date = %f, returning YES", [firstDate timeIntervalSinceDate:lastDate]);
             return YES;
         } else {
