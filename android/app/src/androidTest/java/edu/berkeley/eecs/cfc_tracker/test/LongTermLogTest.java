@@ -53,7 +53,6 @@ public class LongTermLogTest extends AndroidTestCase {
         super.tearDown();
     }
 
-    /*
     public void testSimpleFileHandler() throws Exception {
         Logger testLogger = Logger.getLogger("edu.berkeley.eecs.cfc_tracker.test");
         String fileName = testCtxt.getFilesDir() + "/test-long-term.log";
@@ -90,7 +89,6 @@ public class LongTermLogTest extends AndroidTestCase {
         checkMessage(testReader.readLine(), msg);
         deleteFileAndLock(selectedFiles[0]);
     }
-    */
 
     public void deleteFileAndLock(File logFile) {
         logFile.delete();
