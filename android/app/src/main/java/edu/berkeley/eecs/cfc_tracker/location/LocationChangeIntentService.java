@@ -1,7 +1,6 @@
 package edu.berkeley.eecs.cfc_tracker.location;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 // import com.google.android.gms.location.LocationClient;
 
@@ -11,8 +10,7 @@ import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationManager;
-import android.support.v4.content.LocalBroadcastManager;
+
 import edu.berkeley.eecs.cfc_tracker.Log;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
@@ -27,13 +25,13 @@ public class LocationChangeIntentService extends IntentService {
 	
 	@Override
 	public void onCreate() {
-		Log.d(TAG, "onCreate called");
+		Log.d(this, TAG, "onCreate called");
 		super.onCreate();
 	}
 	
 	@Override
 	public void onStart(Intent i, int startId) {
-		Log.d(TAG, "onStart called with "+i+" startId "+startId);
+		Log.d(this, TAG, "onStart called with "+i+" startId "+startId);
 		super.onStart(i, startId);
 	}
 
@@ -42,9 +40,9 @@ public class LocationChangeIntentService extends IntentService {
 		/*
 		 * The intent is called when we get a location update.
 		 */
-		Log.d(TAG, "FINALLY! Got location update, intent is "+intent);
-		Log.d(TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
-        Log.d(TAG, "Intent Action is "+intent);
+		Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
+		Log.d(this, TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
+        Log.d(this, TAG, "Intent Action is "+intent);
 
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
 		DataUtils.addPoint(this, loc);
@@ -54,7 +52,7 @@ public class LocationChangeIntentService extends IntentService {
 			stopMonitoringIntent.setAction(getString(R.string.transition_stopped_moving));
 			stopMonitoringIntent.putExtra(FusedLocationProviderApi.KEY_LOCATION_CHANGED, loc);
 			sendBroadcast(stopMonitoringIntent);
-            Log.d(TAG, "Finished broadcasting state change to receiver, ending trip now");
+            Log.d(this, TAG, "Finished broadcasting state change to receiver, ending trip now");
             DataUtils.endTrip(this);
 		}
 	}
@@ -67,19 +65,19 @@ public class LocationChangeIntentService extends IntentService {
 		 * TODO: Switching to all updates in the past 5 minutes may be a better choice
 		 */
 		Location[] last10Points = DataUtils.getLastPoints(this, 10);
-		Log.d(TAG, "last10Points = "+ Arrays.toString(last10Points));
+		Log.d(this, TAG, "last10Points = "+ Arrays.toString(last10Points));
 		if (last10Points.length < 10) {
-			Log.i(TAG, "Only "+last10Points.length+
+			Log.i(this, TAG, "Only "+last10Points.length+
 					" points, not enough to decide, returning false");
 			return false;
 		}
 		double[] last9Distances = getDistances(last10Points);
-		Log.d(TAG, "last9Distances = "+ Arrays.toString(last9Distances));
+		Log.d(this, TAG, "last9Distances = "+ Arrays.toString(last9Distances));
 		if (stoppedMoving(last9Distances)) {
-			Log.i(TAG, "stoppedMoving = true");
+			Log.i(this, TAG, "stoppedMoving = true");
 			return true;
 		}
-		Log.i(TAG, "stoppedMoving = false");
+		Log.i(this, TAG, "stoppedMoving = false");
 		return false;
 	}
 	
@@ -121,13 +119,13 @@ public class LocationChangeIntentService extends IntentService {
 				maxDistance = currDistance;
 			}
 		}
-		Log.d(TAG, "maxDistance = "+maxDistance+" TRIP_END_RADIUS = "+TRIP_END_RADIUS);
+		Log.d(this, TAG, "maxDistance = "+maxDistance+" TRIP_END_RADIUS = "+TRIP_END_RADIUS);
 		// If all the distances are below the trip radius, then we have ended
 		if (maxDistance < TRIP_END_RADIUS) {
-			Log.d(TAG, "stoppedMoving = true");
+			Log.d(this, TAG, "stoppedMoving = true");
 			return true;
 		} else {
-			Log.d(TAG, "stoppedMoving = false");
+			Log.d(this, TAG, "stoppedMoving = false");
 			return false;
 		}
 	}

@@ -35,6 +35,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 	private static final String KEY_CONFIDENCE = "CONFIDENCE";
 
 	private static final String TAG = "OngoingTripStorageHelper";
+	private Context mCtxt;
 	
 	public OngoingTripStorageHelper(Context ctx) {
 		/*
@@ -44,6 +45,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 		 *  this doesn't seem to be too dangerous. 
 		 */
 		super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
+        mCtxt = ctx;
 	}
 	
 	@Override
@@ -53,12 +55,12 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 	            KEY_TS + " INTEGER, "+ KEY_WALL_CLOCK_TS + " INTEGER, " +
                 KEY_LAT +" REAL, " + KEY_LNG + " REAL, " +
 	    		KEY_ACCURACY + " REAL)";
-	    Log.d(TAG, "CREATE_TRACK_POINTS_TABLE = "+CREATE_TRACK_POINTS_TABLE);
+	    Log.d(mCtxt, TAG, "CREATE_TRACK_POINTS_TABLE = "+CREATE_TRACK_POINTS_TABLE);
 	    db.execSQL(CREATE_TRACK_POINTS_TABLE);
 	    // Create the second table
 	    String CREATE_MODE_CHANGE_TABLE = "CREATE TABLE " + TABLE_MODE_CHANGES +" (" +
 	            KEY_TS + " INTEGER, "+ KEY_TYPE +" INTEGER, " + KEY_CONFIDENCE + " INTEGER)";
-	    Log.d(TAG, "CREATE_MODE_CHANGE_TABLE = "+CREATE_MODE_CHANGE_TABLE);
+	    Log.d(mCtxt, TAG, "CREATE_MODE_CHANGE_TABLE = "+CREATE_MODE_CHANGE_TABLE);
 	    db.execSQL(CREATE_MODE_CHANGE_TABLE);
 	}
 	
@@ -93,7 +95,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 		
 		String selectStmt = "SELECT * FROM "+TABLE_MODE_CHANGES+
 				" ORDER BY "+KEY_TS+" DESC LIMIT 1";
-		Log.d(TAG, "selectStmt = "+selectStmt);
+		Log.d(mCtxt, TAG, "selectStmt = "+selectStmt);
 		Cursor lastCursor = db.rawQuery(selectStmt, null);
 		assert(lastCursor.getCount() == 0 || lastCursor.getCount() == 1);
 		/*
@@ -112,7 +114,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 	public Location[] getLastPoints(int nPoints) {
 		String selectStmt = "SELECT * FROM "+TABLE_TRACK_POINTS+
 				" ORDER BY "+KEY_TS+" DESC LIMIT "+nPoints;
-		Log.d(TAG, "selectStmt = "+selectStmt);
+		Log.d(mCtxt, TAG, "selectStmt = "+selectStmt);
 		return getLocationsFromStmt(selectStmt);
 	}
 	
@@ -130,7 +132,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 		
 		Cursor lastCursor = db.rawQuery(selectStmt, null);
 		int resultCount = lastCursor.getCount();
-		Log.d(TAG, "Found "+resultCount+" locations that matched the statement");
+		Log.d(mCtxt, TAG, "Found "+resultCount+" locations that matched the statement");
 //		assert(resultCount < nPoints);
 		/*
 		 * If we have no data yet, then we return mode = UNKNOWN with 100% certainty.
@@ -139,9 +141,9 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 		Map<String, Integer> colMap = getColumnMap(lastCursor);
 		if (lastCursor.moveToFirst()) {
 			for (int i = 0; i < resultCount; i++) {
-				Log.d(TAG, "Reading result at location "+i);
+				Log.d(mCtxt, TAG, "Reading result at location "+i);
 				retLoc[i] = getLocationFromCursor(colMap, lastCursor);
-				Log.d(TAG, "Result is "+retLoc[i]);
+				Log.d(mCtxt, TAG, "Result is "+retLoc[i]);
 				lastCursor.moveToNext();
 			}
 		}
@@ -154,8 +156,8 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 				" ORDER BY "+KEY_TS+" LIMIT 1";
 		String endSelectStmt = "SELECT * FROM "+TABLE_TRACK_POINTS+
 				" ORDER BY "+KEY_TS+" DESC LIMIT 1";
-		Log.d(TAG, "startSelectStmt = "+startSelectStmt);
-		Log.d(TAG, "endSelectStmt = "+endSelectStmt);
+		Log.d(mCtxt, TAG, "startSelectStmt = "+startSelectStmt);
+		Log.d(mCtxt, TAG, "endSelectStmt = "+endSelectStmt);
 
 		Location[] retArray = new Location[2];
 		retArray[0] = getLocationFromStmt(startSelectStmt);
@@ -201,7 +203,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
 		SQLiteDatabase db = this.getReadableDatabase();
 		
 		String selectStmt = "SELECT * FROM "+TABLE_MODE_CHANGES;
-		Log.d(TAG, "selectStmt = "+selectStmt);
+		Log.d(mCtxt, TAG, "selectStmt = "+selectStmt);
 		Cursor lastCursor = db.rawQuery(selectStmt, null);
 		int resultCount = lastCursor.getCount();
 
@@ -222,7 +224,7 @@ public class OngoingTripStorageHelper extends SQLiteOpenHelper {
         // TODO: If elapsed time works better, need to switch this to elapsed time as well
 		String selectStmt = "SELECT * FROM "+TABLE_TRACK_POINTS+
 				" WHERE "+KEY_TS+" >= "+startTs+" AND "+KEY_TS+" < "+endTs;
-		Log.d(TAG, "selectStmt = "+selectStmt);
+		Log.d(mCtxt, TAG, "selectStmt = "+selectStmt);
 		return getLocationsFromStmt(selectStmt);
 	}
 	

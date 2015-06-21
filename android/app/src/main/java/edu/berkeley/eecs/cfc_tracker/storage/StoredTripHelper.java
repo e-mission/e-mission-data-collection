@@ -1,7 +1,5 @@
 package edu.berkeley.eecs.cfc_tracker.storage;
 
-import org.json.JSONArray;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -24,6 +22,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 	private static final String KEY_TRIP_BLOB = "TRIP_BLOB";
 
 	private static final String TAG = "StoredTripHelper";
+	private Context mCtxt;
 		
 	public StoredTripHelper(Context ctx) {
 		/*
@@ -33,6 +32,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 		 *  this doesn't seem to be too dangerous. 
 		 */
 		super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
+		mCtxt = ctx;
 	}
 	
 	@Override
@@ -40,24 +40,24 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 		// Create the first table
 	    String CREATE_STORED_TRIPS_TABLE = "CREATE TABLE " + TABLE_STORED_TRIPS +" (" +
 	            KEY_TS + " INTEGER, "+ KEY_TRIP_BLOB +" BLOB)";
-	    Log.d(TAG, "CREATE_STORED_TRIPS_TABLE = "+CREATE_STORED_TRIPS_TABLE);
+	    Log.d(mCtxt, TAG, "CREATE_STORED_TRIPS_TABLE = "+CREATE_STORED_TRIPS_TABLE);
 	    db.execSQL(CREATE_STORED_TRIPS_TABLE);
 	}
 	
 	public void addTrip(long startTs, String tripBlob) {
 		SQLiteDatabase db = this.getWritableDatabase();
-		Log.d(TAG, "Adding trip "+tripBlob+" with timestamp "+startTs);
+		Log.d(mCtxt, TAG, "Adding trip "+tripBlob+" with timestamp "+startTs);
 		ContentValues values = new ContentValues();
 		values.put(KEY_TS, startTs);		
 		values.put(KEY_TRIP_BLOB, tripBlob);
 		long retVal = db.insert(TABLE_STORED_TRIPS, null, values);
-		Log.d(TAG, "retVal = "+retVal);
+		Log.d(mCtxt, TAG, "retVal = "+retVal);
 		db.close();
 	}
 	
 	public void updateTrip(long startTs, String tripBlob) {
 		SQLiteDatabase db = this.getWritableDatabase();
-		Log.d(TAG, "Updating trip "+tripBlob+" with timestamp "+startTs);
+		Log.d(mCtxt, TAG, "Updating trip "+tripBlob+" with timestamp "+startTs);
 		
 		ContentValues values = new ContentValues();
 		values.put(KEY_TS, startTs);
@@ -65,7 +65,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 		
 //		String[] whereArgs = new String[]{String.valueOf(startTs)};
 		long retVal = db.replace(TABLE_STORED_TRIPS, null, values);
-		Log.d(TAG, "retVal = "+retVal);
+		Log.d(mCtxt, TAG, "retVal = "+retVal);
 		db.close();
 	}
 	
@@ -74,7 +74,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 		
 		String selectStmt = "SELECT "+KEY_TRIP_BLOB+" FROM "+TABLE_STORED_TRIPS+
 				" ORDER BY "+KEY_TS+" DESC LIMIT 1";
-		Log.d(TAG, "selectStmt = "+selectStmt);
+		Log.d(mCtxt, TAG, "selectStmt = "+selectStmt);
 		Cursor lastCursor = db.rawQuery(selectStmt, null);
 		assert(lastCursor.getCount() == 0 || lastCursor.getCount() == 1);
 		
@@ -94,7 +94,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 		
 		String selectStmt = "SELECT ROWID, "+KEY_TRIP_BLOB+" FROM "+TABLE_STORED_TRIPS+
 				" ORDER BY "+KEY_TS;
-		Log.d(TAG, "selectStmt = "+selectStmt);
+		Log.d(mCtxt, TAG, "selectStmt = "+selectStmt);
 		Cursor lastCursor = db.rawQuery(selectStmt, null);
 		int resultCount = lastCursor.getCount();
 		String[] retVal = new String[resultCount];
@@ -106,7 +106,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
             for (int i = 0; i < resultCount; i++) {
             	long id = lastCursor.getLong(0);
             	retVal[i] = lastCursor.getString(1);
-            	Log.d(TAG, "JSON string for id = "+id+" at index "+i+" is "+retVal[i]);
+            	Log.d(mCtxt, TAG, "JSON string for id = "+id+" at index "+i+" is "+retVal[i]);
             	lastCursor.moveToNext();
             }			
 		}
@@ -126,7 +126,7 @@ public class StoredTripHelper extends SQLiteOpenHelper {
 			whereArgs[i] = String.valueOf(tsArray[i]);
 		}
 		questionMarks.append(")");
-		Log.d(TAG, "questionMarks = "+questionMarks.toString());
+		Log.d(mCtxt, TAG, "questionMarks = "+questionMarks.toString());
 		db.delete(TABLE_STORED_TRIPS, KEY_TS + " IN "+questionMarks.toString(), whereArgs);
 		db.close();
 	}

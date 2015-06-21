@@ -31,22 +31,6 @@ public class BootReceiver extends BroadcastReceiver {
 
             // Re-initialize the state machine
             ctx.sendBroadcast(new Intent(ctx.getString(R.string.transition_initialize)));
-
-            // Re-initialize the logging
-            try {
-                Log.initWithFile(ctx);
-            } catch(IOException e) {
-                // If we weren't able to init correctly, generate a notification
-                // so that the user can fix it
-                NotificationHelper.createNotification(
-                        ctx, BOOT_RECEIVER_ID, e.getMessage());
-
-                // Unset the previous successful value so that the user has some clue on what to do
-                SharedPreferences.Editor editor =
-                        PreferenceManager.getDefaultSharedPreferences(ctx).edit();
-                editor.putBoolean(MainActivity.LOG_FILE_INIT_KEY, false);
-                editor.apply();
-            }
         }
 	}
 }

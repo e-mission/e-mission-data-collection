@@ -1,6 +1,5 @@
 package edu.berkeley.eecs.cfc_tracker.location;
 
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +15,6 @@ import com.google.android.gms.common.api.BatchResultToken;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
-import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
@@ -61,11 +59,11 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 
     public TripDiaryStateMachineReceiver() {
         // The automatically created receiver needs a default constructor
-        Log.i(TAG, "noarg constructor called");
+        Log.i(mContext, TAG, "noarg constructor called");
     }
 
 	public TripDiaryStateMachineReceiver(Context context) {
-		Log.i(TAG, "TripDiaryStateMachineReceiver constructor called");
+		Log.i(mContext, TAG, "TripDiaryStateMachineReceiver constructor called");
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
         editor.putString(CURR_STATE_KEY, null);
         editor.apply();
@@ -73,7 +71,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		Log.i(TAG, "TripDiaryStateMachineReciever onReceive("+context+", "+intent+") called");
+		Log.i(mContext, TAG, "TripDiaryStateMachineReciever onReceive("+context+", "+intent+") called");
 		// Populate all the instance variables to determine the transition
         mContext = context;
 		mTransition = intent.getAction();
@@ -97,12 +95,12 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
                 .build();
 
         if (!validTransitions.contains(mTransition)) {
-        	Log.e(TAG, "Received unknown action "+intent.getAction()+" ignoring");
+        	Log.e(mContext, TAG, "Received unknown action "+intent.getAction()+" ignoring");
         	return;
         }
         mPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         mCurrState = mPrefs.getString(CURR_STATE_KEY, context.getString(R.string.state_start));
-        Log.d(TAG, "after reading from the prefs, the current state is "+mCurrState);
+        Log.d(mContext, TAG, "after reading from the prefs, the current state is "+mCurrState);
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
         // TODO: Also figure out whether it is best to create it here or in the constructor.
@@ -112,7 +110,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 	
 	@Override
 	public void onConnected(Bundle connectionHint) {
-		Log.d(TAG, "TripDiaryStateMachineReceiver onConnected("+connectionHint+") called");
+		Log.d(mContext, TAG, "TripDiaryStateMachineReceiver onConnected("+connectionHint+") called");
 		handleAction(mContext, mApiClient, mCurrState, mTransition);
 
 		// Note that it does NOT work to disconnect from here because the actions in the state
@@ -133,7 +131,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
     }
 
     public void setNewState(String newState) {
-        Log.d(TAG, "newState after handling action is "+newState);
+        Log.d(mContext, TAG, "newState after handling action is "+newState);
         SharedPreferences.Editor prefsEditor =
                 PreferenceManager.getDefaultSharedPreferences(mContext).edit();
         prefsEditor.putString(CURR_STATE_KEY, newState);
@@ -160,7 +158,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 	 * as parameters, makes the call, and issues the broadcast in the callback
 	 */
 	private void handleAction(Context ctxt, GoogleApiClient apiClient, String currState, String actionString) {
-		Log.d(TAG, "TripDiaryStateMachineReceiver handleAction("+currState+", "+actionString+") called");
+		Log.d(mContext, TAG, "TripDiaryStateMachineReceiver handleAction("+currState+", "+actionString+") called");
 		assert(currState != null);
         // The current state is stored in the shared preferences, so on reboot, for example, we would
         // store that we are in ongoing_trip, but no listeners would be registered. We can have
@@ -184,7 +182,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 	}
 	
 	private void handleStart(Context ctxt, GoogleApiClient apiClient, String actionString) {
-		Log.d(TAG, "TripDiaryStateMachineReceiver handleStarted("+actionString+") called");
+		Log.d(mContext, TAG, "TripDiaryStateMachineReceiver handleStarted("+actionString+") called");
 		// Get current location
 		if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             final Context fCtxt = ctxt;
@@ -211,7 +209,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
     }
 
     public void handleTripStart(Context ctxt, GoogleApiClient apiClient, String actionString) {
-        Log.d(TAG, "TripDiaryStateMachineReceiver handleTripStart("+actionString+") called");
+        Log.d(mContext, TAG, "TripDiaryStateMachineReceiver handleTripStart("+actionString+") called");
         if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
             // Delete geofence
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
@@ -267,7 +265,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
     }
 
     public void handleTripEnd(Context ctxt, GoogleApiClient apiClient, String actionString) {
-        Log.d(TAG, "TripDiaryStateMachineReceiver handleTripEnd(" + actionString + ") called");
+        Log.d(mContext, TAG, "TripDiaryStateMachineReceiver handleTripEnd(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_stopped_moving))) {
             // Stopping location tracking
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();

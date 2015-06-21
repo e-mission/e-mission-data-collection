@@ -26,26 +26,26 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Log.d(TAG, "FINALLY! Got activity update, intent is "+intent);
-		Log.d(TAG, "Intent extras are "+intent.getExtras().describeContents());
-		Log.d(TAG, "Intent extra key list is "+Arrays.toString(intent.getExtras().keySet().toArray()));
+		Log.d(this, TAG, "FINALLY! Got activity update, intent is "+intent);
+		Log.d(this, TAG, "Intent extras are "+intent.getExtras().describeContents());
+		Log.d(this, TAG, "Intent extra key list is "+Arrays.toString(intent.getExtras().keySet().toArray()));
 		if (ActivityRecognitionResult.hasResult(intent)) {
 			ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();
-			Log.i(TAG, "Detected new activity "+mostProbableActivity);
+			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,
 					"Detected new activity "+DataUtils.activityType2Name(mostProbableActivity.getType()));
 			DetectedActivity currentActivity = DataUtils.getCurrentMode(this).getLastActivity();
 			if (currentActivity.getType() == mostProbableActivity.getType()) {
-				Log.d(TAG, "currentActivity ("+currentActivity+") == newActivity ("+mostProbableActivity+"), skipping update");
+				Log.d(this, TAG, "currentActivity ("+currentActivity+") == newActivity ("+mostProbableActivity+"), skipping update");
 			} else {
                 /*
                     At least in the current version of the API, the confidence is given in percent (i.e. 90 instead of 0.9)
                  */
-				Log.d(TAG, "currentActivity ("+currentActivity+") != newActivity ("+mostProbableActivity+"), checking confidence");
+				Log.d(this, TAG, "currentActivity ("+currentActivity+") != newActivity ("+mostProbableActivity+"), checking confidence");
 				if (mostProbableActivity.getConfidence() > 90) {
                     if (!isFilteredActivity(mostProbableActivity.getType())) {
-                        Log.d(TAG, "currentActivity (" + currentActivity + ") != newActivity (" + mostProbableActivity + ") with confidence (" +
+                        Log.d(this, TAG, "currentActivity (" + currentActivity + ") != newActivity (" + mostProbableActivity + ") with confidence (" +
                                 mostProbableActivity.getConfidence() + " > 90, updating current state");
                         DataUtils.addModeChange(this, SystemClock.elapsedRealtimeNanos(), mostProbableActivity);
                     }

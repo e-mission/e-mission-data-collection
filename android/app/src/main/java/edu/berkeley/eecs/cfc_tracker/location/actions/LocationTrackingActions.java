@@ -40,7 +40,7 @@ public class LocationTrackingActions {
 
     public LocationRequest getLocationRequest() {
         LocationRequest defaultRequest = LocationRequest.create();
-        Log.d(TAG, "default request is " + defaultRequest);
+        Log.d(mCtxt, TAG, "default request is " + defaultRequest);
         return defaultRequest
                 .setInterval(30 * 1000)
                 .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
