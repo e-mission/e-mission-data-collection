@@ -49,7 +49,7 @@ public class Log {
 
 
 
-    class LogLinesIterator implements Iterator<String> {
+    static class LogLinesIterator implements Iterator<String> {
         private File[] sortedList;
         private int currIndex = 0;
         private BufferedReader currReader = null;
@@ -59,10 +59,12 @@ public class Log {
             File[] selectedFiles = ctxt.getFilesDir().listFiles(simpleFilter);
             System.out.println("selectedFiles = "+java.util.Arrays.toString(selectedFiles));
             sortedList = new File[selectedFiles.length];
-            for (int i = 0; i < selectedFiles.length - 1; i++) {
-                sortedList[i] = selectedFiles[i+1];
+            for (int i = 0; i < selectedFiles.length; i++) {
+                // We need the -1 because the max index has to be one less than the length
+                // so the 0th original element should be mapped to the 9th new element
+                // if there are 10 files (10 - 1 - 0)
+                sortedList[selectedFiles.length - 1 - i] = selectedFiles[i];
             }
-            sortedList[selectedFiles.length] = selectedFiles[0];
             if (sortedList.length > 0) {
                 currReader = new BufferedReader(new FileReader(sortedList[currIndex]));
                 nextLine = getNextLine();
@@ -111,8 +113,19 @@ public class Log {
         }
     }
 
+    public static Iterator<String> getLogLineIterator(Context ctxt) throws IOException {
+        return new LogLinesIterator(ctxt);
+    }
+
     public static String extractMessage(String logLine) {
+        System.out.println("While extracting message from "+logLine+", split results are "+
+            java.util.Arrays.toString(logLine.split("]")));
         return logLine.split("]")[1];
+    }
+    public static String extractIndex(String logLine) {
+        System.out.println("While extracting index from "+logLine+", split results are "+
+            java.util.Arrays.toString(logLine.split("\\|")));
+        return logLine.split("\\|")[0].substring(1);
     }
 
     public static String getPattern(Context ctxt, String logFilePrefix) {
