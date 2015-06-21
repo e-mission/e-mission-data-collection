@@ -77,6 +77,7 @@
         android:layout_height="wrap_content"
         android:text=""
         android:id="@+id/log_textview"
+        android:scrollbars = "vertical"
         android:layout_centerVertical="true"
         android:layout_below="@+id/button"
         android:layout_alignParentStart="true" />

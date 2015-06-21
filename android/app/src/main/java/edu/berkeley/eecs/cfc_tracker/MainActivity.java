@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
@@ -69,6 +70,9 @@ public class MainActivity extends Activity {
 
         statusText = (TextView)findViewById(R.id.status_textview);
         logText = (TextView)findViewById(R.id.log_textview);
+        // Technique to make TextView scrollable copied from
+        // http://mrbool.com/how-to-create-a-scrollbar-in-android/27070
+        logText.setMovementMethod(ScrollingMovementMethod.getInstance());
 
 		if (!initDone) {
 			AlarmHandler.setupAlarms(this);
@@ -171,7 +175,7 @@ public class MainActivity extends Activity {
         try {
             Iterator<String> it = Log.getLogLineIterator(this);
             while (it.hasNext()) {
-                logText.append(it.next());
+                logText.append(it.next()+"\n");
             }
         } catch (IOException e) {
             e.printStackTrace();
