@@ -11,7 +11,7 @@
     android:excludeFromRecents="true">
 
     <TextView
-        android:id="@+id/textView1"
+        android:id="@+id/status_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/hello_world" />
@@ -55,6 +55,15 @@
         android:layout_below="@+id/button1" />
 
     <Button
+        android:id="@+id/button6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/button5"
+        android:onClick="refreshLog"
+        android:text="Refresh"
+        android:layout_below="@+id/button1" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/login"
@@ -62,5 +71,14 @@
         android:layout_alignParentStart="true"
         android:layout_below="@+id/button1"
         android:onClick="loginToGoogle" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/log_textview"
+        android:layout_centerVertical="true"
+        android:layout_below="@+id/button"
+        android:layout_alignParentStart="true" />
 
 </RelativeLayout>

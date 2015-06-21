@@ -8,25 +8,25 @@ import android.app.DialogFragment;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
-import edu.berkeley.eecs.cfc_tracker.Log;
 import android.view.Menu;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
-import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.cfc_tracker.storage.OngoingTripStorageHelper;
 import edu.berkeley.eecs.cfc_tracker.storage.StoredTripHelper;
 
@@ -53,6 +53,9 @@ public class MainActivity extends Activity {
     Account mAccount;
     // Our ContentResolver is actually a dummy - does this matter?
     ContentResolver mResolver;
+
+    private TextView statusText;
+    private TextView logText;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +63,10 @@ public class MainActivity extends Activity {
 		
 		System.out.println("MainActivity.onCreate called");
 		setContentView(R.layout.activity_main);
+
+        statusText = (TextView)findViewById(R.id.status_textview);
+        logText = (TextView)findViewById(R.id.log_textview);
+
 		if (!initDone) {
 			AlarmHandler.setupAlarms(this);
 			initDone = true;
@@ -109,18 +116,7 @@ public class MainActivity extends Activity {
             editor.apply();
         }
 
-        if (!sp.getBoolean(LOG_FILE_INIT_KEY, false)) {
-            try {
-                Log.initWithFile(this);
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putBoolean(LOG_FILE_INIT_KEY, true);
-                editor.apply();
-            } catch (IOException e) {
-                NotificationHelper.createNotification(
-                        this, MAIN_IN_NUMBERS, e.getMessage());
-            }
-        }
-
+        statusText.setText(UserProfile.getInstance(this).getUserEmail());
     }
 
 	@Override
@@ -165,6 +161,34 @@ public class MainActivity extends Activity {
 		new OngoingTripStorageHelper(this).clear();
 		new StoredTripHelper(this).clear();
 	}
+
+    public void refreshLog(View view) {
+        Log.d(this, TAG, "Logging in refreshLog to see the handler list");
+        File filesDir = this.getFilesDir();
+        File[] logFiles = filesDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File file, String s) {
+                System.out.println("Considering file with name "+s);
+                if (s.startsWith(Log.logFilePrefix)) {
+                    return true;
+                }
+                return false;
+            }
+        });
+        for (int i = 0; i < logFiles.length; i++) {
+            System.out.println("Printing " + logFiles[i]);
+            try {
+                BufferedReader in = new BufferedReader(new FileReader(logFiles[i]));
+                String currLine;
+
+                while ((currLine = in.readLine()) != null) {
+                    logText.append(currLine);
+                }
+            } catch (IOException e) {
+                System.out.println("Got error "+e+" while reading log file");
+            }
+        }
+    }
 
     public void loginToGoogle(View view) {
         new GoogleAccountManagerAuth(this, REQUEST_CODE_PICK_ACCOUNT).getUserName();
@@ -221,8 +245,8 @@ public class MainActivity extends Activity {
       // If Google Play services is available
       if (ConnectionResult.SUCCESS == resultCode) {
           // In debug mode, log the status
-          Log.d(TAG,
-                  "Google Play services is available.");
+          Log.d(this,
+                  TAG, "Google Play services is available.");
           // Continue
           return true;
       // Google Play services was not available for some reason.
@@ -294,12 +318,12 @@ public class MainActivity extends Activity {
                  break;
             }
           case REQUEST_CODE_PICK_ACCOUNT:
-              Log.d(TAG, "Got result of picking account! "+resultCode+", "+data);
+              Log.d(this, TAG, "Got result of picking account! "+resultCode+", "+data);
               if (resultCode == Activity.RESULT_OK) {
                   String userEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
                   Toast.makeText(this, userEmail, Toast.LENGTH_SHORT).show();
                   UserProfile.getInstance(this).setUserEmail(userEmail);
-                  Log.d(TAG, "After saving, username is "+
+                  Log.d(this, TAG, "After saving, username is "+
                           UserProfile.getInstance(this).getUserEmail());
               } else if (resultCode == Activity.RESULT_CANCELED) {
                   Toast.makeText(this, "You must pick an account", Toast.LENGTH_SHORT).show();
