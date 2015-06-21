@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Iterator;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
@@ -164,29 +167,19 @@ public class MainActivity extends Activity {
 
     public void refreshLog(View view) {
         Log.d(this, TAG, "Logging in refreshLog to see the handler list");
-        File filesDir = this.getFilesDir();
-        File[] logFiles = filesDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File file, String s) {
-                System.out.println("Considering file with name "+s);
-                if (s.startsWith(Log.logFilePrefix)) {
-                    return true;
-                }
-                return false;
+        Log.flush(this);
+        try {
+            Iterator<String> it = Log.getLogLineIterator(this);
+            while (it.hasNext()) {
+                logText.append(it.next());
             }
-        });
-        for (int i = 0; i < logFiles.length; i++) {
-            System.out.println("Printing " + logFiles[i]);
-            try {
-                BufferedReader in = new BufferedReader(new FileReader(logFiles[i]));
-                String currLine;
-
-                while ((currLine = in.readLine()) != null) {
-                    logText.append(currLine);
-                }
-            } catch (IOException e) {
-                System.out.println("Got error "+e+" while reading log file");
-            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            StringWriter outString = new StringWriter();
+            PrintWriter outPrint = new PrintWriter(outString);
+            e.printStackTrace(outPrint);
+            outPrint.flush();
+            logText.append(outString.toString());
         }
     }
 

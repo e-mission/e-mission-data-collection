@@ -41,14 +41,20 @@ public class LongTermLogTest extends AndroidTestCase {
         testCtxt = context;
 
         // Make sure that we start every test with a clean slate
-        File[] existingFiles = testCtxt.getFilesDir().listFiles();
-        for (int i = 0; i < existingFiles.length; i++) {
-            existingFiles[i].delete();
-        }
+        cleanAllFiles();
     }
 
     protected void tearDown() throws Exception {
         super.tearDown();
+        // Let's ensure that we cleanup even if there are exceptions during the tests
+        cleanAllFiles();
+    }
+
+    private void cleanAllFiles() {
+        File[] existingFiles = testCtxt.getFilesDir().listFiles();
+        for (int i = 0; i < existingFiles.length; i++) {
+            existingFiles[i].delete();
+        }
     }
 
     public void testExtractMessage() throws Exception {
@@ -72,7 +78,7 @@ public class LongTermLogTest extends AndroidTestCase {
         testLogger.warning(msg);
         File[] potentialFiles = testCtxt.getFilesDir().listFiles();
         // sensor_uuid.props, userProfile, test-long-term.log
-        System.out.println("potential files are "+ Arrays.toString(potentialFiles));
+        System.out.println("potential files are " + Arrays.toString(potentialFiles));
         assertEquals(potentialFiles.length, 2);
         File[] selectedFiles = testCtxt.getFilesDir().listFiles(new FilenameFilter() {
             @Override
@@ -84,7 +90,7 @@ public class LongTermLogTest extends AndroidTestCase {
                 }
             }
         });
-        System.out.println("selected files are "+ Arrays.toString(selectedFiles));
+        System.out.println("selected files are " + Arrays.toString(selectedFiles));
         assertEquals(selectedFiles.length, 1);
         BufferedReader testReader = new BufferedReader(new FileReader(selectedFiles[0]));
         checkMessage(testReader.readLine(), msg);
@@ -93,17 +99,30 @@ public class LongTermLogTest extends AndroidTestCase {
 
     public void deleteFileAndLock(File logFile) {
         logFile.delete();
-        new File(logFile.getPath()+".lck").delete();
+        new File(logFile.getPath() + ".lck").delete();
     }
 
     public void checkMessage(String line, String msg) {
-        System.out.println("Comparing "+line);
+        System.out.println("Comparing " + line);
         assertEquals(line.split("]")[1], msg);
     }
 
     public void testRotatingFileHandler() throws Exception {
         Logger testLogger = Logger.getLogger("edu.berkeley.eecs.cfc_tracker.test");
-        String pattern = Log.getPattern(testCtxt, Log.logFilePrefix);
+        /*
+            This uses a separate prefix for the following reasons:
+            a) if we don't do so, then the file names become different (long-term-1.log.1,
+            long-term-0.log.1, long-term-2.log.1,....
+            this is almost certainly because the previous handler is still around, however,
+            attempts to "fix" that didn't work:
+                i) removing the handler from the logger
+                ii) moving the other test after this one by renaming it, and
+                    setting both the logger and the handler to null here
+            b) using the iterator retests the same code twice. This tests the same thing in two
+                different ways, which should give us a quicker indication if something goes wrong.
+         */
+        final String PREFIX = "test-rotating-file";
+        String pattern = Log.getPattern(testCtxt, PREFIX);
         System.out.println("pattern = " + pattern);
         FileHandler fh = new FileHandler(pattern, 1024 * 1024, 10);
         fh.setFormatter(Log.simpleFormatter);
@@ -114,32 +133,76 @@ public class LongTermLogTest extends AndroidTestCase {
 
         String msg = "This is a test log message";
         // We log this 20,000 times to ensure that the files rotate
-        for (int i = 0; i < 20000; i++) {
+        int NENTRIES = 20000;
+        for (int i = 0; i < NENTRIES; i++) {
             testLogger.warning(msg);
             testLogger.fine(msg);
         }
         File[] potentialFiles = testCtxt.getFilesDir().listFiles();
-        System.out.println("potential files are "+ Arrays.toString(potentialFiles));
+        System.out.println("potential files are " + Arrays.toString(potentialFiles));
         // 3 log files and 1 lock file
         assertEquals(potentialFiles.length, 4);
-        File[] selectedFiles = testCtxt.getFilesDir().listFiles(Log.simpleFilter);
+        File[] selectedFiles = testCtxt.getFilesDir().listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File file, String s) {
+                if (s.startsWith(PREFIX) && s.endsWith(".log")) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        });
         System.out.println("selected files are " + Arrays.toString(selectedFiles));
         assertEquals(selectedFiles.length, 3);
+
+        String currLogLine;
+        // Since this test starts after the previous one, the index is already at 40,000
+        // I am still not quite sure why the entries don't get reset although we are:
+        // a) using a new logger
+        // b) with a new logger name
+        // But resolving that mystery is not important - moving right along...
+        int expectedIndex = NENTRIES * 2;
+
+        for (int i=0; i < selectedFiles.length; i++) {
+            File currFile = selectedFiles[selectedFiles.length - 1 - i];
+            System.out.println("Reading file "+currFile);
+            BufferedReader currReader = new BufferedReader(new FileReader(currFile));
+            while ((currLogLine = currReader.readLine()) != null) {
+                assertEquals(Log.extractMessage(currLogLine), msg);
+                int currIndex = Integer.parseInt(Log.extractIndex(currLogLine));
+                assertEquals(expectedIndex, currIndex);
+                expectedIndex = expectedIndex + 1;
+            }
+        }
+        assertEquals(expectedIndex, NENTRIES * 4);
+
+        for (int i = 0; i < selectedFiles.length; i++) {
+            deleteFileAndLock(selectedFiles[i]);
+        }
+    }
+
+    public void testLogLibrary() throws Exception {
+        String msg = "This is a test log message";
+        // We log this 20,000 times to ensure that the files rotate
+        int NENTRIES = 20000;
+        for (int i = 0; i < NENTRIES; i++) {
+            Log.d(testCtxt, "TEST", msg);
+            Log.i(testCtxt, "TEST", msg);
+        }
 
         Iterator<String> logLineIterator = Log.getLogLineIterator(testCtxt);
         int expectedIndex = 0;
         /*
             Ensure that the lines in the log are returned correctly.
          */
-        while(logLineIterator.hasNext()) {
+        while (logLineIterator.hasNext()) {
             String currLogLine = logLineIterator.next();
-            assertEquals(Log.extractMessage(currLogLine), msg);
+            assertEquals(Log.extractMessage(currLogLine), "TEST : " + msg);
             int currIndex = Integer.parseInt(Log.extractIndex(currLogLine));
             assertEquals(expectedIndex, currIndex);
             expectedIndex = expectedIndex + 1;
         }
-        for (int i = 0; i < selectedFiles.length; i++) {
-            deleteFileAndLock(selectedFiles[i]);
-        }
+        assertEquals(expectedIndex, NENTRIES * 2);
+        cleanAllFiles();
     }
 }

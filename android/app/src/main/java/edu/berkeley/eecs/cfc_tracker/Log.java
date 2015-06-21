@@ -65,6 +65,7 @@ public class Log {
                 // if there are 10 files (10 - 1 - 0)
                 sortedList[selectedFiles.length - 1 - i] = selectedFiles[i];
             }
+            System.out.println("sortedFiles = "+java.util.Arrays.toString(sortedList));
             if (sortedList.length > 0) {
                 currReader = new BufferedReader(new FileReader(sortedList[currIndex]));
                 nextLine = getNextLine();
@@ -104,6 +105,7 @@ public class Log {
             } catch (IOException e) {
                 nextLine = null;
             }
+            // System.out.println("Returning "+toReturn);
             return toReturn;
         }
 
@@ -118,13 +120,17 @@ public class Log {
     }
 
     public static String extractMessage(String logLine) {
+        /*
         System.out.println("While extracting message from "+logLine+", split results are "+
             java.util.Arrays.toString(logLine.split("]")));
+            */
         return logLine.split("]")[1];
     }
     public static String extractIndex(String logLine) {
+        /*
         System.out.println("While extracting index from "+logLine+", split results are "+
             java.util.Arrays.toString(logLine.split("\\|")));
+            */
         return logLine.split("\\|")[0].substring(1);
     }
 
@@ -132,6 +138,11 @@ public class Log {
         String pattern = ctxt.getFilesDir()+"/"+logFilePrefix+"-%g.log";
         System.out.println("Returning pattern "+pattern);
         return pattern;
+    }
+
+    public static void flush(Context ctxt) {
+        System.out.println("Flushing handler "+getLogger(ctxt).getHandlers()[0]);
+        getLogger(ctxt).getHandlers()[0].flush();
     }
 
     public static Logger getLogger(Context ctxt) {
@@ -144,25 +155,27 @@ public class Log {
                 FileHandler fh = new FileHandler(pattern, 10 * MB, 10); // 10 files of 10 MB each
                 fh.setFormatter(simpleFormatter);
                 logger.addHandler(fh);
+                logger.setLevel(Level.FINE);
+                logger.setUseParentHandlers(false);
             } catch (IOException e) {
                 // TODO: generate notification here instead
                 System.out.println("Error "+e+" while creating file handler, logging is only to the short-term adb logcat");
             }
         }
-        System.out.println("Returning logger with "+logger.getHandlers().length+" handlers "+logger.getHandlers());
+        // System.out.println("Returning logger with "+logger.getHandlers().length+" handlers "+logger.getHandlers());
         return logger;
     }
 
     public static void d(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.FINE,
                 String.format("%s : %s", TAG, message));
-        android.util.Log.d(TAG, message);
+        // android.util.Log.d(TAG, message);
     }
 
     public static void i(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.INFO,
                 String.format("%s : %s", TAG, message));
-        android.util.Log.i(TAG, message);
+        // android.util.Log.i(TAG, message);
     }
 
     public static void w(Context ctxt, String TAG, String message) {
