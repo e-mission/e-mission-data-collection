@@ -1,6 +1,7 @@
 package edu.berkeley.eecs.cfc_tracker;
 
 import android.content.Context;
+import android.os.Environment;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -47,7 +48,25 @@ public class Log {
         }
     };
 
+    public static File getLogBase(Context context) {
+        return context.getExternalFilesDir(null);
+    }
 
+    /*
+     Returns a file in the external storage directory. This is one that is under the public root
+     (i.e. at the same level as "DCIM" or "Android". It is intended for data that needs to be shared
+     with other applications. This is currently unused, but can be used in getLogBase() if we want to
+     make our logs more visible.
+     */
+    public static File getBaseInExternalStorageDirectory(Context ctxt) {
+        String ourDirName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/CFC_Tracker";
+        File ourDir = new File(ourDirName);
+        System.out.println("Our dir = "+ourDirName);
+        if (ourDir.exists() == false) {
+            ourDir.mkdirs();
+        }
+        return ourDir;
+    }
 
     static class LogLinesIterator implements Iterator<String> {
         private File[] sortedList;
@@ -56,7 +75,7 @@ public class Log {
         private String nextLine = null;
 
         protected LogLinesIterator(Context ctxt) throws IOException {
-            File[] selectedFiles = ctxt.getFilesDir().listFiles(simpleFilter);
+            File[] selectedFiles = getLogBase(ctxt).listFiles(simpleFilter);
             System.out.println("selectedFiles = "+java.util.Arrays.toString(selectedFiles));
             sortedList = new File[selectedFiles.length];
             for (int i = 0; i < selectedFiles.length; i++) {
@@ -135,7 +154,7 @@ public class Log {
     }
 
     public static String getPattern(Context ctxt, String logFilePrefix) {
-        String pattern = ctxt.getFilesDir()+"/"+logFilePrefix+"-%g.log";
+        String pattern = getLogBase(ctxt)+"/"+logFilePrefix+"-%g.log";
         System.out.println("Returning pattern "+pattern);
         return pattern;
     }
@@ -152,7 +171,7 @@ public class Log {
             String pattern = getPattern(ctxt, logFilePrefix);
             System.out.println("Initializing file handler with pattern " + pattern);
             try {
-                FileHandler fh = new FileHandler(pattern, 10 * MB, 10); // 10 files of 10 MB each
+                FileHandler fh = new FileHandler(pattern, 10 * MB, 10, true); // 10 files of 10 MB each
                 fh.setFormatter(simpleFormatter);
                 logger.addHandler(fh);
                 logger.setLevel(Level.FINE);

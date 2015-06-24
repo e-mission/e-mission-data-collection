@@ -51,7 +51,7 @@ public class LongTermLogTest extends AndroidTestCase {
     }
 
     private void cleanAllFiles() {
-        File[] existingFiles = testCtxt.getFilesDir().listFiles();
+        File[] existingFiles = testCtxt.getExternalFilesDir(null).listFiles();
         for (int i = 0; i < existingFiles.length; i++) {
             existingFiles[i].delete();
         }
@@ -68,7 +68,7 @@ public class LongTermLogTest extends AndroidTestCase {
 
     public void testSimpleFileHandler() throws Exception {
         Logger testLogger = Logger.getLogger("edu.berkeley.eecs.cfc_tracker.test");
-        String fileName = testCtxt.getFilesDir() + "/test-long-term.log";
+        String fileName = testCtxt.getExternalFilesDir(null) + "/test-long-term.log";
         System.out.println("fileName = " + fileName);
         FileHandler fh = new FileHandler(fileName);
         fh.setFormatter(Log.simpleFormatter);
@@ -76,11 +76,11 @@ public class LongTermLogTest extends AndroidTestCase {
 
         String msg = "This is a test log message";
         testLogger.warning(msg);
-        File[] potentialFiles = testCtxt.getFilesDir().listFiles();
+        File[] potentialFiles = testCtxt.getExternalFilesDir(null).listFiles();
         // sensor_uuid.props, userProfile, test-long-term.log
         System.out.println("potential files are " + Arrays.toString(potentialFiles));
         assertEquals(potentialFiles.length, 2);
-        File[] selectedFiles = testCtxt.getFilesDir().listFiles(new FilenameFilter() {
+        File[] selectedFiles = testCtxt.getExternalFilesDir(null).listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String s) {
                 if (s.startsWith("test-long-term") && s.endsWith(".log")) {
@@ -138,11 +138,11 @@ public class LongTermLogTest extends AndroidTestCase {
             testLogger.warning(msg);
             testLogger.fine(msg);
         }
-        File[] potentialFiles = testCtxt.getFilesDir().listFiles();
+        File[] potentialFiles = testCtxt.getExternalFilesDir(null).listFiles();
         System.out.println("potential files are " + Arrays.toString(potentialFiles));
         // 3 log files and 1 lock file
         assertEquals(potentialFiles.length, 4);
-        File[] selectedFiles = testCtxt.getFilesDir().listFiles(new FilenameFilter() {
+        File[] selectedFiles = testCtxt.getExternalFilesDir(null).listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String s) {
                 if (s.startsWith(PREFIX) && s.endsWith(".log")) {
