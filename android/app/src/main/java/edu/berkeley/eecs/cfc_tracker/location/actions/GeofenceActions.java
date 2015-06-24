@@ -45,6 +45,13 @@ public class GeofenceActions {
         this.mGoogleApiClient = googleApiClient;
     }
 
+    /*
+     * Actually creates the geofence. We want to create the geofence at the last known location, so
+     * we retrieve it from the location services. If this is not null, we call createGeofence to
+     * create the geofence request and register it.
+     *
+     * see @GeofenceActions.createGeofence
+     */
     public PendingResult<Status> create() {
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
@@ -58,9 +65,16 @@ public class GeofenceActions {
                         createGeofence(mLastLocation.getLatitude(), mLastLocation.getLongitude()),
                         getGeofenceExitPendingIntent(mCtxt));
         }
+        // TODO: Should try to request location updates here and then create the geofence once
+        // the first request is received
+        Log.w(mCtxt, TAG, "mLastLocationTime = null, skipping geofence creation. IMPROVE ME!!");
         return null;
     }
 
+    /*
+     * Returns the geofence request object to be used with the geofencing API.
+     * Called from the previous create() call.
+     */
     public GeofencingRequest createGeofence(double lat, double lng) {
         Log.d(mCtxt, TAG, "creating geofence at location "+lat+", "+lng);
         Geofence currGeofence =
