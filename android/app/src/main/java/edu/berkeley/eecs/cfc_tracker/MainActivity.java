@@ -171,7 +171,8 @@ public class MainActivity extends Activity {
 
     public void refreshLog(View view) {
         Log.d(this, TAG, "Logging in refreshLog to see the handler list");
-        Log.flush(this);
+        // Clear before refreshing
+        logText.setText("");
         try {
             Iterator<String> it = Log.getLogLineIterator(this);
             while (it.hasNext()) {
