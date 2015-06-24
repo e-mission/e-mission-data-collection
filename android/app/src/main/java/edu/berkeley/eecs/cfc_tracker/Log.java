@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.PriorityQueue;
@@ -32,8 +34,12 @@ public class Log {
     public static java.util.logging.Formatter simpleFormatter = new java.util.logging.Formatter() {
         @Override
         public String format(LogRecord logRecord) {
-            return "[" + logRecord.getSequenceNumber() + "|" + logRecord.getMillis() + "|" + logRecord.getLevel() +"]" +
-                    logRecord.getMessage() + "\n";
+            return "[" + logRecord.getSequenceNumber() + "|" +
+                        logRecord.getMillis() + "|" +
+                        // getInstance ensures that we use a SHORT instance type
+                        SimpleDateFormat.getInstance().format(new Date(logRecord.getMillis())) + "|" +
+                        logRecord.getLevel() +"]" +
+                        logRecord.getMessage() + "\n";
         }
     };
 
