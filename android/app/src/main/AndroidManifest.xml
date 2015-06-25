@@ -20,6 +20,7 @@
     <!-- We need this in order to check for existing accounts before creating a new account. Need to figure out a better way to do this so that people don't get freaked out -->
     <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"

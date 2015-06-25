@@ -25,21 +25,21 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    BOOL recreateTripDiary = NO;
+    BOOL relaunchLocationMgr = NO;
     if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Application launched with LaunchOptionsLocationKey = YES"]];
-        recreateTripDiary = YES;
+        relaunchLocationMgr = YES;
     } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Application launched with LaunchOptionsLocationKey = NO"]];
         
     }
     
-    if (_tripDiaryStateMachine == NULL || recreateTripDiary) {
-        NSLog(@"tripDiaryStateMachine = %@, recreateTripDiary = %d, recreating the state machine",
-              _tripDiaryStateMachine, recreateTripDiary);
-        _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] init];
+    if (_tripDiaryStateMachine == NULL || relaunchLocationMgr) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"tripDiaryStateMachine = %@, relaunchLocationManager = %@, recreating the state machine",
+              _tripDiaryStateMachine, @(relaunchLocationMgr)]];
+        _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] initRelaunchLocationManager:relaunchLocationMgr];
     }
     
     [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]

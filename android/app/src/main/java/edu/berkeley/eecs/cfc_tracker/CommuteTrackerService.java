@@ -11,7 +11,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.IBinder;
-import edu.berkeley.eecs.cfc_tracker.Log;
 
 import com.google.android.gms.location.LocationListener;
 
@@ -51,7 +50,7 @@ public class CommuteTrackerService extends Service implements
 	
 	@Override
 	public void onCreate() {
-		Log.i(TAG, "onCreate called");
+		Log.i(this, TAG, "onCreate called");
 	}
 
 	/*
@@ -73,7 +72,7 @@ public class CommuteTrackerService extends Service implements
 	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.i(TAG, "CommuteTrackerService.onStartCommand invoked with flags = "+flags+
+		Log.i(this, TAG, "CommuteTrackerService.onStartCommand invoked with flags = "+flags+
 				" startId = "+startId);
 		if (!running) {
 			// pollThread.start();
@@ -91,7 +90,7 @@ public class CommuteTrackerService extends Service implements
 	        
 			running = true;
 			privateFileDir = getFilesDir();
-			Log.i(TAG, "Writing sensor data to directory "+privateFileDir
+			Log.i(this, TAG, "Writing sensor data to directory "+privateFileDir
 					+" whose existence state is "+privateFileDir.exists());
 		}
 		return START_STICKY;
@@ -130,7 +129,7 @@ public class CommuteTrackerService extends Service implements
 		
 		/** Writes accelerometer data to local file. */
 		DataUtils.saveData(accelData, privateFileDir);
-		Log.i(TAG, "X: " + accelerameter_x + "Y: "+ accelerameter_y + "Z: " + accelerameter_z);
+		Log.i(this, TAG, "X: " + accelerameter_x + "Y: "+ accelerameter_y + "Z: " + accelerameter_z);
 	}	
 	
 	/** Define a LocationListener to listen to updates from locationManager. */
@@ -142,7 +141,7 @@ public class CommuteTrackerService extends Service implements
 		
         @Override
         public void onLocationChanged(Location newLoc) {
-        	Log.d(TAG, "CommuteTrackerService: Received location update to "+newLoc);
+        	Log.d(CommuteTrackerService.this, TAG, "CommuteTrackerService: Received location update to "+newLoc);
         	Properties locData = new Properties();
         	locData.put(Constants.LATITUDE, String.valueOf(newLoc.getLatitude()));
             locData.put(Constants.LONGITUDE, String.valueOf(newLoc.getLongitude()));
@@ -174,7 +173,7 @@ public class CommuteTrackerService extends Service implements
     };
     
     private void stopService() {
-    	Log.i(TAG, "User initiated stop");
+    	Log.i(this, TAG, "User initiated stop");
     	/*
     	 * I tried putting calls to the handler in here, but that didn't work.
     	 * This log statement never actually showed up - it is unclear if the method is called.
@@ -185,7 +184,7 @@ public class CommuteTrackerService extends Service implements
 	@Override
 	public void onDestroy() {
 		running = false;
-		Log.i(TAG, "CommuteTrackerService.onDestroy invoked");
+		Log.i(this, TAG, "CommuteTrackerService.onDestroy invoked");
 		sm.unregisterListener((SensorEventListener)this);
 		// locationManager.removeUpdates(mLocationListener);
 		/*
@@ -199,7 +198,7 @@ public class CommuteTrackerService extends Service implements
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
 		if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-			Log.d(TAG, "Accelerometer accuracy changed to "+accuracy);
+			Log.d(this, TAG, "Accelerometer accuracy changed to "+accuracy);
 			// Unclear what we should do here, punt for now
 		}
 	}

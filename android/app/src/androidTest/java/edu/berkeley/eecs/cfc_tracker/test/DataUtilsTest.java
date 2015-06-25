@@ -104,7 +104,7 @@ public class DataUtilsTest extends AndroidTestCase {
 	
 	public void testGetJSONPlace() throws JSONException {
 		Location loc = makeLoc(37, -122, 1);
-		JSONObject pls = DataUtils.getJSONPlace(loc);
+		JSONObject pls = DataUtils.getJSONPlace(testCtxt, loc);
 		Log.d(TAG, pls.toString());
 		assertTrue(pls.has("place"));
 		assertEquals(pls.getString("type"), "place");
@@ -117,7 +117,7 @@ public class DataUtilsTest extends AndroidTestCase {
 	
 	public void testGetTrackPoint() throws JSONException {
 		Location loc = makeLoc(37, -122, 1);
-		JSONObject tp = DataUtils.getTrackPoint(loc, 0, 0);
+		JSONObject tp = DataUtils.getTrackPoint(testCtxt, loc, 0, 0);
 		assertEquals(tp.getString("time"), DateFormat.format(DATE_FORMAT, new Date(loc.getTime())));
 		assertEquals(tp.getDouble("lat"), 37.0);
 		assertEquals(tp.getDouble("lon"), -122.0);

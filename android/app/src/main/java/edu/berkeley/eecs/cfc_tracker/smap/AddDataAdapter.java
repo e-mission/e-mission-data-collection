@@ -9,9 +9,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
@@ -34,11 +31,10 @@ import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.net.http.AndroidHttpClient;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+
 import edu.berkeley.eecs.cfc_tracker.Log;
 
 /**
@@ -137,18 +133,18 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 			toSend.put("sections", tripsToPush);
             toSend.put("user", userToken);
 		
-			Log.i(TAG, "About to post JSON object "+toSend);
+			Log.i(mContext, TAG, "About to post JSON object "+toSend);
 			boolean success = pushTripsToServer(emission_host, toSend);
             if (success) {
-                Log.i(TAG, "Push successful, deleting trips");
+                Log.i(mContext, TAG, "Push successful, deleting trips");
                 DataUtils.deletePushedTrips(getContext(), tripsToPush);
             } else {
-                Log.i(TAG, "Push unsuccessful, retaining trips");
+                Log.i(mContext, TAG, "Push unsuccessful, retaining trips");
             }
 		} catch (JSONException e) {
-			Log.e(TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
+			Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
 		} catch (IOException e) {
-			Log.e(TAG, "IO Error "+e+" while posting converted trips to JSON");			
+			Log.e(mContext, TAG, "IO Error "+e+" while posting converted trips to JSON");
 		}
 	}
 

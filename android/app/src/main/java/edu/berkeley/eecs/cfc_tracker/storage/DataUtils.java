@@ -57,17 +57,17 @@ public class DataUtils {
 	*/
 	
 	public static void addPoint(Context ctxt, Location currLoc) {
-		Log.d(TAG, "addPoint("+currLoc+") called");
+		Log.d(ctxt, TAG, "addPoint("+currLoc+") called");
 		new OngoingTripStorageHelper(ctxt).addPoint(currLoc);
 	}
 	
 	public static Location[] getLastPoints(Context ctxt, int nPoints) {
-		Log.d(TAG, "getLastPoints("+nPoints+") called");
+		Log.d(ctxt, TAG, "getLastPoints("+nPoints+") called");
 		return new OngoingTripStorageHelper(ctxt).getLastPoints(nPoints);
 	}
 
 	public static void addModeChange(Context ctxt, long ts, DetectedActivity newMode) {
-		Log.d(TAG, "addModeChange("+ts+"," + newMode +") called");
+		Log.d(ctxt, TAG, "addModeChange("+ts+"," + newMode +") called");
 		new OngoingTripStorageHelper(ctxt).addModeChange(ts, newMode);
 	}
 	
@@ -90,7 +90,7 @@ public class DataUtils {
 	};
 	  
 	public static ModeChange getCurrentMode(Context ctxt) {
-		Log.d(TAG, "getCurrentMode() called");
+		Log.d(ctxt, TAG, "getCurrentMode() called");
 		return new OngoingTripStorageHelper(ctxt).getCurrentMode();
 	}
 	
@@ -109,28 +109,28 @@ public class DataUtils {
 		 * So we should probably retry (maybe once) to deal with transient issues, but ignore long-term.
 		 * What's a trip between friends? :)
 		 */
-		Log.d(TAG, "endTrip called");
+		Log.d(ctxt, TAG, "endTrip called");
 		try {
 			convertOngoingToStored(ctxt);
 		} catch (JSONException e) {
-			Log.e(TAG, "Got initial error "+e+" while saving ongoing trips, retrying once to see if it is a transient error");
+			Log.e(ctxt, TAG, "Got initial error "+e+" while saving ongoing trips, retrying once to see if it is a transient error");
 			try {
 				convertOngoingToStored(ctxt);
 			} catch (JSONException eFinal) {
-				Log.e(TAG, "Got final error "+eFinal+" while saving ongoing trips, deleting DB and abandoning");
+				Log.e(ctxt, TAG, "Got final error "+eFinal+" while saving ongoing trips, deleting DB and abandoning");
 			}
 		}
 		clearOngoingDb(ctxt);
 	}
 	
 	public static void clearOngoingDb(Context ctxt) {
-		Log.d(TAG, "clearOngoingDb called");
+		Log.d(ctxt, TAG, "clearOngoingDb called");
 		OngoingTripStorageHelper db = new OngoingTripStorageHelper(ctxt);
 		db.clear();
 	}
 	
 	public static void convertOngoingToStored(Context ctxt) throws JSONException {
-		Log.d(TAG, "convertOngoingToStored called");
+		Log.d(ctxt, TAG, "convertOngoingToStored called");
 		OngoingTripStorageHelper db = new OngoingTripStorageHelper(ctxt);
 		StoredTripHelper storedDb = new StoredTripHelper(ctxt);
 		
@@ -141,7 +141,7 @@ public class DataUtils {
 		Location startPoint = endPoints[0];
 		Location endPoint = endPoints[1];
 
-		Log.d(TAG, "startPoint = "+startPoint+" endPoint = "+endPoint);
+		Log.d(ctxt, TAG, "startPoint = "+startPoint+" endPoint = "+endPoint);
 		if (startPoint == null && endPoint == null) {
 			// The trip has no points, so we can't store anything
 			return;
@@ -149,11 +149,11 @@ public class DataUtils {
 
 		JSONObject startPlace = null;
 		String lastTripString = storedDb.getLastTrip();
-		Log.d(TAG, "lastTripString = "+lastTripString);
+		Log.d(ctxt, TAG, "lastTripString = "+lastTripString);
 		if (lastTripString == null) {
 			// This is the first time we have started running, don't have any data so don't have any pending trip to complete.
 			// Let's just create an object with the current location and a start time of midnight today
-			startPlace = getJSONPlace(startPoint);
+			startPlace = getJSONPlace(ctxt, startPoint);
 			Date now = new Date();
 			Calendar nowCal = Calendar.getInstance();
 			nowCal.setTime(now);
@@ -169,7 +169,7 @@ public class DataUtils {
 		
 		// Our end point in the start place is when this trip starts
 		startPlace.put("endTime", DateFormat.format(DATE_FORMAT, new Date(startPoint.getTime())));
-		Log.d(TAG, "updated startPlace = "+startPlace.toString());
+		Log.d(ctxt, TAG, "updated startPlace = "+startPlace.toString());
 		storedDb.updateTrip(startPlace.getLong("startTimeTs"), startPlace.toString());
 
         long startTripUTC = startPoint.getTime();
@@ -189,7 +189,7 @@ public class DataUtils {
 
 		JSONArray activityArray = new JSONArray();
 		ModeChange[] modeChanges = db.getModeChanges();
-        Log.d(TAG, "mode change list is of size "+modeChanges.length);
+        Log.d(ctxt, TAG, "mode change list is of size "+modeChanges.length);
 		
 		/*
 		 * We request mode changes at the same frequency as location changes (30 secs),
@@ -210,24 +210,24 @@ public class DataUtils {
 		 */
 
 		if (modeChanges.length == 0) {
-            Log.i(TAG, "Found zero mode changes, creating one unknown section");
-			JSONObject currSection = createSection(startTripUTC, startTripElapsedTime,
+            Log.i(ctxt, TAG, "Found zero mode changes, creating one unknown section");
+			JSONObject currSection = createSection(ctxt, startTripUTC, startTripElapsedTime,
                     startPoint.getElapsedRealtimeNanos(), endPoint.getElapsedRealtimeNanos(),
                     "unknown", db);
 			activityArray.put(currSection);
 		}
 		
 		if (modeChanges.length == 1) {
-            Log.i(TAG, "Found one mode change, creating one section of type "+
+            Log.i(ctxt, TAG, "Found one mode change, creating one section of type "+
                     activityType2Name(modeChanges[0].getLastActivity().getType()));
-			JSONObject currSection = createSection(startTripUTC, startTripElapsedTime,
+			JSONObject currSection = createSection(ctxt, startTripUTC, startTripElapsedTime,
                     startPoint.getElapsedRealtimeNanos(), endPoint.getElapsedRealtimeNanos(),
 					activityType2Name(modeChanges[0].getLastActivity().getType()), db);
 			activityArray.put(currSection);
 		}
 		
 		if (modeChanges.length > 1) {
-            Log.i(TAG, "Found more than one mode change, iterating through them ");
+            Log.i(ctxt, TAG, "Found more than one mode change, iterating through them ");
 
             for (int i=0; i < modeChanges.length; i++)
 			{
@@ -252,7 +252,7 @@ public class DataUtils {
                     endTs = modeChanges[i+1].getLastChangeTs();
                 }
 
-                JSONObject currSection = createSection(startTripUTC, startTripElapsedTime,
+                JSONObject currSection = createSection(ctxt, startTripUTC, startTripElapsedTime,
                         startTs,
 						endTs,
 						activityType,
@@ -263,19 +263,19 @@ public class DataUtils {
 		if (activityArray.length() > 0) {
 			completedTrip.put("activities", activityArray);
 		}
-		Log.d(TAG, "completedTrip = "+completedTrip.toString());
+		Log.d(ctxt, TAG, "completedTrip = "+completedTrip.toString());
 		storedDb.addTrip(completedTrip.getLong("startTimeTs"), completedTrip.toString());
 		
 		
 		// We are in the end place starting now.
 		// Dunno when we will stop.
 		// But when we do, this will be the startPlace and we will set the endTime above
-		JSONObject endPlace = getJSONPlace(endPoint);
-		Log.d(TAG, "endPlace = "+endPlace.toString());
+		JSONObject endPlace = getJSONPlace(ctxt, endPoint);
+		Log.d(ctxt, TAG, "endPlace = "+endPlace.toString());
 		storedDb.addTrip(endPlace.getLong("startTimeTs"), endPlace.toString());
 	}
 	
-	public static JSONObject createSection(Long startTripUTC, Long startTripElapsedTime,
+	public static JSONObject createSection(Context ctxt, Long startTripUTC, Long startTripElapsedTime,
                                                     Long startSectionElapsedTime,
                                                     Long endSectionElapsedTime,
 			String activityType, OngoingTripStorageHelper db) throws JSONException {
@@ -296,7 +296,7 @@ public class DataUtils {
 		JSONArray trackPoints = new JSONArray();
 		double distance = 0;
 		for (int j = 0; j < pointsForSection.length; j++) {
-			JSONObject currPoint = getTrackPoint(pointsForSection[j], startTripUTC, startTripElapsedTime);
+			JSONObject currPoint = getTrackPoint(ctxt, pointsForSection[j], startTripUTC, startTripElapsedTime);
 			trackPoints.put(currPoint);
 			if (j < pointsForSection.length - 1) {
 				distance = distance + pointsForSection[j].distanceTo(pointsForSection[j+1]);
@@ -308,8 +308,8 @@ public class DataUtils {
 		return currSection;
 	}
 	
-	public static JSONObject getJSONPlace(Location loc) throws JSONException {
-		Log.d(TAG, "getJSONPlace("+loc+") called");
+	public static JSONObject getJSONPlace(Context ctxt, Location loc) throws JSONException {
+		Log.d(ctxt, TAG, "getJSONPlace("+loc+") called");
 
 		JSONObject retObj = new JSONObject();
 		retObj.put("type", "place");
@@ -333,9 +333,9 @@ public class DataUtils {
 		return retObj;
 	}
 	
-	public static JSONObject getTrackPoint(Location loc, long startUTC,
+	public static JSONObject getTrackPoint(Context ctxt, Location loc, long startUTC,
                                            long startElapsedRealTimeNanos) throws JSONException {
-		Log.d(TAG, "getTrackPoint("+loc+") called");
+		Log.d(ctxt, TAG, "getTrackPoint("+loc+") called");
 		
 		JSONObject retObject = new JSONObject();
         // Convert Nanos to Millis before adding to the startUTC, since
@@ -350,7 +350,7 @@ public class DataUtils {
 	}
 	
 	public static JSONArray getTripsToPush(Context ctxt) throws JSONException {
-		Log.d(TAG, "getTripsToPush() called");
+		Log.d(ctxt, TAG, "getTripsToPush() called");
 		
 		StoredTripHelper storedDb = new StoredTripHelper(ctxt);
 		// TODO: Decide how to deal with staying in a place overnight (say from 8pm to 8am)
@@ -367,7 +367,7 @@ public class DataUtils {
 	}
 	
 	public static void deletePushedTrips(Context ctxt, JSONArray tripsToPush) throws JSONException {
-		Log.d(TAG, "deletePushedTrips("+tripsToPush.length()+") called");
+		Log.d(ctxt, TAG, "deletePushedTrips("+tripsToPush.length()+") called");
 
 		StoredTripHelper storedDb = new StoredTripHelper(ctxt);
 		long[] tsArray = new long[tripsToPush.length()];

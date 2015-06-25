@@ -3,10 +3,6 @@ package edu.berkeley.eecs.cfc_tracker;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
-import edu.berkeley.eecs.cfc_tracker.Log;
-
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 public class WakeupReceiver extends BroadcastReceiver {
     private static String TAG = "WakeupReceiver";
@@ -16,7 +12,7 @@ public class WakeupReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context ctxt, Intent intent) {
-		Log.d(TAG, "Received broadcast message " + intent);
+		Log.d(ctxt, TAG, "Received broadcast message " + intent);
 		if ((intent.getAction().equals(ctxt.getString(R.string.startAtDropoff)) ||
 				intent.getAction().equals(ctxt.getString(R.string.startAtPickup)))) {
 			NotificationHelper.createNotification(ctxt, STARTED_MONITORING, ctxt.getString(R.string.startedMonitoring));

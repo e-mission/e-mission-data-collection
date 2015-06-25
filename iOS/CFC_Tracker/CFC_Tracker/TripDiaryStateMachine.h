@@ -53,6 +53,7 @@ typedef enum : NSUInteger {
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 @interface TripDiaryStateMachine : NSObject
+-(id)initRelaunchLocationManager:(BOOL)restart;
 
 @property CLLocationManager *locMgr;
 @property CMMotionActivityManager *activityMgr;

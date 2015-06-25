@@ -4,12 +4,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.support.v4.content.LocalBroadcastManager;
+
 import edu.berkeley.eecs.cfc_tracker.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
@@ -18,8 +17,6 @@ import com.google.android.gms.location.LocationServices;
 import java.util.Arrays;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
-import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
-import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.location.GeofenceExitIntentService;
 
 /**
@@ -48,12 +45,19 @@ public class GeofenceActions {
         this.mGoogleApiClient = googleApiClient;
     }
 
+    /*
+     * Actually creates the geofence. We want to create the geofence at the last known location, so
+     * we retrieve it from the location services. If this is not null, we call createGeofence to
+     * create the geofence request and register it.
+     *
+     * see @GeofenceActions.createGeofence
+     */
     public PendingResult<Status> create() {
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         if (mLastLocation != null) {
-            Log.d(TAG, "mLastLocation has elapsed time = "+mLastLocation.getElapsedRealtimeNanos());
-            Log.d(TAG, "Last location is " + mLastLocation + " creating geofence");
+            Log.d(mCtxt, TAG, "mLastLocation has elapsed time = "+mLastLocation.getElapsedRealtimeNanos());
+            Log.d(mCtxt, TAG, "Last location is " + mLastLocation + " creating geofence");
             // This is also an asynchronous call. We can either wait for the result,
             // or we can provide a callback. Let's provide a callback to keep the async
             // logic in place
@@ -61,11 +65,18 @@ public class GeofenceActions {
                         createGeofence(mLastLocation.getLatitude(), mLastLocation.getLongitude()),
                         getGeofenceExitPendingIntent(mCtxt));
         }
+        // TODO: Should try to request location updates here and then create the geofence once
+        // the first request is received
+        Log.w(mCtxt, TAG, "mLastLocationTime = null, skipping geofence creation. IMPROVE ME!!");
         return null;
     }
 
+    /*
+     * Returns the geofence request object to be used with the geofencing API.
+     * Called from the previous create() call.
+     */
     public GeofencingRequest createGeofence(double lat, double lng) {
-        Log.d(TAG, "creating geofence at location "+lat+", "+lng);
+        Log.d(mCtxt, TAG, "creating geofence at location "+lat+", "+lng);
         Geofence currGeofence =
                 new Geofence.Builder().setRequestId(GEOFENCE_REQUEST_ID)
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)

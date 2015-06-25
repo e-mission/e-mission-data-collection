@@ -38,22 +38,57 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
--(id)init {
+-(id)initRelaunchLocationManager:(BOOL)restart {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    self.currState = [defaults integerForKey:kCurrState];
+    
+    /*
+     * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager
+     * first if required.
+     */
     
     // Register for notifications related to the state machine
     [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil usingBlock:^(NSNotification* note) {
         [self handleTransition:(NSString*)note.object];
     }];
+
+    if (restart) {
+        self.locMgr = [[CLLocationManager alloc] init];
+        self.locMgr.pausesLocationUpdatesAutomatically = NO;
+        
+        _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
+        self.locMgr.delegate = _locDelegate;
+        
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Restart = YES, initializing TripDiaryStateMachine with state = %@",
+                                                   [TripDiaryStateMachine getStateName:kStartState]]];
+        [self setState:kStartState];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionInitialize];
+    } else {
+        /* 
+         * In this case, we re-initialized the code because the FSM was NULL. LaunchOptionsLocationKey = NO,
+         * so one might think that we don't need to reinitialize the location manager. However, if the FSM is 
+         * null, then the trip manager, which is a field of the location manager, is also null. In particular,
+         * without this, when the app is started up for the first time, it won't create the location manager
+         * and will not be able to start the state machine in any serious way.
+         *
+         * However, in this case, we restart the FSM from the current state rather than resetting to the
+         * start state.
+         */
+        self.locMgr = [[CLLocationManager alloc] init];
+        self.locMgr.pausesLocationUpdatesAutomatically = NO;
+        
+        _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
+        self.locMgr.delegate = _locDelegate;
+        
+
+        self.currState = [defaults integerForKey:kCurrState];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Restart = NO, initializing TripDiaryStateMachine with state = %@",
+                                                   [TripDiaryStateMachine getStateName:self.currState]]];
+
+    }
     
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Initialized TripDiaryStateMachine when state = %@",
-                                               [TripDiaryStateMachine getStateName:self.currState]]];
-    
-    self.locMgr = [[CLLocationManager alloc] init];
-    _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
-    self.locMgr.delegate = _locDelegate;
     if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
         if ([CLLocationManager instancesRespondToSelector:@selector(requestAlwaysAuthorization)]) {
             NSLog(@"Current location authorization = %d, always = %d, requesting always",

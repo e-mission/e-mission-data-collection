@@ -43,7 +43,7 @@
     if (_tdsm.currState == kStartState) {
         // Find the last location
 //        [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:manager];
-        NSLog(@"Created geofence at location %@", lastLocation);
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Re-entering call to create geofence at location %@", lastLocation]];
         [TripDiaryActions createGeofenceHere:manager inState:_tdsm.currState];
     }
     
@@ -123,7 +123,8 @@
 
 - (void)locationManager:(CLLocationManager *)manager
                 didStartMonitoringForRegion:(CLRegion *)region {
-    NSLog(@"started monitoring for region %@", region.identifier);
+    [LocalNotificationManager addNotification:
+        [NSString stringWithFormat:@"started monitoring for region %@", region.identifier]];
     // Needed in order to avoid getting a failure in the geofence creation by querying it too quickly
     // http://www.cocoanetics.com/2014/05/radar-monitoring-clregion-immediately-after-removing-one-fails/
     // Not documented anywhere other than a blog post!!
@@ -150,9 +151,10 @@
      * will never leave the geofence, since we are already outside, and we won't track any trips at all.
      */
     
-    NSLog(@"Current state of region %@ is %d (%@)", region.identifier, (int)state, stateStr);
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Current state of region %@ is %d (%@)", region.identifier, (int)state, stateStr]];
     NSString* currTransition = nil;
     if (state == CLRegionStateInside) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Received INSIDE geofence state when currState = %@", [TripDiaryStateMachine getStateName:_tdsm.currState]]];
         if (_tdsm.currState == kStartState) {
             currTransition = CFCTransitionInitComplete;
         } else if (_tdsm.currState == kWaitingForTripStartState) {
@@ -162,6 +164,7 @@
             currTransition = CFCTransitionEndTripTracking;
         }
     } else if (state == CLRegionStateOutside) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Received OUTSIDE geofence state when currState = %@", [TripDiaryStateMachine getStateName:_tdsm.currState]]];
         if (_tdsm.currState == kStartState) {
             currTransition = CFCTransitionExitedGeofence;
         } else if (_tdsm.currState == kWaitingForTripStartState) {
@@ -173,7 +176,7 @@
         }
     } else {
         // state == CLRegionStateUnknown
-        NSLog(@"Received UNKNOWN geofence state, unclear what to do");
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Received UNKNOWN geofence state when currState = %@, unclear what to do", [TripDiaryStateMachine getStateName:_tdsm.currState]]];
         // It looks like geofence creation is not complete.
         // TODO: Figure out how to deal with this error condition
     }
