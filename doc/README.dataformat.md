@@ -14,6 +14,8 @@ We will then transfer this data to the long term storage/analysis cache. The dat
 
 Here, we decide the data format for the user cache (flow 1 above). The flow is bi-directional, and so can again be split into phone -> server and server -> phone components. For now, we will endeavor to separate the data in the two components so that there is no overlap. This will help us in resolving conflicts because there will be none. We will revisit and extend this design if and when we find a data element that needs to be modified from both the server and the phone sides.
 
+
+----
 ### Phone -> server component
 
 This can again be split into two components - user generated data and data from background sensing.
@@ -70,7 +72,7 @@ Some other requirements on the data from background sensing:
 3. We expect that all data objects will have at least an associated timestamp.
 4. The JSON objects will be inserted into SQLite databases on android and iOS. Since the location points are used by the data collection state machine, each row will contain some extracted information for easy querying. It will also contain the raw JSON for easy syncing!
 
-### Combined
+#### Combined
 
 The two will be combined into a single data structure as follows:
 
@@ -106,6 +108,7 @@ The two will be combined into a single data structure as follows:
       }
     }
 
+----
 ### Server -> phone component
 
 This can again be divided into two components. The first is intended for user display (results, etc), and the second is intended for configuring the background collection. Again, the structure of the first part needs to be very flexible, in order to support dynamically deploying screens along with dynamically generated data. At the same time, the second part does not need to be as flexible, since changes to it will not work unless there are changes to the corresponding native code.
