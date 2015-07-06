@@ -54,6 +54,11 @@ public class WrapperTest extends AndroidTestCase {
         assertEquals(parsedJSON.getLong("mElapsedRealtimeNanos"), 28);
         assertEquals(parsedJSON.getDouble("mLatitude"), 29.29);
         assertEquals(parsedJSON.getDouble("mLongitude"), 30.30);
+        Location parsedLoc = new Gson().fromJson(locJson, Location.class);
+        assertEquals(parsedLoc.getAccuracy(), 25.25f);
+        assertEquals(parsedLoc.getElapsedRealtimeNanos(), 28l);
+        assertEquals(parsedLoc.getLatitude(), 29.29);
+        assertEquals(parsedLoc.getLongitude(), 30.30);
     }
 
     public void testDetectedActivitySerDeser() throws Exception {
@@ -67,12 +72,9 @@ public class WrapperTest extends AndroidTestCase {
         System.out.println("Serialized JSON for bicycle = " + gson.toJson(testDetectedBicycle));
         System.out.println("Serialized JSON for walking = " + gson.toJson(testDetectedWalking));
         System.out.println("Serialized JSON for vehicle = " + gson.toJson(testDetectedInVehicle));
-        JSONObject parsedJSON = new JSONObject(bicycleJson);
-        /*
-        assertEquals(parsedJSON.getDouble("mAccuracy"), 25.25);
-        assertEquals(parsedJSON.getLong("mElapsedRealtimeNanos"), 28);
-        assertEquals(parsedJSON.getDouble("mLatitude"), 29.29);
-        assertEquals(parsedJSON.getDouble("mLongitude"), 30.30);
-        */
+
+        DetectedActivity parsedBicycle = new Gson().fromJson(bicycleJson, DetectedActivity.class);
+        assertEquals(parsedBicycle.getType(), DetectedActivity.ON_BICYCLE);
+        assertEquals(parsedBicycle.getConfidence(), 80);
     }
 }
