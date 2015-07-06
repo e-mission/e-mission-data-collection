@@ -136,6 +136,9 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
                 PreferenceManager.getDefaultSharedPreferences(mContext).edit();
         prefsEditor.putString(CURR_STATE_KEY, newState);
         prefsEditor.apply();
+        Log.d(mContext, TAG, "newState saved in prefManager is "+
+            PreferenceManager.getDefaultSharedPreferences(mContext).getString(
+                    CURR_STATE_KEY, "not found"));
     }
 
 	@Override
