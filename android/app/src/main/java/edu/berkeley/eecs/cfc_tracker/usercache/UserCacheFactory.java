@@ -1,5 +1,7 @@
 package edu.berkeley.eecs.cfc_tracker.usercache;
 
+import android.content.Context;
+
 /**
  * Created by shankari on 7/5/15.
  */
@@ -9,7 +11,7 @@ public class UserCacheFactory {
      * various backends. Currently, we have only one backend implemented,
      * so we return it.
      */
-    public static UserCache getUserCache() {
-        return new BuiltinUserCache();
+    public static UserCache getUserCache(Context ctxt) {
+        return new BuiltinUserCache(ctxt);
     }
 }

@@ -7,10 +7,17 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.JsonReader;
 
+import com.google.gson.Gson;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.LinkedList;
+
+import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.wrapper.Entry;
+import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
 
 /**
  * Concrete implementation of the user cache that stores the entries
@@ -40,7 +47,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     private static final String KEY_PLUGIN = "plugin";
     private static final String KEY_DATA = "data";
 
-    private static final String TAG = "ClientStatsHelper";
+    private static final String TAG = "BuiltinUserCache";
 
     private static final String METADATA_TAG = "metadata";
     private static final String DATA_TAG = "data";
@@ -67,44 +74,40 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public void putMessage(String key, JSONObject value) {
+    public void putMessage(String key, Object value) {
         putValue(key, value, MESSAGE_TYPE);
     }
 
     @Override
-    public void putReadWriteDocument(String key, JSONObject value) {
+    public void putReadWriteDocument(String key, Object value) {
         putValue(key, value, RW_DOCUMENT_TYPE);
     }
 
-    private void putValue(String key, JSONObject value, String type) {
+    private void putValue(String key, Object value, String type) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues newValues = new ContentValues();
         newValues.put(KEY_WRITE_TS, System.currentTimeMillis());
         newValues.put(KEY_TYPE, type);
         newValues.put(KEY_KEY, key);
-        newValues.put(KEY_DATA, value.toString());
+        newValues.put(KEY_DATA, new Gson().toJson(value));
         db.insert(TABLE_USER_CACHE, null, newValues);
     }
 
     @Override
-    public JSONObject getDocument(String key) {
+    public <T> T getDocument(String key, Class<T> classOfT) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT "+KEY_DATA+" from " + TABLE_USER_CACHE +
                 "WHERE " + KEY_KEY + " = " + key +
                 " AND ("+ KEY_TYPE + " = "+ DOCUMENT_TYPE + " OR " + KEY_TYPE + " = " + RW_DOCUMENT_TYPE + ")";
         Cursor queryVal = db.rawQuery(selectQuery, null);
-        JSONObject dataObj = null;
-        try {
-            dataObj = new JSONObject(queryVal.getString(0));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
         db.close();
         updateReadTimestamp(key);
-        return dataObj;
+        return retVal;
     }
 
+    @Override
     public JSONObject getUpdatedDocument(String key) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT "+KEY_WRITE_TS+", "+KEY_READ_TS+", "+KEY_DATA+" from " + TABLE_USER_CACHE +
@@ -144,13 +147,6 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_USER_CACHE, whereString, whereArgs);
         db.close();
-        /*
-        metadataObj.put(KEY_WRITE_TS, queryVal.getString(0));
-        metadataObj.put(KEY_READ_TS, queryVal.getString(1));
-        metadataObj.put(KEY_TYPE, queryVal.getString(2));
-        metadataObj.put(KEY_KEY, queryVal.getString(3));
-        metadataObj.put(KEY_PLUGIN, queryVal.getString(4));
-        */
     }
 
     /*
@@ -163,7 +159,67 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-
+    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS "+TABLE_USER_CACHE);
+        onCreate(sqLiteDatabase);
     }
+
+    /* BEGIN: Methods that are invoked to get the data for syncing to the host
+     * Note that these are not defined in the interface, since other methods for syncing,
+     * such as couchdb and azure, have their own syncing mechanism that don't depend on our
+     * REST API.
+     */
+
+    /*
+     * Return a string version of the messages and rw documents that need to be sent to the server.
+     */
+
+    public Entry[] sync_phone_to_server() {
+        String selectQuery = "SELECT * from " + TABLE_USER_CACHE +
+                "WHERE " + KEY_TYPE + " = "+ DOCUMENT_TYPE + " OR " + KEY_TYPE + " = " + RW_DOCUMENT_TYPE +
+                "SORT BY "+KEY_WRITE_TS;
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor queryVal = db.rawQuery(selectQuery, null);
+
+        int resultCount = queryVal.getCount();
+        Entry[] entryArray = new Entry[resultCount];
+
+        // Returns fals if the cursor is empty
+        // in which case we return the empty JSONArray, to be consistent.
+        if (queryVal.moveToFirst()) {
+            for (int i = 0; i < resultCount; i++) {
+                Metadata md = new Metadata();
+                md.setWrite_ts(queryVal.getLong(0));
+                md.setRead_ts(queryVal.getLong(1));
+                md.setType(queryVal.getString(2));
+                md.setKey(queryVal.getString(3));
+                md.setPlugin(queryVal.getString(4));
+                String dataStr = queryVal.getString(5);
+                Entry entry = new Entry();
+                entry.setMetadata(md);
+                entry.setData(dataStr);
+                Log.d(cachedCtx, TAG, "For row " + i + ", about to send string " + new Gson().toJson(entry));
+                entryArray[i] = entry;
+            }
+        }
+        return entryArray;
+    }
+
+    public void sync_server_to_phone(Entry[] entryArray) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        for (Entry entry:entryArray) {
+            ContentValues newValues = new ContentValues();
+            newValues.put(KEY_WRITE_TS, entry.getMetadata().getWrite_ts());
+            newValues.put(KEY_READ_TS, entry.getMetadata().getRead_ts());
+            newValues.put(KEY_TYPE, entry.getMetadata().getType());
+            newValues.put(KEY_KEY, entry.getMetadata().getKey());
+            newValues.put(KEY_PLUGIN, entry.getMetadata().getPlugin());
+            newValues.put(KEY_DATA, (String) entry.getData());
+            db.insert(TABLE_USER_CACHE, null, newValues);
+        }
+        db.close();
+    }
+
+    // END: Methods invoked for syncing the data to the host. Not part of the interface.
 }

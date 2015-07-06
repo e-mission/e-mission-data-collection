@@ -19,15 +19,24 @@ public interface UserCache {
         }
     }
 
-    public abstract void putMessage(String key, JSONObject value);
+    /**
+      The value should be an object that is serializable using GSON.
+      Most objects are, but it would be good to confirm, probably by
+      adding a serialization/deserialization test to WrapperTest.
+     */
+    public abstract void putMessage(String key, Object value);
 
-    public abstract void putReadWriteDocument(String key, JSONObject value);
+    public abstract void putReadWriteDocument(String key, Object value);
 
     // TODO: Should this return a JSON object or an actual object retrieved via gson?
     /**
      * Return the document that matches the specified key.
+     * The class of T needs to be passed in, and an appropriate type will be reconstructed
+     * and returned.
      */
-    public abstract JSONObject getDocument(String key);
+    public abstract <T> T getDocument(String key, Class<T> classOfT);
+
+    JSONObject getUpdatedDocument(String key);
 
     /**
      * Delete documents that match the specified time query.
