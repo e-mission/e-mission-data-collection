@@ -5,7 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.JsonReader;
 
 import com.google.gson.Gson;
 
@@ -13,10 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.LinkedList;
-
 import edu.berkeley.eecs.cfc_tracker.Log;
-import edu.berkeley.eecs.cfc_tracker.wrapper.Entry;
 import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
 
 /**
@@ -98,13 +94,18 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     public <T> T getDocument(String key, Class<T> classOfT) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT "+KEY_DATA+" from " + TABLE_USER_CACHE +
-                "WHERE " + KEY_KEY + " = " + key +
-                " AND ("+ KEY_TYPE + " = "+ DOCUMENT_TYPE + " OR " + KEY_TYPE + " = " + RW_DOCUMENT_TYPE + ")";
+                " WHERE " + KEY_KEY + " = '" + key + "'" +
+                " AND ("+ KEY_TYPE + " = '"+ DOCUMENT_TYPE + "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "')";
         Cursor queryVal = db.rawQuery(selectQuery, null);
-        T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
-        db.close();
-        updateReadTimestamp(key);
-        return retVal;
+        if (queryVal.moveToFirst()) {
+            T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
+            db.close();
+            updateReadTimestamp(key);
+            return retVal;
+        } else {
+            // There was no matching entry
+            return null;
+        }
     }
 
     @Override
@@ -114,21 +115,26 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 "WHERE " + KEY_KEY + " = " + key +
                 " AND ("+ KEY_TYPE + " = "+ DOCUMENT_TYPE + " OR " + KEY_TYPE + " = " + RW_DOCUMENT_TYPE + ")";
         Cursor queryVal = db.rawQuery(selectQuery, null);
-        long writeTs = queryVal.getLong(0);
-        long readTs = queryVal.getLong(1);
-        if (writeTs < readTs) {
-            // This has been not been updated since it was last read
+        if (queryVal.moveToFirst()) {
+            long writeTs = queryVal.getLong(0);
+            long readTs = queryVal.getLong(1);
+            if (writeTs < readTs) {
+                // This has been not been updated since it was last read
+                return null;
+            }
+            JSONObject dataObj = null;
+            try {
+                dataObj = new JSONObject(queryVal.getString(0));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            db.close();
+            updateReadTimestamp(key);
+            return dataObj;
+        } else {
+            // There is no matching entry
             return null;
         }
-        JSONObject dataObj = null;
-        try {
-            dataObj = new JSONObject(queryVal.getString(0));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        db.close();
-        updateReadTimestamp(key);
-        return dataObj;
     }
 
     private void updateReadTimestamp(String key) {
@@ -174,16 +180,16 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
      * Return a string version of the messages and rw documents that need to be sent to the server.
      */
 
-    public Entry[] sync_phone_to_server() {
+    public JSONArray sync_phone_to_server() throws JSONException {
         String selectQuery = "SELECT * from " + TABLE_USER_CACHE +
-                "WHERE " + KEY_TYPE + " = "+ DOCUMENT_TYPE + " OR " + KEY_TYPE + " = " + RW_DOCUMENT_TYPE +
-                "SORT BY "+KEY_WRITE_TS;
+                " WHERE " + KEY_TYPE + " = '"+ MESSAGE_TYPE + "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "'" +
+                " ORDER BY "+KEY_WRITE_TS;
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor queryVal = db.rawQuery(selectQuery, null);
 
         int resultCount = queryVal.getCount();
-        Entry[] entryArray = new Entry[resultCount];
+        JSONArray entryArray = new JSONArray();
 
         // Returns fals if the cursor is empty
         // in which case we return the empty JSONArray, to be consistent.
@@ -196,26 +202,53 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 md.setKey(queryVal.getString(3));
                 md.setPlugin(queryVal.getString(4));
                 String dataStr = queryVal.getString(5);
-                Entry entry = new Entry();
-                entry.setMetadata(md);
-                entry.setData(dataStr);
-                Log.d(cachedCtx, TAG, "For row " + i + ", about to send string " + new Gson().toJson(entry));
-                entryArray[i] = entry;
+                /*
+                 * I used to have a GSON wrapper here called "Entry" which encapsulated the metadata
+                 * and the data. However, that didn't really work because it was unclear what type
+                 * the data was.
+                 *
+                 * If we assumed that the data was a string, then GSON would escape and encode it
+                 * during serialization (e.g. {"data":"{\"mProvider\":\"TEST\",\"mResults\":[0.0,0.0],\"mAccuracy\":5.5,
+                 * or {"data":"[\u0027accelerometer\u0027, \u0027gyrometer\u0027, \u0027linear_accelerometer\u0027]
+                 * , and expect an encoded string during deserialization.
+                 *
+                 * This is not consistent with the server, which returns actual JSON in the data, not a string.
+                 *
+                 * We could attempt to overcome this by assuming that the data is an object, not a string. But in that case,
+                 * it is not clear how it would be deserialized, since we wouldn't know what class it was.
+                 *
+                 * So we are going to return a raw JSON object here instead of a GSONed object. That will also allow us to
+                 * put it into the right wrapper object (phone_to_server or server_to_phone).
+                 */
+                JSONObject entry = new JSONObject();
+                entry.put(METADATA_TAG, new JSONObject(new Gson().toJson(md)));
+                entry.put(DATA_TAG, new JSONObject(dataStr));
+                Log.d(cachedCtx, TAG, "For row " + i + ", about to send string " + entry.toString());
+                entryArray.put(entry);
+                queryVal.moveToNext();
             }
         }
         return entryArray;
     }
 
-    public void sync_server_to_phone(Entry[] entryArray) {
+    public void sync_server_to_phone(JSONArray entryArray) throws JSONException {
         SQLiteDatabase db = this.getReadableDatabase();
-        for (Entry entry:entryArray) {
+        for (int i = 0; i < entryArray.length(); i++) {
+            /*
+             * I used to use a GSON entry class here but switched to JSON instead.
+             * Look at the comment in sync_phone_to_server for details.
+             */
+            JSONObject entry = entryArray.getJSONObject(i);
+            Metadata md = new Gson().fromJson(entry.getJSONObject(METADATA_TAG).toString(), Metadata.class);
             ContentValues newValues = new ContentValues();
-            newValues.put(KEY_WRITE_TS, entry.getMetadata().getWrite_ts());
-            newValues.put(KEY_READ_TS, entry.getMetadata().getRead_ts());
-            newValues.put(KEY_TYPE, entry.getMetadata().getType());
-            newValues.put(KEY_KEY, entry.getMetadata().getKey());
-            newValues.put(KEY_PLUGIN, entry.getMetadata().getPlugin());
-            newValues.put(KEY_DATA, (String) entry.getData());
+            newValues.put(KEY_WRITE_TS, md.getWrite_ts());
+            newValues.put(KEY_READ_TS, md.getRead_ts());
+            newValues.put(KEY_TYPE, md.getType());
+            newValues.put(KEY_KEY, md.getKey());
+            newValues.put(KEY_PLUGIN, md.getPlugin());
+            // We use get() here instead of getJSONObject() because we can get either an object or
+            // an array
+            newValues.put(KEY_DATA, entry.get(DATA_TAG).toString());
             db.insert(TABLE_USER_CACHE, null, newValues);
         }
         db.close();
