@@ -31,6 +31,7 @@ import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.LocationTrackingActions;
+import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 
 public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 	implements ConnectionCallbacks, OnConnectionFailedListener {
@@ -98,6 +99,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
         	Log.e(mContext, TAG, "Received unknown action "+intent.getAction()+" ignoring");
         	return;
         }
+        UserCacheFactory.getUserCache(mContext).putMessage("statemachine/transition", mTransition);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         mCurrState = mPrefs.getString(CURR_STATE_KEY, context.getString(R.string.state_start));
         Log.d(mContext, TAG, "after reading from the prefs, the current state is "+mCurrState);

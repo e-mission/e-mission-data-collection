@@ -20,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import edu.berkeley.eecs.cfc_tracker.CommunicationHelper;
 import edu.berkeley.eecs.cfc_tracker.ConnectionSettings;
 import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
@@ -36,6 +37,8 @@ import android.net.http.AndroidHttpClient;
 import android.os.Bundle;
 
 import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
+import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 
 /**
  * @author shankari
@@ -121,32 +124,44 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 		 * We are going to send over information for all the data in a single JSON object, to avoid overhead.
 		 * So we take a quick check to see if the number of entries is zero.
 		 */
-		try {
-			JSONArray tripsToPush = DataUtils.getTripsToPush(getContext());
+        BuiltinUserCache biuc = new BuiltinUserCache(mContext);
 
-			if (tripsToPush.length() == 0) {
+        try {
+			JSONArray entriesToPush = biuc.sync_phone_to_server();
+
+			if (entriesToPush.length() == 0) {
 				System.out.println("No data to send, returning early!");
 				return;
-			}
-		
-			JSONObject toSend = new JSONObject();
-			toSend.put("sections", tripsToPush);
-            toSend.put("user", userToken);
-		
-			Log.i(mContext, TAG, "About to post JSON object "+toSend);
-			boolean success = pushTripsToServer(emission_host, toSend);
-            if (success) {
-                Log.i(mContext, TAG, "Push successful, deleting trips");
-                DataUtils.deletePushedTrips(getContext(), tripsToPush);
-            } else {
-                Log.i(mContext, TAG, "Push unsuccessful, retaining trips");
             }
-		} catch (JSONException e) {
+
+            CommunicationHelper.phone_to_server(mContext, userToken, entriesToPush);
+            long start_ts = entriesToPush.getJSONObject(0).getJSONObject("metadata").getLong("write_ts");
+            long end_ts = entriesToPush.getJSONObject(entriesToPush.length() - 1).getJSONObject("metadata").getLong("write_ts");
+            // This might still have a race in which there are new entries added with the same timestamp as the last
+            // entry. Use an id instead? Or manually choose a slightly earlier ts to be on the safe side?
+            // TODO: Need to figure out which one to do
+            UserCache.TimeQuery tq = new UserCache.TimeQuery("write_ts", start_ts, end_ts);
+            biuc.clearMessages(tq);
+
+        } catch (JSONException e) {
 			Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
 		} catch (IOException e) {
 			Log.e(mContext, TAG, "IO Error "+e+" while posting converted trips to JSON");
 		}
-	}
+
+        /*
+         * Now, read all the information from the server. This is in a different try/catch block,
+         * because we want to try it even if the push fails.
+         */
+        try {
+            JSONArray entriesReceived = CommunicationHelper.server_to_phone(mContext, userToken);
+            biuc.sync_server_to_phone(entriesReceived);
+        } catch (JSONException e) {
+            Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
+        } catch (IOException e) {
+            Log.e(mContext, TAG, "IO Error "+e+" while posting converted trips to JSON");
+        }
+    }
 
 	public Properties getUUIDMap(File privateFileDir) throws FileNotFoundException, IOException {
 		File uuidFile = new File(privateFileDir, "sensor-uuid.props");

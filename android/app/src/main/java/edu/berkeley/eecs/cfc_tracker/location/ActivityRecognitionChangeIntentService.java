@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.os.SystemClock;
 
 import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
+import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 
 
 public class ActivityRecognitionChangeIntentService extends IntentService {
@@ -35,13 +37,19 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,
 					"Detected new activity "+DataUtils.activityType2Name(mostProbableActivity.getType()));
+			// TODO: Do we want to compare activity and only store when different?
+            // Can easily do that by getting the last activity
+            // Let's suck everything up to the server for now and optimize later
+            if (mostProbableActivity.getConfidence() > 90) {
+                UserCache userCache = UserCacheFactory.getUserCache(this);
+                userCache.putMessage("background/activity", mostProbableActivity);
+            }
+			/*
 			DetectedActivity currentActivity = DataUtils.getCurrentMode(this).getLastActivity();
 			if (currentActivity.getType() == mostProbableActivity.getType()) {
 				Log.d(this, TAG, "currentActivity ("+currentActivity+") == newActivity ("+mostProbableActivity+"), skipping update");
 			} else {
-                /*
-                    At least in the current version of the API, the confidence is given in percent (i.e. 90 instead of 0.9)
-                 */
+                //    At least in the current version of the API, the confidence is given in percent (i.e. 90 instead of 0.9)
 				Log.d(this, TAG, "currentActivity ("+currentActivity+") != newActivity ("+mostProbableActivity+"), checking confidence");
 				if (mostProbableActivity.getConfidence() > 90) {
                     if (!isFilteredActivity(mostProbableActivity.getType())) {
@@ -51,6 +59,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
                     }
 				}
 			}
+			*/
 		}
 	}
 
