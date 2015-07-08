@@ -12,6 +12,8 @@ import android.content.Intent;
 import android.location.Location;
 
 import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
+import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
 
@@ -44,7 +46,12 @@ public class LocationChangeIntentService extends IntentService {
 		Log.d(this, TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
         Log.d(this, TAG, "Intent Action is "+intent);
 
+        UserCache uc = UserCacheFactory.getUserCache(this);
+
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+
+        // TODO: Refactor this to be based off a configurable list of properties
+
 
 		/*
 		It seems that newer version of Google Play will send along an intent that does not have the
@@ -56,26 +63,27 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		if (loc == null) return;
 
-		DataUtils.addPoint(this, loc);
-		if (isTripEnded()) {
+        uc.putMessage("background/location", loc);
+
+		if (isTripEnded(uc)) {
 			// Stop listening to more updates
 			Intent stopMonitoringIntent = new Intent();
 			stopMonitoringIntent.setAction(getString(R.string.transition_stopped_moving));
 			stopMonitoringIntent.putExtra(FusedLocationProviderApi.KEY_LOCATION_CHANGED, loc);
 			sendBroadcast(stopMonitoringIntent);
             Log.d(this, TAG, "Finished broadcasting state change to receiver, ending trip now");
-            DataUtils.endTrip(this);
+            // DataUtils.endTrip(this);
 		}
 	}
 	
-	public boolean isTripEnded() {
+	public boolean isTripEnded(UserCache userCache) {
 		/* We have requested 10 points, but we might get less than 10 if the trip has just started
 		 * We request updates every 30 secs, but we might get updates more frequently if other apps have
 		 * requested that. So maybe relying on the last n updates is not such a good idea.
 		 *
 		 * TODO: Switching to all updates in the past 5 minutes may be a better choice
 		 */
-		Location[] last10Points = DataUtils.getLastPoints(this, 10);
+		Location[] last10Points = userCache.getLastMessages("background/location", 10, Location.class);
 		Log.d(this, TAG, "last10Points = "+ Arrays.toString(last10Points));
 		if (last10Points.length < 10) {
 			Log.i(this, TAG, "Only "+last10Points.length+
@@ -114,18 +122,18 @@ public class LocationChangeIntentService extends IntentService {
 	 * The current check to detect that we have stopped moving is that all the last 4 points are within
 	 * the TRIP_END_RADIUS from the last point.
 	 */
-	public boolean stoppedMoving(double[] last4Distances) {
-		if (last4Distances.length < 1) {
+	public boolean stoppedMoving(double[] last9Distances) {
+		if (last9Distances.length < 1) {
 			// We don't have enough points to decide whether we have finished or not, so let's wait a bit longer
 			return false;
 		}
 		// We don't want to start with maxDistance == 0 because then we will always
 		// be within the threshold. We already know that there is at least one element, so we
 		// start with that element
-		double maxDistance = last4Distances[0];
+		double maxDistance = last9Distances[0];
 
-		for(int i = 1; i < last4Distances.length; i++) {
-			double currDistance = last4Distances[i];
+		for(int i = 1; i < last9Distances.length; i++) {
+			double currDistance = last9Distances[i];
 			if (currDistance > maxDistance) {
 				maxDistance = currDistance;
 			}

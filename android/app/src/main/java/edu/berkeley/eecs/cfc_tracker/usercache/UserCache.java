@@ -29,14 +29,17 @@ public interface UserCache {
     public abstract void putReadWriteDocument(String key, Object value);
 
     // TODO: Should this return a JSON object or an actual object retrieved via gson?
-    /**
-     * Return the document that matches the specified key.
-     * The class of T needs to be passed in, and an appropriate type will be reconstructed
-     * and returned.
-     */
-    public abstract <T> T getDocument(String key, Class<T> classOfT);
 
-    JSONObject getUpdatedDocument(String key);
+    public abstract <T> T[] getMessagesForInterval(String key, TimeQuery tq, Class<T> classOfT);
+    public abstract <T> T[] getLastMessages(String key, int nEntries, Class<T> classOfT);
+
+        /**
+         * Return the document that matches the specified key.
+         * The class of T needs to be passed in, and an appropriate type will be reconstructed
+         * and returned.
+         */
+    public abstract <T> T getDocument(String key, Class<T> classOfT);
+    public abstract <T> T getUpdatedDocument(String key, Class<T> classOfT);
 
     /**
      * Delete documents that match the specified time query.

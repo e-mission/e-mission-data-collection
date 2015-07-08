@@ -12,6 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.LinkedList;
+
 import edu.berkeley.eecs.cfc_tracker.Log;
 import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
 
@@ -109,7 +111,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public JSONObject getUpdatedDocument(String key) {
+    public <T> T getUpdatedDocument(String key, Class<T> classOfT) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT "+KEY_WRITE_TS+", "+KEY_READ_TS+", "+KEY_DATA+" from " + TABLE_USER_CACHE +
                 "WHERE " + KEY_KEY + " = " + key +
@@ -122,19 +124,51 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 // This has been not been updated since it was last read
                 return null;
             }
-            JSONObject dataObj = null;
-            try {
-                dataObj = new JSONObject(queryVal.getString(0));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
             db.close();
             updateReadTimestamp(key);
-            return dataObj;
+            return retVal;
         } else {
             // There is no matching entry
             return null;
         }
+    }
+
+    @Override
+    public <T> T[] getMessagesForInterval(String key, TimeQuery tq, Class<T> classOfT) {
+        String whereString = KEY_KEY + " = ? AND "+ tq.key + " < ? AND " + tq.key + " > ?";
+        String[] whereArgs = {key, String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] retCol = {KEY_DATA};
+        Cursor resultCursor = db.query(TABLE_USER_CACHE, retCol, whereString, whereArgs, null, null, null, null);
+
+        T[] result = getMessagesFromCursor(resultCursor, classOfT);
+        db.close();
+        return result;
+    }
+
+    @Override
+    public <T> T[] getLastMessages(String key, int nEntries, Class<T> classOfT) {
+        String whereString = KEY_KEY + " = ? ";
+        String[] whereArgs = {key};
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] retCol = {KEY_DATA};
+        Cursor resultCursor = db.query(TABLE_USER_CACHE, retCol, whereString, whereArgs, null, null,
+                "write_ts", "LIMIT " + nEntries);
+        T[] result = getMessagesFromCursor(resultCursor, classOfT);
+        db.close();
+        return result;
+    }
+
+    private <T> T[] getMessagesFromCursor(Cursor resultCursor, Class<T> classOfT) {
+        int resultCount = resultCursor.getCount();
+        LinkedList<T> resultArray = new LinkedList<T>();
+        if (resultCursor.moveToFirst()) {
+            for (int i = 0; i < resultCount; i++) {
+                resultArray.add(new Gson().fromJson(resultCursor.getString(0), classOfT));
+            }
+        }
+        return (T[])resultArray.toArray();
     }
 
     private void updateReadTimestamp(String key) {
