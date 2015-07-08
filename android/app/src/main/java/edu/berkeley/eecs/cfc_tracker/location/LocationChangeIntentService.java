@@ -6,6 +6,8 @@ import java.util.Arrays;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
+import edu.berkeley.eecs.cfc_tracker.sensors.PollSensor;
+import edu.berkeley.eecs.cfc_tracker.sensors.PollSensorManager;
 import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 import android.app.IntentService;
 import android.content.Intent;
@@ -47,6 +49,15 @@ public class LocationChangeIntentService extends IntentService {
         Log.d(this, TAG, "Intent Action is "+intent);
 
         UserCache uc = UserCacheFactory.getUserCache(this);
+
+        /*
+         * For the sensors that are not managed by the android sensor manager, but instead, require
+         * polling us to poll them, let us do so at the time that we get location updates. We will
+         * always have location updates, since that is our goal, and piggybacking
+         * in this fashion will avoid the overhead of building a scheduler, launching a new process
+         * for the polling, and the power drain of waking up the CPU.
+         */
+        PollSensorManager.getAndSaveAllValues(this);
 
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
 
