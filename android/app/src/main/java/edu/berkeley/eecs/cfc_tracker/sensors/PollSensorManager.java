@@ -2,6 +2,7 @@ package edu.berkeley.eecs.cfc_tracker.sensors;
 
 import android.content.Context;
 
+import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 
@@ -28,7 +29,8 @@ public class PollSensorManager {
      */
     public static PollSensor[] getSensorList(Context ctxt) {
         String[] sensorNameList =
-                UserCacheFactory.getUserCache(ctxt).getDocument("config/poll_sensors",String[].class);
+                UserCacheFactory.getUserCache(ctxt).getDocument(R.string.key_usercache_config_sensors,
+                        String[].class);
         PollSensor[] sensorList = new PollSensor[sensorNameList.length];
 
         for (int i = 0; i < sensorNameList.length; i++) {

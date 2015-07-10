@@ -61,8 +61,6 @@ public class LocationChangeIntentService extends IntentService {
 
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
 
-        // TODO: Refactor this to be based off a configurable list of properties
-
 
 		/*
 		It seems that newer version of Google Play will send along an intent that does not have the
@@ -74,7 +72,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		if (loc == null) return;
 
-        uc.putMessage("background/location", loc);
+        uc.putMessage(R.string.key_usercache_location, loc);
 
 		if (isTripEnded(uc)) {
 			// Stop listening to more updates
@@ -94,7 +92,7 @@ public class LocationChangeIntentService extends IntentService {
 		 *
 		 * TODO: Switching to all updates in the past 5 minutes may be a better choice
 		 */
-		Location[] last10Points = userCache.getLastMessages("background/location", 10, Location.class);
+		Location[] last10Points = userCache.getLastMessages(R.string.key_usercache_location, 10, Location.class);
 		Log.d(this, TAG, "last10Points = "+ Arrays.toString(last10Points));
 		if (last10Points.length < 10) {
 			Log.i(this, TAG, "Only "+last10Points.length+

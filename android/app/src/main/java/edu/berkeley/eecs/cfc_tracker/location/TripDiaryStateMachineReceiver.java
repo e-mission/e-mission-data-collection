@@ -99,7 +99,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
         	Log.e(mContext, TAG, "Received unknown action "+intent.getAction()+" ignoring");
         	return;
         }
-        UserCacheFactory.getUserCache(mContext).putMessage("statemachine/transition", mTransition);
+        UserCacheFactory.getUserCache(mContext).putMessage(R.string.key_usercache_transition, mTransition);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         mCurrState = mPrefs.getString(CURR_STATE_KEY, context.getString(R.string.state_start));
         Log.d(mContext, TAG, "after reading from the prefs, the current state is "+mCurrState);

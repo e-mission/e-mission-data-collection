@@ -71,38 +71,42 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         sqLiteDatabase.execSQL(CREATE_USER_CACHE_TABLE);
     }
 
-    @Override
-    public void putMessage(String key, Object value) {
-        putValue(key, value, MESSAGE_TYPE);
+    private String getKey(int keyRes) {
+        return cachedCtx.getString(keyRes);
     }
 
     @Override
-    public void putReadWriteDocument(String key, Object value) {
-        putValue(key, value, RW_DOCUMENT_TYPE);
+    public void putMessage(int keyRes, Object value) {
+        putValue(keyRes, value, MESSAGE_TYPE);
     }
 
-    private void putValue(String key, Object value, String type) {
+    @Override
+    public void putReadWriteDocument(int keyRes, Object value) {
+        putValue(keyRes, value, RW_DOCUMENT_TYPE);
+    }
+
+    private void putValue(int keyRes, Object value, String type) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues newValues = new ContentValues();
         newValues.put(KEY_WRITE_TS, System.currentTimeMillis());
         newValues.put(KEY_TYPE, type);
-        newValues.put(KEY_KEY, key);
+        newValues.put(KEY_KEY, getKey(keyRes));
         newValues.put(KEY_DATA, new Gson().toJson(value));
         db.insert(TABLE_USER_CACHE, null, newValues);
     }
 
     @Override
-    public <T> T getDocument(String key, Class<T> classOfT) {
+    public <T> T getDocument(int keyRes, Class<T> classOfT) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT "+KEY_DATA+" from " + TABLE_USER_CACHE +
-                " WHERE " + KEY_KEY + " = '" + key + "'" +
+                " WHERE " + KEY_KEY + " = '" + getKey(keyRes) + "'" +
                 " AND ("+ KEY_TYPE + " = '"+ DOCUMENT_TYPE + "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "')";
         Cursor queryVal = db.rawQuery(selectQuery, null);
         if (queryVal.moveToFirst()) {
             T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
             db.close();
-            updateReadTimestamp(key);
+            updateReadTimestamp(keyRes);
             return retVal;
         } else {
             // There was no matching entry
@@ -111,10 +115,10 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public <T> T getUpdatedDocument(String key, Class<T> classOfT) {
+    public <T> T getUpdatedDocument(int keyRes, Class<T> classOfT) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT "+KEY_WRITE_TS+", "+KEY_READ_TS+", "+KEY_DATA+" from " + TABLE_USER_CACHE +
-                "WHERE " + KEY_KEY + " = " + key +
+                "WHERE " + KEY_KEY + " = " + getKey(keyRes) +
                 " AND ("+ KEY_TYPE + " = "+ DOCUMENT_TYPE + " OR " + KEY_TYPE + " = " + RW_DOCUMENT_TYPE + ")";
         Cursor queryVal = db.rawQuery(selectQuery, null);
         if (queryVal.moveToFirst()) {
@@ -126,7 +130,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
             }
             T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
             db.close();
-            updateReadTimestamp(key);
+            updateReadTimestamp(keyRes);
             return retVal;
         } else {
             // There is no matching entry
@@ -135,9 +139,9 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public <T> T[] getMessagesForInterval(String key, TimeQuery tq, Class<T> classOfT) {
-        String whereString = KEY_KEY + " = ? AND "+ tq.key + " < ? AND " + tq.key + " > ?";
-        String[] whereArgs = {key, String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
+    public <T> T[] getMessagesForInterval(int keyRes, TimeQuery tq, Class<T> classOfT) {
+        String whereString = KEY_KEY + " = ? AND "+ getKey(tq.keyRes) + " < ? AND " + getKey(tq.keyRes) + " > ?";
+        String[] whereArgs = {getKey(keyRes), String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
         SQLiteDatabase db = this.getReadableDatabase();
         String[] retCol = {KEY_DATA};
         Cursor resultCursor = db.query(TABLE_USER_CACHE, retCol, whereString, whereArgs, null, null, null, null);
@@ -148,9 +152,9 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public <T> T[] getLastMessages(String key, int nEntries, Class<T> classOfT) {
+    public <T> T[] getLastMessages(int keyRes, int nEntries, Class<T> classOfT) {
         String whereString = KEY_KEY + " = ? ";
-        String[] whereArgs = {key};
+        String[] whereArgs = {getKey(keyRes)};
         SQLiteDatabase db = this.getReadableDatabase();
         String[] retCol = {KEY_DATA};
         Cursor resultCursor = db.query(TABLE_USER_CACHE, retCol, whereString, whereArgs, null, null,
@@ -171,18 +175,18 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         return (T[])resultArray.toArray();
     }
 
-    private void updateReadTimestamp(String key) {
+    private void updateReadTimestamp(int keyRes) {
         SQLiteDatabase writeDb = this.getWritableDatabase();
         ContentValues updateValues = new ContentValues();
         updateValues.put(KEY_READ_TS, System.currentTimeMillis());
-        updateValues.put(KEY_KEY, key);
+        updateValues.put(KEY_KEY, getKey(keyRes));
         writeDb.update(TABLE_USER_CACHE, updateValues, null, null);
         writeDb.close();
     }
 
     @Override
     public void clearMessages(TimeQuery tq) {
-        String whereString = tq.key + " < ? AND " + tq.key + " > ?";
+        String whereString = getKey(tq.keyRes) + " < ? AND " + getKey(tq.keyRes) + " > ?";
         String[] whereArgs = {String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_USER_CACHE, whereString, whereArgs);

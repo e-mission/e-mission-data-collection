@@ -6,6 +6,7 @@ import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
 import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
+import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 import android.app.IntentService;
@@ -42,7 +43,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
             // Let's suck everything up to the server for now and optimize later
             if (mostProbableActivity.getConfidence() > 90) {
                 UserCache userCache = UserCacheFactory.getUserCache(this);
-                userCache.putMessage("background/activity", mostProbableActivity);
+                userCache.putMessage(R.string.key_usercache_activity, mostProbableActivity);
             }
 			/*
 			DetectedActivity currentActivity = DataUtils.getCurrentMode(this).getLastActivity();
