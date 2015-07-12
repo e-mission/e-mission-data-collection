@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId "edu.berkeley.eecs.cfc_tracker"
         minSdkVersion 18
-        targetSdkVersion 22
+        targetSdkVersion 21
 
         testApplicationId "edu.berkeley.eecs.cfc_tracker.test"
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
