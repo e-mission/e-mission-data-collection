@@ -12,6 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import edu.berkeley.eecs.cfc_tracker.Log;
@@ -94,6 +96,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         newValues.put(KEY_KEY, getKey(keyRes));
         newValues.put(KEY_DATA, new Gson().toJson(value));
         db.insert(TABLE_USER_CACHE, null, newValues);
+        db.close();
     }
 
     @Override
@@ -109,7 +112,8 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
             updateReadTimestamp(keyRes);
             return retVal;
         } else {
-            // There was no matching entry
+            // If there was no matching entry, return an empty list instead of null
+            db.close();
             return null;
         }
     }
@@ -126,6 +130,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
             long readTs = queryVal.getLong(1);
             if (writeTs < readTs) {
                 // This has been not been updated since it was last read
+                db.close();
                 return null;
             }
             T retVal = new Gson().fromJson(queryVal.getString(0), classOfT);
@@ -134,6 +139,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
             return retVal;
         } else {
             // There is no matching entry
+            db.close();
             return null;
         }
     }
@@ -153,12 +159,11 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     @Override
     public <T> T[] getLastMessages(int keyRes, int nEntries, Class<T> classOfT) {
-        String whereString = KEY_KEY + " = ? ";
-        String[] whereArgs = {getKey(keyRes)};
+        String queryString = "SELECT "+KEY_DATA+" FROM "+TABLE_USER_CACHE+
+                " WHERE "+KEY_KEY+" = '"+getKey(keyRes)+ "'"+
+                " ORDER BY write_ts DESC LIMIT "+nEntries;
         SQLiteDatabase db = this.getReadableDatabase();
-        String[] retCol = {KEY_DATA};
-        Cursor resultCursor = db.query(TABLE_USER_CACHE, retCol, whereString, whereArgs, null, null,
-                "write_ts", "LIMIT " + nEntries);
+        Cursor resultCursor = db.rawQuery(queryString, null);
         T[] result = getMessagesFromCursor(resultCursor, classOfT);
         db.close();
         return result;
@@ -166,13 +171,17 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     private <T> T[] getMessagesFromCursor(Cursor resultCursor, Class<T> classOfT) {
         int resultCount = resultCursor.getCount();
-        LinkedList<T> resultArray = new LinkedList<T>();
+        T[] resultArray = (T[]) Array.newInstance(classOfT, resultCount);
+        System.out.println("resultArray is "+resultArray);
         if (resultCursor.moveToFirst()) {
             for (int i = 0; i < resultCount; i++) {
-                resultArray.add(new Gson().fromJson(resultCursor.getString(0), classOfT));
+                String data = resultCursor.getString(0);
+                System.out.println("data = "+data);
+                resultArray[i] = new Gson().fromJson(data, classOfT);
+                resultCursor.moveToNext();
             }
         }
-        return (T[])resultArray.toArray();
+        return resultArray;
     }
 
     private void updateReadTimestamp(int keyRes) {
@@ -186,6 +195,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     @Override
     public void clearMessages(TimeQuery tq) {
+        Log.d(cachedCtx, TAG, "Clearing message for timequery "+tq);
         String whereString = getKey(tq.keyRes) + " < ? AND " + getKey(tq.keyRes) + " > ?";
         String[] whereArgs = {String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
         SQLiteDatabase db = this.getWritableDatabase();
@@ -197,6 +207,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
      * Nuclear option that just deletes everything. Useful for debugging.
      */
     public void clear() {
+        Log.d(cachedCtx, TAG, "Clearing all messages ");
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_USER_CACHE, null, null);
         db.close();
@@ -266,6 +277,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 queryVal.moveToNext();
             }
         }
+        db.close();
         return entryArray;
     }
 
