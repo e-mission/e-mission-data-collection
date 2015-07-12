@@ -39,6 +39,7 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
                 new RenamingDelegatingContext(getContext(), "test_");
         cachedContext = context;
         dbHelper = new BuiltinUserCache(context);
+        dbHelper.clear();
     }
 
     protected void tearDown() throws Exception {
@@ -65,18 +66,32 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
         uc.putMessage(R.string.key_usercache_activity, getDetectedActivity(DetectedActivity.ON_BICYCLE, 80));
         uc.putMessage(R.string.key_usercache_activity, getDetectedActivity(DetectedActivity.ON_FOOT, 90));
 
+        for (int i = 0; i < 50; i++) {
+            uc.putMessage(R.string.key_usercache_location, getDummyLocation(27.27, 37.37, 7.7f));
+        }
+
+        assertEquals(dbHelper.getLastMessages(R.string.key_usercache_location, 5, Location.class).length, 5);
+
         BuiltinUserCache biuc = new BuiltinUserCache(cachedContext);
         String toSend = biuc.sync_phone_to_server().toString();
         System.out.println("String to send = " + toSend);
 
         JSONArray el = new JSONArray(toSend);
-        assertEquals(el.length(), 4);
+        assertEquals(el.length(), 54);
         assertEquals(new Gson().fromJson(el.getJSONObject(0).getJSONObject(METADATA_TAG).toString(), Metadata.class).getKey(),
                 cachedContext.getString(R.string.key_usercache_location));
         assertEquals(new Gson().fromJson(el.getJSONObject(2).getJSONObject(METADATA_TAG).toString(), Metadata.class).getKey(),
                 cachedContext.getString(R.string.key_usercache_activity));
         assertEquals(el.getJSONObject(0).getJSONObject(DATA_TAG).getDouble("mLatitude"), 25.25);
         assertEquals(el.getJSONObject(2).getJSONObject(DATA_TAG).getInt("zzaxw"), 1);
+    }
+
+    public void testMultipleTestGetPutMessage() throws Exception {
+        int NTIMES = 1000;
+        for (int i = 0; i < NTIMES; i++) {
+            dbHelper.clear();
+            testGetPutMessage();
+        }
     }
 
     private Metadata getDummyMetadata(String key, String type) {
