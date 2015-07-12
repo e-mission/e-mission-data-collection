@@ -31,6 +31,10 @@ public class PollSensorManager {
         String[] sensorNameList =
                 UserCacheFactory.getUserCache(ctxt).getDocument(R.string.key_usercache_config_sensors,
                         String[].class);
+        if (sensorNameList == null) {
+            // We return null if the document does not exist.
+            return new PollSensor[0];
+        }
         PollSensor[] sensorList = new PollSensor[sensorNameList.length];
 
         for (int i = 0; i < sensorNameList.length; i++) {
