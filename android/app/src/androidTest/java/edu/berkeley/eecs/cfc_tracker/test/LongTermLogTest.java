@@ -1,6 +1,9 @@
 package edu.berkeley.eecs.cfc_tracker.test;
 
+import android.app.Activity;
 import android.content.Context;
+import android.test.ActivityInstrumentationTestCase2;
+import android.test.ActivityTestCase;
 import android.test.AndroidTestCase;
 import android.test.RenamingDelegatingContext;
 
@@ -17,18 +20,17 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import edu.berkeley.eecs.cfc_tracker.Log;
 
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
-import edu.berkeley.eecs.cfc_tracker.storage.StoredTripHelper;
+import edu.berkeley.eecs.cfc_tracker.MainActivity;
 
 /**
  * Created by shankari on 6/20/15.
  */
-public class LongTermLogTest extends AndroidTestCase {
-    private Context testCtxt;
+public class LongTermLogTest extends ActivityInstrumentationTestCase2<MainActivity> {
+    private Activity testCtxt;
 
     // We want to store a long-term log for
     public LongTermLogTest() {
-        super();
+        super(MainActivity.class);
     }
 
     protected void setUp() throws Exception {
@@ -36,10 +38,8 @@ public class LongTermLogTest extends AndroidTestCase {
 		 * Don't need to populate with test data here, can do that in the test cases.
 		 */
         super.setUp();
-        RenamingDelegatingContext context =
-                new RenamingDelegatingContext(getContext(), "test_");
-        testCtxt = context;
-
+        getActivity().finish();
+        testCtxt = getActivity();
         // Make sure that we start every test with a clean slate
         cleanAllFiles();
     }
@@ -47,7 +47,7 @@ public class LongTermLogTest extends AndroidTestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         // Let's ensure that we cleanup even if there are exceptions during the tests
-        cleanAllFiles();
+        // cleanAllFiles();
     }
 
     private void cleanAllFiles() {
@@ -66,7 +66,18 @@ public class LongTermLogTest extends AndroidTestCase {
         assertEquals(Log.extractIndex("[0|ms|WARNING] Message"), "0");
     }
 
+    private void restartProcess() {
+        testCtxt.finish();
+        testCtxt = getActivity();
+    }
+
+    /*
+     * For all the tests that read the number of files, or the id, let's reset the context
+     * so that we can get repeatable behavior.
+     */
     public void testSimpleFileHandler() throws Exception {
+        restartProcess();
+
         Logger testLogger = Logger.getLogger("edu.berkeley.eecs.cfc_tracker.test");
         String fileName = testCtxt.getExternalFilesDir(null) + "/test-long-term.log";
         System.out.println("fileName = " + fileName);
@@ -108,6 +119,7 @@ public class LongTermLogTest extends AndroidTestCase {
     }
 
     public void testRotatingFileHandler() throws Exception {
+        restartProcess();
         Logger testLogger = Logger.getLogger("edu.berkeley.eecs.cfc_tracker.test");
         /*
             This uses a separate prefix for the following reasons:
@@ -182,6 +194,7 @@ public class LongTermLogTest extends AndroidTestCase {
     }
 
     public void testLogLibrary() throws Exception {
+        restartProcess();
         String msg = "This is a test log message";
         // We log this 20,000 times to ensure that the files rotate
         int NENTRIES = 20000;

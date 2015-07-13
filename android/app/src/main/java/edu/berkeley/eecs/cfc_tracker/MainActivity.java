@@ -31,8 +31,7 @@ import java.util.Iterator;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
-import edu.berkeley.eecs.cfc_tracker.storage.OngoingTripStorageHelper;
-import edu.berkeley.eecs.cfc_tracker.storage.StoredTripHelper;
+import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 
 public class MainActivity extends Activity {
     boolean initDone = false;
@@ -165,8 +164,7 @@ public class MainActivity extends Activity {
 	
 	public void clearDb(View view) {
 		System.out.println("MainActivity forcing sync");
-		new OngoingTripStorageHelper(this).clear();
-		new StoredTripHelper(this).clear();
+        new BuiltinUserCache(this).clear();
 	}
 
     public void refreshLog(View view) {

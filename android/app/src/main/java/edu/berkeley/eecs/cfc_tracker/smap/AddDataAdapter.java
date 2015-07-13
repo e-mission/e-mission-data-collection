@@ -26,7 +26,6 @@ import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;
@@ -128,19 +127,13 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 
         try {
 			JSONArray entriesToPush = biuc.sync_phone_to_server();
-
 			if (entriesToPush.length() == 0) {
 				System.out.println("No data to send, returning early!");
 				return;
             }
 
             CommunicationHelper.phone_to_server(mContext, userToken, entriesToPush);
-            long start_ts = entriesToPush.getJSONObject(0).getJSONObject("metadata").getLong("write_ts");
-            long end_ts = entriesToPush.getJSONObject(entriesToPush.length() - 1).getJSONObject("metadata").getLong("write_ts");
-            // This might still have a race in which there are new entries added with the same timestamp as the last
-            // entry. Use an id instead? Or manually choose a slightly earlier ts to be on the safe side?
-            // TODO: Need to figure out which one to do
-            UserCache.TimeQuery tq = new UserCache.TimeQuery("write_ts", start_ts, end_ts);
+            UserCache.TimeQuery tq = getTimeQuery(entriesToPush);
             biuc.clearMessages(tq);
 
         } catch (JSONException e) {
@@ -178,6 +171,18 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 		}
 		return uuidMap;
 	}
+
+    public static UserCache.TimeQuery getTimeQuery(JSONArray pointList) throws JSONException {
+        long start_ts = pointList.getJSONObject(0).getJSONObject("metadata").getLong("write_ts");
+        long end_ts = pointList.getJSONObject(pointList.length() - 1).getJSONObject("metadata").getLong("write_ts");
+        // This might still have a race in which there are new entries added with the same timestamp as the last
+        // entry. Use an id instead? Or manually choose a slightly earlier ts to be on the safe side?
+        // TODO: Need to figure out which one to do
+		// Start slightly before and end slightly after to make sure that we get all entries
+        UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
+                start_ts - 1, end_ts + 1);
+        return tq;
+    }
 	
 	/*
 	 * We add the parts to the object for each sensor based on the order in:

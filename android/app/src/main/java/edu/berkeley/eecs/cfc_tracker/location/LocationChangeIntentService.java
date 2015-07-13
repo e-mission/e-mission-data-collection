@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
+import edu.berkeley.eecs.cfc_tracker.sensors.PollSensorManager;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
@@ -48,9 +48,16 @@ public class LocationChangeIntentService extends IntentService {
 
         UserCache uc = UserCacheFactory.getUserCache(this);
 
-		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+        /*
+         * For the sensors that are not managed by the android sensor manager, but instead, require
+         * polling us to poll them, let us do so at the time that we get location updates. We will
+         * always have location updates, since that is our goal, and piggybacking
+         * in this fashion will avoid the overhead of building a scheduler, launching a new process
+         * for the polling, and the power drain of waking up the CPU.
+         */
+        PollSensorManager.getAndSaveAllValues(this);
 
-        // TODO: Refactor this to be based off a configurable list of properties
+		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
 
 
 		/*
@@ -63,7 +70,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		if (loc == null) return;
 
-        uc.putMessage("background/location", loc);
+        uc.putMessage(R.string.key_usercache_location, loc);
 
 		if (isTripEnded(uc)) {
 			// Stop listening to more updates
@@ -83,7 +90,7 @@ public class LocationChangeIntentService extends IntentService {
 		 *
 		 * TODO: Switching to all updates in the past 5 minutes may be a better choice
 		 */
-		Location[] last10Points = userCache.getLastMessages("background/location", 10, Location.class);
+		Location[] last10Points = userCache.getLastMessages(R.string.key_usercache_location, 10, Location.class);
 		Log.d(this, TAG, "last10Points = "+ Arrays.toString(last10Points));
 		if (last10Points.length < 10) {
 			Log.i(this, TAG, "Only "+last10Points.length+
