@@ -32,6 +32,7 @@ import edu.berkeley.eecs.cfc_tracker.location.actions.ActivityRecognitionActions
 import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
+import edu.berkeley.eecs.cfc_tracker.wrapper.Transition;
 
 public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 	implements ConnectionCallbacks, OnConnectionFailedListener {
@@ -99,10 +100,11 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
         	Log.e(mContext, TAG, "Received unknown action "+intent.getAction()+" ignoring");
         	return;
         }
-        UserCacheFactory.getUserCache(mContext).putMessage(R.string.key_usercache_transition, mTransition);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         mCurrState = mPrefs.getString(CURR_STATE_KEY, context.getString(R.string.state_start));
         Log.d(mContext, TAG, "after reading from the prefs, the current state is "+mCurrState);
+        UserCacheFactory.getUserCache(mContext).putMessage(R.string.key_usercache_transition,
+                new Transition(mCurrState, mTransition));
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
         // TODO: Also figure out whether it is best to create it here or in the constructor.
