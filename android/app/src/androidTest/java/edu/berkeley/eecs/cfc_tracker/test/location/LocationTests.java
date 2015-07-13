@@ -181,12 +181,11 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
         appCtxt.unregisterReceiver(exitChecker);
 
         // The location at which we exited the geofence
-        /*
+
         System.out.println("ASSERT: Got "+uc.getLastMessages(R.string.key_usercache_location, 2,
                 Location.class).length+" points");
 		assertEquals(uc.getLastMessages(R.string.key_usercache_location, 2,
                 Location.class).length, 1);
-                */
 
         startTime = System.currentTimeMillis();
 		final BroadcastChecker enterChecker = new BroadcastChecker(stopString);
@@ -204,21 +203,20 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 
 		Thread.sleep(2 * 1000);
 
-        /*
-		Location[] allPoints = uc.getLastMessages(R.string.key_usercache_location, 15,
+		Location[] allPoints = uc.getLastMessages(R.string.key_usercache_location, 20,
                 Location.class);
 		System.out.println("last points " + Arrays.toString(allPoints));
-		assertEquals(uc.getLastMessages(R.string.key_usercache_location, 15,
-                Location.class).length, 14);
-                */
+		assertEquals(allPoints.length, 15);
 
-        /*
         JSONArray entriesToPush = biuc.sync_phone_to_server();
-        assertEquals(entriesToPush.length(), 14);
+        System.out.println("entriesToPush = "+entriesToPush);
+        // assertEquals(entriesToPush.length(), 20);
 
         UserCache.TimeQuery tq = AddDataAdapter.getTimeQuery(entriesToPush);
 		uc.clearMessages(tq);
-		*/
+        System.out.println("timequery = "+tq);
+        assertEquals(uc.getLastMessages(R.string.key_usercache_location, 20,
+                Location.class).length, 0);
 
         /*
 		System.out.println("trips to push "+tripsToPush);
@@ -236,13 +234,12 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 		assertEquals(moveTrip.getJSONArray("activities").length(), 1);
 		JSONObject moveActivity = moveTrip.getJSONArray("activities").getJSONObject(0);
 		*/
-        /*
-		assertEquals(allPoints.length, 14);
-		assertEquals(allPoints[0].getLatitude(), 37.380866);
-		assertEquals(allPoints[0].getLongitude(), -122.086945);
-		assertEquals(allPoints[8].getLatitude(), 37.385461);
-		assertEquals(allPoints[8].getLongitude(), -122.078265);
-		*/
+
+		assertEquals(allPoints.length, 15);
+		assertEquals(allPoints[14].getLatitude(), 37.380866);
+		assertEquals(allPoints[14].getLongitude(), -122.086945);
+		assertEquals(allPoints[0].getLatitude(), 37.385461);
+		assertEquals(allPoints[0].getLongitude(), -122.078265);
 
         startTime = System.currentTimeMillis();
         final BroadcastChecker exitChecker2 = new BroadcastChecker(startString);
@@ -402,24 +399,43 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 
         Location[] allPoints = uc.getLastMessages(R.string.key_usercache_location, 17, Location.class);
         System.out.println("last points " + Arrays.toString(allPoints));
-        assertEquals(allPoints.length, 16);
+        assertTrue("allPoints.length = "+allPoints.length+" expecting 13 to 17",
+                12 < allPoints.length && allPoints.length < 18);
 
         JSONArray entriesToPush = biuc.sync_phone_to_server();
         System.out.println("trips to push " + entriesToPush);
-        assertEquals(entriesToPush.length(), 18);
+        System.out.println("trips to push length " + entriesToPush.length());
+        // We are actually getting activity entries from the system now, since this is on a physical phone
+        // We can't control how many of them we get, so we check for a range instead of an exact value
+        assertTrue(20 < entriesToPush.length() && entriesToPush.length() < 30);
 
-        Location startPlaceLocation = allPoints[0];
+        Location startPlaceLocation = allPoints[14];
         assertEquals(startPlaceLocation.getLatitude(), 37.380866);
         assertEquals(startPlaceLocation.getLongitude(), -122.086945);
 
         DetectedActivity[] allActivities = uc.getLastMessages(R.string.key_usercache_activity, 10,
                 DetectedActivity.class);
-        assertEquals(allActivities.length, 2);
+        assertTrue("allActivities.length = " + allActivities.length + " expecting 2 to 10",
+                2 <= allActivities.length && allActivities.length <= 10);
 
-        assertEquals(entriesToPush.getJSONObject(0).getJSONObject("data").getDouble("mLatitude"), 37.380866);
-        assertEquals(entriesToPush.getJSONObject(0).getJSONObject("data").getDouble("mLongitude"), -122.086945);
-        assertEquals(entriesToPush.getJSONObject(8).getJSONObject("data").getDouble("mLatitude"), 37.385461);
-        assertEquals(entriesToPush.getJSONObject(8).getJSONObject("data").getDouble("mLongitude"), -122.078265);
+        for (int i = 0; i < entriesToPush.length(); i++) {
+            if (entriesToPush.getJSONObject(i).getJSONObject("metadata").getString("key").equals(
+                    appCtxt.getString(R.string.key_usercache_location))) {
+                // This is the first location
+                assertEquals(entriesToPush.getJSONObject(i).getJSONObject("data").getDouble("mLatitude"), 37.380866);
+                assertEquals(entriesToPush.getJSONObject(i).getJSONObject("data").getDouble("mLongitude"), -122.086945);
+                break;
+            }
+        }
+        for (int i = entriesToPush.length() - 1; i > 0; i--) {
+            if (entriesToPush.getJSONObject(i).getJSONObject("metadata").getString("key").equals(
+                    appCtxt.getString(R.string.key_usercache_location))) {
+                // This is the last location
+                assertEquals(entriesToPush.getJSONObject(i).getJSONObject("data").getDouble("mLatitude"), 37.385461);
+                assertEquals(entriesToPush.getJSONObject(i).getJSONObject("data").getDouble("mLongitude"), -122.078265);
+                break;
+            }
+        }
     }
 
     @Override
