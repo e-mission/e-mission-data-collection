@@ -7,7 +7,7 @@ import android.util.Log;
  * Created by shankari on 1/18/15.
  */
 public class MockLocationBroadcastChecker extends BroadcastChecker {
-    private static final String TAG = "MockLocationBroadcastChecker";
+    private static final String TAG = "MockLocationBrdcstChker";
     private int code1;
     private int code2;
 
