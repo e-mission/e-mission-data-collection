@@ -129,13 +129,11 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 			JSONArray entriesToPush = biuc.sync_phone_to_server();
 			if (entriesToPush.length() == 0) {
 				System.out.println("No data to send, returning early!");
-				return;
-            }
-
-            CommunicationHelper.phone_to_server(mContext, userToken, entriesToPush);
-            UserCache.TimeQuery tq = getTimeQuery(entriesToPush);
-            biuc.clearMessages(tq);
-
+            } else {
+				CommunicationHelper.phone_to_server(mContext, userToken, entriesToPush);
+				UserCache.TimeQuery tq = getTimeQuery(entriesToPush);
+				biuc.clearMessages(tq);
+			}
         } catch (JSONException e) {
 			Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
 		} catch (IOException e) {

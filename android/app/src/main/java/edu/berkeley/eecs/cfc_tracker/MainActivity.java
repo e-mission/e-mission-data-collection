@@ -9,6 +9,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.method.ScrollingMovementMethod;
@@ -31,6 +32,7 @@ import java.util.Iterator;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
+import edu.berkeley.eecs.cfc_tracker.smap.AddDataAdapter;
 import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 
 public class MainActivity extends Activity {
@@ -156,10 +158,22 @@ public class MainActivity extends Activity {
 	
 	public void forceSync(View view) {
 		System.out.println("MainActivity forcing sync");
+
+        AsyncTask<Context, Void, Void> task = new AsyncTask<Context, Void, Void>() {
+            protected Void doInBackground(Context... ctxt) {
+                edu.berkeley.eecs.cfc_tracker.smap.AddDataAdapter cta = new edu.berkeley.eecs.cfc_tracker.smap.AddDataAdapter(ctxt[0], true);
+                cta.onPerformSync(mAccount, null, AUTHORITY,
+                        null, null);
+                return null;
+            }
+        };
+        task.execute(this);
+        /*
 	    Bundle b = new Bundle();
         b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		ContentResolver.requestSync(mAccount, AUTHORITY, new Bundle());
+		*/
 	}
 	
 	public void clearDb(View view) {
