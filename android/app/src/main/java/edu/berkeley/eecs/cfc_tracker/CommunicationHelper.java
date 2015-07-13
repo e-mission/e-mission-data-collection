@@ -115,6 +115,11 @@ public class CommunicationHelper {
         String commuteTrackerHost = ConnectionSettings.getConnectURL(cachedContext);
         String fullURL = commuteTrackerHost + "/usercache/get";
         String rawJSON = getUserPersonalData(cachedContext, fullURL, userToken);
+        if (rawJSON.trim().length() == 0) {
+            // We didn't get anything from the server, so let's return an empty array for now
+            // TODO: Figure out whether we need to return a blank array from the server instead
+            return new JSONArray();
+        }
         JSONObject parentObj = new JSONObject(rawJSON);
         return parentObj.getJSONArray("server_to_phone");
     }
