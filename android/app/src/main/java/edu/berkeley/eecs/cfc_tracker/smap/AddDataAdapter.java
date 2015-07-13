@@ -179,8 +179,9 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
         // This might still have a race in which there are new entries added with the same timestamp as the last
         // entry. Use an id instead? Or manually choose a slightly earlier ts to be on the safe side?
         // TODO: Need to figure out which one to do
+		// Start slightly before and end slightly after to make sure that we get all entries
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
-                start_ts, end_ts);
+                start_ts - 1, end_ts + 1);
         return tq;
     }
 	
