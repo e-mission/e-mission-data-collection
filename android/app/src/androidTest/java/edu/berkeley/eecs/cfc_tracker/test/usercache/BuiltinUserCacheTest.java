@@ -92,7 +92,7 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
     }
 
     public void testMultipleTestGetPutMessage() throws Exception {
-        int NTIMES = 1000;
+        int NTIMES = 20;
         for (int i = 0; i < NTIMES; i++) {
             dbHelper.clear();
             testGetPutMessage();
@@ -161,7 +161,7 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
 
     public void testRawOutputToServer() throws Exception {
         String expectedOutputRegEx = new StringBuilder().append("\\[").
-                append("\\{\"metadata\":\\{\"key\":\"background./location\",\"type\":\"message\",\"read_ts\":0,\"write_ts\":[0-9]*\\},").
+                append("\\{\"metadata\":\\{\"key\":\"background./location\",.*\"type\":\"message\",\"write_ts\":[0-9]*\\},").
                 append("\"data\":\\{.*\"mAccuracy\":5.5,.*\"mLatitude\":45.64,.*\"mLongitude\":21.35.*\\]").toString();
 
         UserCache uc = UserCacheFactory.getUserCache(cachedContext);
@@ -172,6 +172,6 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
 
         String toSend = el.toString();
 
-        assertTrue(toSend.matches(expectedOutputRegEx));
+        assertTrue("toSend = "+toSend, toSend.matches(expectedOutputRegEx));
     }
 }
