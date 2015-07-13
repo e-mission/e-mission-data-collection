@@ -63,11 +63,16 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
         uc.putMessage(R.string.key_usercache_location, getDummyLocation(25.25, 35.35, 5.5f));
         uc.putMessage(R.string.key_usercache_location, getDummyLocation(27.27, 37.37, 7.7f));
 
+        assertEquals(dbHelper.getLastMessages(R.string.key_usercache_location, 5, Location.class).length, 2);
+
         uc.putMessage(R.string.key_usercache_activity, getDetectedActivity(DetectedActivity.ON_BICYCLE, 80));
         uc.putMessage(R.string.key_usercache_activity, getDetectedActivity(DetectedActivity.ON_FOOT, 90));
 
         for (int i = 0; i < 50; i++) {
             uc.putMessage(R.string.key_usercache_location, getDummyLocation(27.27, 37.37, 7.7f));
+            System.out.println("In for loop, location length(10) is " +
+                    dbHelper.getLastMessages(R.string.key_usercache_location, 10, Location.class).length);
+            assertEquals(dbHelper.getLastMessages(R.string.key_usercache_location, 3, Location.class).length, 3);
         }
 
         assertEquals(dbHelper.getLastMessages(R.string.key_usercache_location, 5, Location.class).length, 5);
