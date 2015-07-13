@@ -49,6 +49,7 @@ public class Metadata {
     private String type;
     private String key;
     private String plugin;
+    private final String platform = "android";
 
     public Metadata() {
     }
