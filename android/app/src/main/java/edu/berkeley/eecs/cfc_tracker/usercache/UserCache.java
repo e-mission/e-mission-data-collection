@@ -1,7 +1,5 @@
 package edu.berkeley.eecs.cfc_tracker.usercache;
 
-import org.json.JSONObject;
-
 /**
  * Abstract superclass for the client side component of the user cache.
  */
@@ -16,6 +14,10 @@ public interface UserCache {
             this.keyRes = keyRes;
             this.startTs = startTs;
             this.endTs = endTs;
+        }
+
+        public String toString() {
+            return startTs + " < " + keyRes + " < " + endTs;
         }
     }
 
