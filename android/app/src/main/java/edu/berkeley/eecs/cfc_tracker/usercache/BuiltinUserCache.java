@@ -161,7 +161,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     public <T> T[] getLastMessages(int keyRes, int nEntries, Class<T> classOfT) {
         String queryString = "SELECT "+KEY_DATA+" FROM "+TABLE_USER_CACHE+
                 " WHERE "+KEY_KEY+" = '"+getKey(keyRes)+ "'"+
-                " ORDER BY write_ts DESC LIMIT "+nEntries;
+                " ORDER BY write_ts DESC  LIMIT "+nEntries;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor resultCursor = db.rawQuery(queryString, null);
         T[] result = getMessagesFromCursor(resultCursor, classOfT);
@@ -176,7 +176,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         if (resultCursor.moveToFirst()) {
             for (int i = 0; i < resultCount; i++) {
                 String data = resultCursor.getString(0);
-                System.out.println("data = "+data);
+                // System.out.println("data = "+data);
                 resultArray[i] = new Gson().fromJson(data, classOfT);
                 resultCursor.moveToNext();
             }
@@ -196,8 +196,9 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     @Override
     public void clearMessages(TimeQuery tq) {
         Log.d(cachedCtx, TAG, "Clearing message for timequery "+tq);
-        String whereString = getKey(tq.keyRes) + " < ? AND " + getKey(tq.keyRes) + " > ?";
+        String whereString = getKey(tq.keyRes) + " > ? AND " + getKey(tq.keyRes) + " < ?";
         String[] whereArgs = {String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
+        Log.d(cachedCtx, TAG, "Args =  "+whereString + " : " + Arrays.toString(whereArgs));
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_USER_CACHE, whereString, whereArgs);
         db.close();
