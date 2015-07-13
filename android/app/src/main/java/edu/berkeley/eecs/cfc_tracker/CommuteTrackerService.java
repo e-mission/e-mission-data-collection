@@ -14,8 +14,6 @@ import android.os.IBinder;
 
 import com.google.android.gms.location.LocationListener;
 
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
-
 public class CommuteTrackerService extends Service implements
 	Runnable, SensorEventListener {
 	private static final String TAG = "CommuteTrackerService";
@@ -128,7 +126,7 @@ public class CommuteTrackerService extends Service implements
 		accelData.put(Constants.ACCELERATOR_Z, String.valueOf(event.values[2]));
 		
 		/** Writes accelerometer data to local file. */
-		DataUtils.saveData(accelData, privateFileDir);
+		// DataUtils.saveData(accelData, privateFileDir);
 		Log.i(this, TAG, "X: " + accelerameter_x + "Y: "+ accelerameter_y + "Z: " + accelerameter_z);
 	}	
 	
@@ -145,9 +143,6 @@ public class CommuteTrackerService extends Service implements
         	Properties locData = new Properties();
         	locData.put(Constants.LATITUDE, String.valueOf(newLoc.getLatitude()));
             locData.put(Constants.LONGITUDE, String.valueOf(newLoc.getLongitude()));
-            
-            /** Writes location to local file. */
-            DataUtils.saveData(locData, privateFileDir);
             
             /*
             if (prevLoc != null) {
@@ -192,7 +187,6 @@ public class CommuteTrackerService extends Service implements
 		activityHandler.stopMonitoring();
 		*/
 		// Generate the final trip
-		DataUtils.endTrip(this);
 	}
 
 	@Override

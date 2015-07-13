@@ -31,7 +31,6 @@ import edu.berkeley.eecs.cfc_tracker.location.actions.ActivityRecognitionActions
 import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.cfc_tracker.smap.AddDataAdapter;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
@@ -74,8 +73,8 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 		System.out.println("textCtxt = "+testCtxt);
 		
 		// Let's start off with a clean slate
-		DataUtils.clearOngoingDb(appCtxt);
-		DataUtils.deleteAllStoredTrips(appCtxt);
+		BuiltinUserCache biuc = new BuiltinUserCache(appCtxt);
+        biuc.clear();
 
         final BroadcastChecker removeChecker = new BroadcastChecker(CALLBACK_CLEAR_DONE);
         LocalBroadcastManager.getInstance(appCtxt)
@@ -399,7 +398,7 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 
         Location[] allPoints = uc.getLastMessages(R.string.key_usercache_location, 17, Location.class);
         System.out.println("last points " + Arrays.toString(allPoints));
-        assertTrue("allPoints.length = "+allPoints.length+" expecting 13 to 17",
+        assertTrue("allPoints.length = " + allPoints.length + " expecting 13 to 17",
                 12 < allPoints.length && allPoints.length < 18);
 
         JSONArray entriesToPush = biuc.sync_phone_to_server();

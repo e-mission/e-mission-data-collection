@@ -26,7 +26,6 @@ import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;

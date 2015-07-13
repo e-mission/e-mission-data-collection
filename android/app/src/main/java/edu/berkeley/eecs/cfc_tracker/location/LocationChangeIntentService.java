@@ -6,9 +6,7 @@ import java.util.Arrays;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.sensors.PollSensor;
 import edu.berkeley.eecs.cfc_tracker.sensors.PollSensorManager;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;

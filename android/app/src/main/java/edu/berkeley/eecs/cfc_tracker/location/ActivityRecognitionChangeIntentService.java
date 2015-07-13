@@ -7,7 +7,6 @@ import com.google.android.gms.location.DetectedActivity;
 
 import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
 import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -37,7 +36,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,
-					"Detected new activity "+DataUtils.activityType2Name(mostProbableActivity.getType()));
+					"Detected new activity "+activityType2Name(mostProbableActivity.getType()));
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
             // Let's suck everything up to the server for now and optimize later
@@ -76,4 +75,27 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
         }
         return false;
     }
+
+	/**
+	 * Map detected activity types to strings
+	 *@param activityType The detected activity type
+	 *@return A user-readable name for the type
+	 */
+	public static String activityType2Name(int activityType) {
+		switch(activityType) {
+			case DetectedActivity.IN_VEHICLE:
+				return "transport";
+			case DetectedActivity.ON_BICYCLE:
+				return "cycling";
+			case DetectedActivity.ON_FOOT:
+				return "walking";
+			case DetectedActivity.STILL:
+				return "still";
+			case DetectedActivity.UNKNOWN:
+				return "unknown";
+			case DetectedActivity.TILTING:
+				return "tilting";
+		}
+		return "unknown";
+	}
 }

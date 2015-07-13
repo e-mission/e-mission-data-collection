@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 import edu.berkeley.eecs.cfc_tracker.Log;
 
 import edu.berkeley.eecs.cfc_tracker.MainActivity;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
-import edu.berkeley.eecs.cfc_tracker.storage.StoredTripHelper;
 
 /**
  * Created by shankari on 6/20/15.

@@ -1,7 +1,6 @@
 package edu.berkeley.eecs.cfc_tracker.location;
 
 import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.storage.DataUtils;
 
 import android.app.IntentService;
 import android.content.Intent;
