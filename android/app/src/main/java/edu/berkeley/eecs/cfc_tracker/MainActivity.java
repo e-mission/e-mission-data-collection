@@ -176,6 +176,7 @@ public class MainActivity extends Activity {
 	public void clearDb(View view) {
 		System.out.println("MainActivity forcing sync");
         new BuiltinUserCache(this).clear();
+        new DatabaseLogHandler(this).clear();
 	}
 
     public void refreshLog(View view) {
