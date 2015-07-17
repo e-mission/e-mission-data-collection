@@ -21,10 +21,6 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,7 +28,8 @@ import java.util.Iterator;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
-import edu.berkeley.eecs.cfc_tracker.smap.AddDataAdapter;
+import edu.berkeley.eecs.cfc_tracker.log.DatabaseLogHandler;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 
 public class MainActivity extends Activity {
@@ -202,6 +199,11 @@ public class MainActivity extends Activity {
 
     public void loginToGoogle(View view) {
         new GoogleAccountManagerAuth(this, REQUEST_CODE_PICK_ACCOUNT).getUserName();
+    }
+
+    public void exportDatabaseLogs(View view) {
+        new DatabaseLogHandler(this).export();
+        Toast.makeText(this, "Database export complete", Toast.LENGTH_LONG).show();
     }
 	
 	@Override
