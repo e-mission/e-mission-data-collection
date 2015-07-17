@@ -11,7 +11,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
-import edu.berkeley.eecs.cfc_tracker.Log;
 
 public class BatteryLevelReceiver extends BroadcastReceiver {
 	public static int STARTED_MONITORING = 42;

@@ -1,7 +1,6 @@
 package edu.berkeley.eecs.cfc_tracker.auth;
 
 import java.io.IOException;
-import java.sql.Connection;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
@@ -9,20 +8,14 @@ import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 
 import edu.berkeley.eecs.cfc_tracker.ConnectionSettings;
-import edu.berkeley.eecs.cfc_tracker.Log;
-import edu.berkeley.eecs.cfc_tracker.R;
-import android.accounts.Account;
-import android.accounts.AccountManager;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.provider.Settings;
-import android.widget.TextView;
-import android.widget.Toast;
 
 public class GoogleAccountManagerAuth {
 

@@ -11,7 +11,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
 
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 

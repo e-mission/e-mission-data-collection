@@ -1,4 +1,4 @@
-package edu.berkeley.eecs.cfc_tracker;
+package edu.berkeley.eecs.cfc_tracker.log;
 
 import android.content.Context;
 import android.os.Environment;
@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 public class Log {
     public static String logFilePrefix = "long-term";
     private static Logger logger;
+    private static DatabaseLogHandler dbLogger;
     private static final int MB = 1024 * 1024;
 
     public static java.util.logging.Formatter simpleFormatter = new java.util.logging.Formatter() {
@@ -186,6 +187,7 @@ public class Log {
                 // TODO: generate notification here instead
                 System.out.println("Error "+e+" while creating file handler, logging is only to the short-term adb logcat");
             }
+            dbLogger = new DatabaseLogHandler(ctxt);
         }
         // System.out.println("Returning logger with "+logger.getHandlers().length+" handlers "+logger.getHandlers());
         return logger;
@@ -194,24 +196,28 @@ public class Log {
     public static void d(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.FINE,
                 String.format("%s : %s", TAG, message));
+        dbLogger.log("TAG " + message);
         android.util.Log.d(TAG, message);
     }
 
     public static void i(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.INFO,
                 String.format("%s : %s", TAG, message));
+        dbLogger.log("TAG " + message);
         android.util.Log.i(TAG, message);
     }
 
     public static void w(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.WARNING,
                 String.format("%s : %s", TAG, message));
+        dbLogger.log("TAG " + message);
         android.util.Log.w(TAG, message);
     }
 
     public static void e(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.SEVERE,
                 String.format("%s : %s", TAG, message));
+        dbLogger.log("TAG "+message);
         android.util.Log.e(TAG, message);
     }
 }

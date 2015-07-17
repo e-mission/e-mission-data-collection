@@ -5,7 +5,7 @@ import edu.berkeley.eecs.cfc_tracker.R;
 import android.app.IntentService;
 import android.content.Intent;
 
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 
 import com.google.android.gms.location.Geofence;

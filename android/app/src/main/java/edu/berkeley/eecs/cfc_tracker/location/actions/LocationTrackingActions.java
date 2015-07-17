@@ -3,7 +3,7 @@ package edu.berkeley.eecs.cfc_tracker.location.actions;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;

@@ -14,9 +14,8 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.LinkedList;
 
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
 
 /**
@@ -69,7 +68,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 KEY_WRITE_TS + " INTEGER, "+ KEY_READ_TS +" INTEGER, " +
                 KEY_TYPE + " TEXT, " + KEY_KEY + " TEXT, "+
                 KEY_PLUGIN + " TEXT, " + KEY_DATA + " TEXT)";
-        System.out.println("CREATE_CLIENT_STATS_TABLE = " + CREATE_USER_CACHE_TABLE);
+        System.out.println("CREATE_USER_CACHE_TABLE = " + CREATE_USER_CACHE_TABLE);
         sqLiteDatabase.execSQL(CREATE_USER_CACHE_TABLE);
     }
 

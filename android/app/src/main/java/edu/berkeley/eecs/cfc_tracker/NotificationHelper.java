@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 
+import edu.berkeley.eecs.cfc_tracker.log.Log;
+
 public class NotificationHelper {
 	private static String TAG = "NotificationHelper";
 
@@ -34,7 +36,7 @@ public class NotificationHelper {
 		NotificationManager nMgr =
 				(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
 		
-		Log.d(context, TAG, "Generating notify with id "+id+" and message "+message);
+		Log.d(context, TAG, "Generating notify with id " + id + " and message " + message);
 		nMgr.notify(id, builder.build());
 	}
 }
