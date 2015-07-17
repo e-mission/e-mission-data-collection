@@ -12,6 +12,7 @@ import com.google.android.gms.location.ActivityRecognitionApi;
 import com.google.android.gms.location.LocationServices;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
+import edu.berkeley.eecs.cfc_tracker.Log;
 import edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentService;
 
 /**
@@ -33,6 +34,7 @@ public class ActivityRecognitionActions {
     }
 
     public PendingResult<Status> start() {
+        Log.d(mCtxt, TAG, "Starting activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
         return ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient,
                 ACTIVITY_DETECTION_INTERVAL,
                 getActivityRecognitionPendingIntent(mCtxt));

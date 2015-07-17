@@ -91,6 +91,7 @@ public class GeofenceActions {
     }
 
     public PendingResult<Status> remove() {
+        Log.d(mCtxt, TAG, "Removing geofence with ID = "+GEOFENCE_REQUEST_ID);
         return LocationServices.GeofencingApi.removeGeofences(mGoogleApiClient,
                 Arrays.asList(GEOFENCE_REQUEST_ID));
     }
