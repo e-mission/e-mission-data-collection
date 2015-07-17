@@ -12,6 +12,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.logging.Formatter;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
 /**
@@ -24,10 +27,12 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
 
     private Context cachedContext;
+    Formatter formatter;
 
     public DatabaseLogHandler(Context context) {
         super(context, "logDB", null, DATABASE_VERSION);
         cachedContext = context;
+        formatter = Log.simpleFormatter;
     }
 
     @Override
@@ -44,7 +49,9 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
         onCreate(sqLiteDatabase);
     }
 
-    public void log(String line) {
+    public void log(String message) {
+        LogRecord record = new LogRecord(Level.FINE, message);
+        String line = formatter.format(record);
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(KEY_LINE, line);
@@ -70,6 +77,12 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
             Toast.makeText(cachedContext, e.getMessage(), Toast.LENGTH_LONG).show();
             System.err.println();
         }
+        db.close();
+    }
+
+    public void clear() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_LOG, null, null);
         db.close();
     }
 }
