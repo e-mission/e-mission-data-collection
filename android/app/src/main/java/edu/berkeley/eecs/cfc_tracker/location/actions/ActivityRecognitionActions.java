@@ -50,6 +50,7 @@ public class ActivityRecognitionActions {
     }
 
     public PendingResult<Status> stop() {
+        Log.d(mCtxt, TAG, "Stopping activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
         return ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient,
                 getActivityRecognitionPendingIntent(mCtxt));
     }
