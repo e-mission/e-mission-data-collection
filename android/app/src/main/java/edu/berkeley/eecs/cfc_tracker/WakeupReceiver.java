@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import edu.berkeley.eecs.cfc_tracker.log.Log;
+
 public class WakeupReceiver extends BroadcastReceiver {
     private static String TAG = "WakeupReceiver";
 

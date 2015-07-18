@@ -14,6 +14,8 @@ import android.os.IBinder;
 
 import com.google.android.gms.location.LocationListener;
 
+import edu.berkeley.eecs.cfc_tracker.log.Log;
+
 public class CommuteTrackerService extends Service implements
 	Runnable, SensorEventListener {
 	private static final String TAG = "CommuteTrackerService";

@@ -35,7 +35,7 @@ import android.content.SyncResult;
 import android.net.http.AndroidHttpClient;
 import android.os.Bundle;
 
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 

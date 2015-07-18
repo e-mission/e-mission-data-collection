@@ -8,10 +8,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
-import com.google.android.gms.location.ActivityRecognitionApi;
-import com.google.android.gms.location.LocationServices;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentService;
 
 /**
@@ -33,6 +32,7 @@ public class ActivityRecognitionActions {
     }
 
     public PendingResult<Status> start() {
+        Log.d(mCtxt, TAG, "Starting activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
         return ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient,
                 ACTIVITY_DETECTION_INTERVAL,
                 getActivityRecognitionPendingIntent(mCtxt));
@@ -48,6 +48,7 @@ public class ActivityRecognitionActions {
     }
 
     public PendingResult<Status> stop() {
+        Log.d(mCtxt, TAG, "Stopping activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
         return ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient,
                 getActivityRecognitionPendingIntent(mCtxt));
     }

@@ -10,9 +10,8 @@ import edu.berkeley.eecs.cfc_tracker.R;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.os.SystemClock;
 
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 

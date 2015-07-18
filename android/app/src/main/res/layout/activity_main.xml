@@ -20,9 +20,9 @@
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textView1"
-        android:layout_marginLeft="27dp"
-        android:layout_toRightOf="@+id/button1"
+        android:layout_below="@+id/status_textview"
+        android:layout_marginStart="27dp"
+        android:layout_toEndOf="@+id/button1"
         android:onClick="stopTracking"
         android:text="@string/stop" />
 
@@ -30,8 +30,8 @@
         android:id="@+id/button3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_below="@+id/textView1"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/status_textview"
         android:layout_marginRight="36dp"
         android:onClick="forceSync"
         android:text="@string/sync" />
@@ -40,8 +40,8 @@
         android:id="@+id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView1"
-        android:layout_below="@+id/textView1"
+        android:layout_alignStart="@+id/status_textview"
+        android:layout_below="@+id/status_textview"
         android:onClick="startTracking"
         android:text="@string/start" />
 
@@ -67,10 +67,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/login"
-        android:id="@+id/button"
+        android:id="@+id/loginButton"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/button1"
         android:onClick="loginToGoogle" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/exportDB"
+        android:id="@+id/exportButton"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/loginButton"
+        android:onClick="exportDatabaseLogs" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -79,7 +88,7 @@
         android:id="@+id/log_textview"
         android:scrollbars = "vertical|horizontal"
         android:layout_centerVertical="true"
-        android:layout_below="@+id/button"
+        android:layout_below="@+id/exportButton"
         android:layout_alignParentStart="true" />
 
 </RelativeLayout>

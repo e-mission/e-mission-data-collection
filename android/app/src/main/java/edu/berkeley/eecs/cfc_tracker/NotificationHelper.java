@@ -6,8 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 
+import edu.berkeley.eecs.cfc_tracker.log.Log;
+
 public class NotificationHelper {
-	
+	private static String TAG = "NotificationHelper";
+
 	public static void createNotification(Context context, int id, String message) {
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 		builder.setSmallIcon(R.drawable.ic_launcher);
@@ -33,8 +36,7 @@ public class NotificationHelper {
 		NotificationManager nMgr =
 				(NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
 		
-		System.out.println("Generating notify with id "+id+" and message "+message);
+		Log.d(context, TAG, "Generating notify with id " + id + " and message " + message);
 		nMgr.notify(id, builder.build());
 	}
-	
 }

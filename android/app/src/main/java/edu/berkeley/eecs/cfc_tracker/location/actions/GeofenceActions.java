@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 
-import edu.berkeley.eecs.cfc_tracker.Log;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -91,6 +91,7 @@ public class GeofenceActions {
     }
 
     public PendingResult<Status> remove() {
+        Log.d(mCtxt, TAG, "Removing geofence with ID = "+GEOFENCE_REQUEST_ID);
         return LocationServices.GeofencingApi.removeGeofences(mGoogleApiClient,
                 Arrays.asList(GEOFENCE_REQUEST_ID));
     }
