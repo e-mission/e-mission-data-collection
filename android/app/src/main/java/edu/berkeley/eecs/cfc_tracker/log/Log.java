@@ -196,28 +196,28 @@ public class Log {
     public static void d(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.FINE,
                 String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG " + message);
+        dbLogger.log(TAG+" "+message);
         android.util.Log.d(TAG, message);
     }
 
     public static void i(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.INFO,
                 String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG " + message);
+        dbLogger.log(TAG+" "+message);
         android.util.Log.i(TAG, message);
     }
 
     public static void w(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.WARNING,
                 String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG " + message);
+        dbLogger.log(TAG+ " "+message);
         android.util.Log.w(TAG, message);
     }
 
     public static void e(Context ctxt, String TAG, String message) {
         getLogger(ctxt).log(Level.SEVERE,
                 String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG "+message);
+        dbLogger.log(TAG +" "+message);
         android.util.Log.e(TAG, message);
     }
 }
