@@ -65,12 +65,13 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
             String ourFileName = Log.getLogBase(cachedContext) + "/dumped_log_file.txt";
             System.out.println("ourFileName = "+ourFileName);
             PrintStream out = new PrintStream(new FileOutputStream(ourFileName, true));
-            String queryString = "SELECT * from " + TABLE_LOG;
+            String queryString = "SELECT "+KEY_LINE+" from " + TABLE_LOG;
             Cursor cur = db.rawQuery(queryString, null);
             int resultCount = cur.getCount();
             if (cur.moveToFirst()) {
                 for (int i = 0; i < resultCount; i++) {
                     out.println(cur.getString(0));
+                    cur.moveToNext();
                 }
             }
         } catch (IOException e) {
