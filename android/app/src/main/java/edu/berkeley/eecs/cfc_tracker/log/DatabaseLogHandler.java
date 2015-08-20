@@ -28,11 +28,13 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
 
     private Context cachedContext;
     Formatter formatter;
+    SQLiteDatabase writeDB;
 
     public DatabaseLogHandler(Context context) {
         super(context, "logDB", null, DATABASE_VERSION);
         cachedContext = context;
         formatter = Log.simpleFormatter;
+        writeDB = this.getWritableDatabase();
     }
 
     @Override
@@ -52,11 +54,9 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
     public void log(String message) {
         LogRecord record = new LogRecord(Level.FINE, message);
         String line = formatter.format(record);
-        SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(KEY_LINE, line);
-        db.insert(TABLE_LOG, null, cv);
-        db.close();
+        writeDB.insert(TABLE_LOG, null, cv);
     }
 
     public void export() {
