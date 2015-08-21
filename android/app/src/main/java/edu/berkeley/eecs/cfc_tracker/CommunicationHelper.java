@@ -2,7 +2,6 @@ package edu.berkeley.eecs.cfc_tracker;
 
 import android.content.Context;
 import android.net.http.AndroidHttpClient;
-import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -23,6 +22,7 @@ import java.net.URL;
 
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
+import edu.berkeley.eecs.cfc_tracker.log.Log;
 
 public class CommunicationHelper {
     public static final String TAG = "CommunicationHelper";
@@ -51,7 +51,7 @@ public class CommunicationHelper {
 
         final InputStream inputStream = connection.getInputStream();
         final int code = connection.getResponseCode();
-        Log.d(TAG, "Update Connection response status " + connection.getResponseCode());
+        Log.d(ctxt, TAG, "Update Connection response status " + connection.getResponseCode());
         if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
             throw new RuntimeException("Failed : HTTP error code : " + connection.getResponseCode());
         }
@@ -154,6 +154,7 @@ public class CommunicationHelper {
         AndroidHttpClient connection = AndroidHttpClient.newInstance(ctxt.getString(R.string.app_name));
         HttpResponse response = connection.execute(msg);
         System.out.println("Got response " + response + " with status " + response.getStatusLine());
+        Log.i(ctxt, TAG, "Got response "+response+" with status"+response.getStatusLine());
         connection.close();
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new IOException();
@@ -193,7 +194,7 @@ public class CommunicationHelper {
         AndroidHttpClient connection = AndroidHttpClient.newInstance(R.class.toString());
         HttpResponse response = connection.execute(msg);
         StatusLine statusLine = response.getStatusLine();
-        System.out.println("Got response "+response+" with status "+statusLine);
+        Log.i(ctxt, TAG, "Got response "+response+" with status "+statusLine);
         int statusCode = statusLine.getStatusCode();
 
         if(statusCode == 200){
@@ -205,9 +206,10 @@ public class CommunicationHelper {
             }
             result = builder.toString();
             System.out.println("Result Summary JSON = "+result);
+            Log.i(ctxt, TAG, "Result Summary JSON = "+result);
             in.close();
         } else {
-            Log.e(R.class.toString(),"Failed to get JSON object");
+            Log.e(ctxt, R.class.toString(),"Failed to get JSON object");
         }
         connection.close();
         return result;
