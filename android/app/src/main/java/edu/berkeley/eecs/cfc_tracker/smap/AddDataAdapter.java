@@ -140,6 +140,8 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
 			Log.e(mContext, TAG, "IO Error "+e+" while posting converted trips to JSON");
 		}
 
+		Log.i(mContext, TAG, "Push complete, now pulling");
+
         /*
          * Now, read all the information from the server. This is in a different try/catch block,
          * because we want to try it even if the push fails.
