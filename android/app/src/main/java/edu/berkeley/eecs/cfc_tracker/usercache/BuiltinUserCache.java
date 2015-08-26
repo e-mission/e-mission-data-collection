@@ -233,6 +233,14 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
      * REST API.
      */
 
+    /**
+     * Ensure that we don't delete points that we are using for trip end
+     * detection. Note that we could just refactor the check for trip end and
+     * use the same logic to determine which points to delete - i.e. sync and
+     * delete everything older than 30 mins, but I want to keep our options
+     * open in case it turns out that we want to do some preprocessing of
+     * sensitive trips on the phone before uploading them to the server.
+     */
     public long getTsOfLastTransition() {
         /*
          * Find the last transition that was "stopped moving" using a direct SQL query.
