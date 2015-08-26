@@ -15,6 +15,8 @@ import org.json.JSONObject;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
+import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
+import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
 
@@ -95,6 +97,8 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         newValues.put(KEY_KEY, getKey(keyRes));
         newValues.put(KEY_DATA, new Gson().toJson(value));
         db.insert(TABLE_USER_CACHE, null, newValues);
+        System.out.println("Added value for key "+ cachedCtx.getString(keyRes) +
+                " at time "+newValues.getAsLong(KEY_WRITE_TS));
         db.close();
     }
 
@@ -145,11 +149,14 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     @Override
     public <T> T[] getMessagesForInterval(int keyRes, TimeQuery tq, Class<T> classOfT) {
-        String whereString = KEY_KEY + " = ? AND "+ getKey(tq.keyRes) + " < ? AND " + getKey(tq.keyRes) + " > ?";
-        String[] whereArgs = {getKey(keyRes), String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
+        String queryString = "SELECT "+KEY_DATA+" FROM "+TABLE_USER_CACHE+
+                " WHERE "+KEY_KEY+" = '"+getKey(keyRes)+ "'"+
+                " AND "+getKey(tq.keyRes)+" >= "+tq.startTs+
+                " AND "+getKey(tq.keyRes)+" <= "+tq.endTs+
+                " ORDER BY write_ts DESC";
+        System.out.println("About to execute query "+queryString);
         SQLiteDatabase db = this.getReadableDatabase();
-        String[] retCol = {KEY_DATA};
-        Cursor resultCursor = db.query(TABLE_USER_CACHE, retCol, whereString, whereArgs, null, null, null, null);
+        Cursor resultCursor = db.rawQuery(queryString, null);
 
         T[] result = getMessagesFromCursor(resultCursor, classOfT);
         db.close();
@@ -163,6 +170,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 " ORDER BY write_ts DESC  LIMIT "+nEntries;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor resultCursor = db.rawQuery(queryString, null);
+
         T[] result = getMessagesFromCursor(resultCursor, classOfT);
         db.close();
         return result;
@@ -171,7 +179,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     private <T> T[] getMessagesFromCursor(Cursor resultCursor, Class<T> classOfT) {
         int resultCount = resultCursor.getCount();
         T[] resultArray = (T[]) Array.newInstance(classOfT, resultCount);
-        System.out.println("resultArray is "+resultArray);
+        // System.out.println("resultArray is " + resultArray);
         if (resultCursor.moveToFirst()) {
             for (int i = 0; i < resultCount; i++) {
                 String data = resultCursor.getString(0);
@@ -197,7 +205,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         Log.d(cachedCtx, TAG, "Clearing message for timequery "+tq);
         String whereString = getKey(tq.keyRes) + " > ? AND " + getKey(tq.keyRes) + " < ?";
         String[] whereArgs = {String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
-        Log.d(cachedCtx, TAG, "Args =  "+whereString + " : " + Arrays.toString(whereArgs));
+        Log.d(cachedCtx, TAG, "Args =  " + whereString + " : " + Arrays.toString(whereArgs));
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_USER_CACHE, whereString, whereArgs);
         db.close();
@@ -215,7 +223,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS "+TABLE_USER_CACHE);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_USER_CACHE);
         onCreate(sqLiteDatabase);
     }
 
@@ -225,13 +233,80 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
      * REST API.
      */
 
+    public long getTsOfLastTransition() {
+        /*
+         * Find the last transition that was "stopped moving" using a direct SQL query.
+         * Note that we cannot use the @see getLastMessage call here because that returns the messages
+         * (the transition strings in this case) but not the metadata.
+         */
+
+        String selectQuery = "SELECT * FROM "+TABLE_USER_CACHE+
+                " WHERE "+KEY_KEY+" = '"+getKey(R.string.key_usercache_transition)+ "'"+
+                " AND "+KEY_DATA+" LIKE '%_transition_:_" + cachedCtx.getString(R.string.transition_stopped_moving) +"_%'"+
+                " ORDER BY write_ts DESC  LIMIT 1";
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor resultCursor = db.rawQuery(selectQuery, null);
+        Log.d(cachedCtx, TAG, "While searching for regex, got "+resultCursor.getCount()+" results");
+        if (resultCursor.moveToFirst()) {
+            Log.d(cachedCtx, TAG, resultCursor.getLong(resultCursor.getColumnIndex(KEY_WRITE_TS)) + ": "+
+                    resultCursor.getString(resultCursor.getColumnIndex(KEY_DATA)));
+            return resultCursor.getLong(resultCursor.getColumnIndex(KEY_WRITE_TS));
+        } else {
+            // There was one instance when it looked like the regex search did not work.
+            // However, it turns out that it was just a logging issue.
+            // Let's have a more robust fallback and see how often we need to use it.
+            // But this should almost certainly be removed before deployment.
+            String selectQueryAllTrans = "SELECT * FROM "+TABLE_USER_CACHE+
+                    " WHERE "+KEY_KEY+" = '"+getKey(R.string.key_usercache_transition)+ "'"+
+                    " ORDER BY write_ts DESC";
+            Cursor allCursor = db.rawQuery(selectQueryAllTrans, null);
+
+            int resultCount = allCursor.getCount();
+            Log.d(cachedCtx, TAG, "While searching for all, got "+resultCount+" results");
+            if (allCursor.moveToFirst() && resultCount > 0) {
+                for (int i = 0; i < resultCount; i++) {
+                    Log.d(cachedCtx, TAG, "Considering transition "+
+                            allCursor.getLong(allCursor.getColumnIndex(KEY_WRITE_TS)) + ": "+
+                            allCursor.getString(allCursor.getColumnIndex(KEY_DATA)));
+                    if(allCursor.getString(allCursor.getColumnIndex(KEY_DATA))
+                            .contains("\"transition\":\"local.transition.stopped_moving\"")) {
+                        // when we find stopped moving, we return, so this must be the first
+                        // time we have found it
+                        NotificationHelper.createNotification(cachedCtx, 5, "Had to look in all!");
+                        Log.w(cachedCtx, TAG, "regex did not find entry, had to search all");
+                        return allCursor.getLong(allCursor.getColumnIndex(KEY_WRITE_TS));
+                    }
+                    allCursor.moveToNext();
+                }
+            } else {
+                Log.d(cachedCtx, TAG, "There are no entries in the usercache." +
+                        "A sync must have just completed!");
+            }
+        }
+        // Did not find a stopped_moving transition.
+        // This may mean that we have pushed all completed trips.
+        // Since this is supposed to return the millisecond timestamp,
+        // we just return a negative number (-1)
+        return -1;
+    }
+
     /*
      * Return a string version of the messages and rw documents that need to be sent to the server.
      */
 
     public JSONArray sync_phone_to_server() throws JSONException {
+        long lastTripEndTs = getTsOfLastTransition();
+        Log.d(cachedCtx, TAG, "Last trip end was at "+lastTripEndTs);
+
+        if (lastTripEndTs < 0) {
+            // We don't have a completed trip, so we don't want to push anything yet.
+            return new JSONArray();
+        }
+
         String selectQuery = "SELECT * from " + TABLE_USER_CACHE +
                 " WHERE " + KEY_TYPE + " = '"+ MESSAGE_TYPE + "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "'" +
+                " AND " + KEY_WRITE_TS + " < " + lastTripEndTs +
                 " ORDER BY "+KEY_WRITE_TS;
 
         SQLiteDatabase db = this.getReadableDatabase();
