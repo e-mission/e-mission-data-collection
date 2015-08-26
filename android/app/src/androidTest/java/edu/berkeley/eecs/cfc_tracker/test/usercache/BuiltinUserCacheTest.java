@@ -18,6 +18,7 @@ import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
+import edu.berkeley.eecs.cfc_tracker.wrapper.Transition;
 
 /**
  * Created by shankari on 7/6/15.
@@ -44,6 +45,51 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
 
     protected void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    public void testSerializeString() throws Exception {
+        String serialized = new Gson().toJson("foo");
+        System.out.println("Serialized string value is "+serialized);
+        assertEquals("Testing serialization of a simple string value", "\"foo\"", serialized);
+    }
+
+    public void testSearchSerializedString() throws Exception {
+        UserCache uc = UserCacheFactory.getUserCache(cachedContext);
+        Transition testTransition = new Transition(cachedContext.getString(R.string.state_ongoing_trip),
+                cachedContext.getString(R.string.transition_stopped_moving));
+        String serializedVal = new Gson().toJson(testTransition);
+
+        System.out.println("Serialization of the test transition = " + serializedVal);
+        assertTrue(serializedVal.contains("\"transition\":\"local.transition.stopped_moving\""));
+
+        long beforeTs = System.currentTimeMillis();
+        uc.putMessage(R.string.key_usercache_transition, testTransition);
+
+        BuiltinUserCache biuc = new BuiltinUserCache(cachedContext);
+        long retrievedTs = biuc.getTsOfLastTransition();
+        System.out.println("Retrieved timestamp = "+retrievedTs);
+        assertTrue(retrievedTs >= beforeTs && retrievedTs <= System.currentTimeMillis());
+    }
+
+    public void testGetMessagesForInterval() throws Exception {
+        UserCache uc = UserCacheFactory.getUserCache(cachedContext);
+        Transition testTransition = new Transition(cachedContext.getString(R.string.state_ongoing_trip),
+                cachedContext.getString(R.string.transition_stopped_moving));
+        String serializedVal = new Gson().toJson(testTransition);
+
+        System.out.println("Serialization of the test transition = " + serializedVal);
+        assertTrue(serializedVal.contains("\"transition\":\"local.transition.stopped_moving\""));
+
+        long beforeTs = System.currentTimeMillis();
+        uc.putMessage(R.string.key_usercache_transition, testTransition);
+        long afterTs = System.currentTimeMillis();
+        UserCache.TimeQuery last5MinsQuery =
+                new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
+                        beforeTs - 5 * 60 * 1000, afterTs);
+        System.out.println("Querying for the transitions using query "+last5MinsQuery);
+        Transition[] transitions = uc.getMessagesForInterval(R.string.key_usercache_transition,
+                last5MinsQuery, Transition.class);
+        assertEquals(1, transitions.length);
     }
 
     private Location getDummyLocation(double lat, double lng, float accuracy) {
@@ -75,6 +121,9 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
             assertEquals(dbHelper.getLastMessages(R.string.key_usercache_location, 3, Location.class).length, 3);
         }
 
+        uc.putMessage(R.string.key_usercache_transition, new Transition(cachedContext.getString(R.string.state_ongoing_trip),
+                cachedContext.getString(R.string.transition_stopped_moving)));
+
         assertEquals(dbHelper.getLastMessages(R.string.key_usercache_location, 5, Location.class).length, 5);
 
         BuiltinUserCache biuc = new BuiltinUserCache(cachedContext);
@@ -82,13 +131,13 @@ public class BuiltinUserCacheTest extends AndroidTestCase {
         System.out.println("String to send = " + toSend);
 
         JSONArray el = new JSONArray(toSend);
-        assertEquals(el.length(), 54);
+        assertEquals(55, el.length());
         assertEquals(new Gson().fromJson(el.getJSONObject(0).getJSONObject(METADATA_TAG).toString(), Metadata.class).getKey(),
                 cachedContext.getString(R.string.key_usercache_location));
         assertEquals(new Gson().fromJson(el.getJSONObject(2).getJSONObject(METADATA_TAG).toString(), Metadata.class).getKey(),
                 cachedContext.getString(R.string.key_usercache_activity));
-        assertEquals(el.getJSONObject(0).getJSONObject(DATA_TAG).getDouble("mLatitude"), 25.25);
-        assertEquals(el.getJSONObject(2).getJSONObject(DATA_TAG).getInt("zzaxw"), 1);
+        assertEquals(25.25, el.getJSONObject(0).getJSONObject(DATA_TAG).getDouble("mLatitude"), 25.25);
+        assertEquals(1, el.getJSONObject(2).getJSONObject(DATA_TAG).getInt("zzaxw"));
     }
 
     public void testMultipleTestGetPutMessage() throws Exception {
