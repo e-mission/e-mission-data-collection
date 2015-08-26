@@ -61,7 +61,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver
 
     public TripDiaryStateMachineReceiver() {
         // The automatically created receiver needs a default constructor
-        Log.i(mContext, TAG, "noarg constructor called");
+        android.util.Log.i(TAG, "noarg constructor called");
     }
 
 	public TripDiaryStateMachineReceiver(Context context) {

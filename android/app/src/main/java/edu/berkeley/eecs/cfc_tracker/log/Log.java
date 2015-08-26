@@ -56,7 +56,7 @@ public class Log {
     };
 
     public static File getLogBase(Context context) {
-        return context.getExternalFilesDir(null);
+            return context.getExternalFilesDir(null);
     }
 
     /*
@@ -162,7 +162,7 @@ public class Log {
 
     public static String getPattern(Context ctxt, String logFilePrefix) {
         String pattern = getLogBase(ctxt)+"/"+logFilePrefix+"-%g.log";
-        System.out.println("Returning pattern "+pattern);
+        System.out.println("Returning pattern " + pattern);
         return pattern;
     }
 
@@ -172,6 +172,9 @@ public class Log {
     }
 
     public static Logger getLogger(Context ctxt) {
+        if (ctxt == null) {
+            return null;
+        }
         if (logger == null) {
             System.out.println("logger == null, lazily creating new logger");
             logger = Logger.getLogger("edu.berkeley.eecs.cfc_tracker");
@@ -194,30 +197,46 @@ public class Log {
     }
 
     public static void d(Context ctxt, String TAG, String message) {
-        getLogger(ctxt).log(Level.FINE,
-                String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG " + message);
+        try {
+            getLogger(ctxt).log(Level.FINE,
+                    String.format("%s : %s", TAG, message));
+            dbLogger.log(TAG + " " + message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         android.util.Log.d(TAG, message);
     }
 
     public static void i(Context ctxt, String TAG, String message) {
-        getLogger(ctxt).log(Level.INFO,
-                String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG " + message);
+        try {
+            getLogger(ctxt).log(Level.INFO,
+                    String.format("%s : %s", TAG, message));
+            dbLogger.log(TAG + " " + message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         android.util.Log.i(TAG, message);
     }
 
     public static void w(Context ctxt, String TAG, String message) {
-        getLogger(ctxt).log(Level.WARNING,
-                String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG " + message);
+        try {
+            getLogger(ctxt).log(Level.WARNING,
+                    String.format("%s : %s", TAG, message));
+            dbLogger.log(TAG + " " + message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         android.util.Log.w(TAG, message);
     }
 
     public static void e(Context ctxt, String TAG, String message) {
-        getLogger(ctxt).log(Level.SEVERE,
-                String.format("%s : %s", TAG, message));
-        dbLogger.log("TAG "+message);
+        try {
+            getLogger(ctxt).log(Level.SEVERE,
+                    String.format("%s : %s", TAG, message));
+            dbLogger.log(TAG + " " + message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         android.util.Log.e(TAG, message);
     }
 }

@@ -28,11 +28,13 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
 
     private Context cachedContext;
     Formatter formatter;
+    SQLiteDatabase writeDB;
 
     public DatabaseLogHandler(Context context) {
         super(context, "logDB", null, DATABASE_VERSION);
         cachedContext = context;
         formatter = Log.simpleFormatter;
+        writeDB = this.getWritableDatabase();
     }
 
     @Override
@@ -52,11 +54,9 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
     public void log(String message) {
         LogRecord record = new LogRecord(Level.FINE, message);
         String line = formatter.format(record);
-        SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(KEY_LINE, line);
-        db.insert(TABLE_LOG, null, cv);
-        db.close();
+        writeDB.insert(TABLE_LOG, null, cv);
     }
 
     public void export() {
@@ -65,12 +65,13 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
             String ourFileName = Log.getLogBase(cachedContext) + "/dumped_log_file.txt";
             System.out.println("ourFileName = "+ourFileName);
             PrintStream out = new PrintStream(new FileOutputStream(ourFileName, true));
-            String queryString = "SELECT * from " + TABLE_LOG;
+            String queryString = "SELECT "+KEY_LINE+" from " + TABLE_LOG;
             Cursor cur = db.rawQuery(queryString, null);
             int resultCount = cur.getCount();
             if (cur.moveToFirst()) {
                 for (int i = 0; i < resultCount; i++) {
                     out.println(cur.getString(0));
+                    cur.moveToNext();
                 }
             }
         } catch (IOException e) {

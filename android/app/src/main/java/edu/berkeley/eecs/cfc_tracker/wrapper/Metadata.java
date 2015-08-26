@@ -50,6 +50,7 @@ public class Metadata {
     private String key;
     private String plugin;
     private final String platform = "android";
+    private final String filter = "time";
 
     public Metadata() {
     }
