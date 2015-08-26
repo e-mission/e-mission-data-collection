@@ -31,10 +31,13 @@ import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SyncResult;
 import android.net.http.AndroidHttpClient;
 import android.os.Bundle;
 
+import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineReceiver;
+import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
@@ -153,6 +156,25 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
             Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
         } catch (IOException e) {
             Log.e(mContext, TAG, "IO Error "+e+" while posting converted trips to JSON");
+        }
+
+		/*
+		 * Now, do some validation of the current state and clean it up if necessary. This should
+		 * help with issues we have seen in the field where location updates pause mysteriously, or
+		 * geofences are never exited.
+		 */
+        validateAndCleanupState();
+    }
+
+    public void validateAndCleanupState() {
+        /*
+         * Check for being in geofence if in waiting_for_trip_state.
+         */
+        if (TripDiaryStateMachineReceiver.getState(mContext).equals(mContext.getString(R.string.state_start))) {
+            mContext.sendBroadcast(new Intent(mContext.getString(R.string.transition_initialize)));
+        } else if (TripDiaryStateMachineReceiver.getState(mContext).equals(
+                mContext.getString(R.string.state_waiting_for_trip_start))) {
+            // check in geofence
         }
     }
 
