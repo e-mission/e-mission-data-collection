@@ -12,6 +12,6 @@ import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 public class BatteryPollSensor implements PollSensor {
     public void getAndSaveValue(Context ctxt) {
         float currLevel = BatteryUtils.getBatteryLevel(ctxt);
-        UserCacheFactory.getUserCache(ctxt).putMessage(R.string.key_usercache_battery, currLevel);
+        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery, currLevel);
     }
 }

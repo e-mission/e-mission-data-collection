@@ -71,7 +71,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		if (loc == null) return;
 
-        uc.putMessage(R.string.key_usercache_location, loc);
+        uc.putSensorData(R.string.key_usercache_location, loc);
 
         /*
 		 * So far, our analysis for detecting the end of a trip starts off with ignoring points with
@@ -81,13 +81,13 @@ public class LocationChangeIntentService extends IntentService {
 		 * location and use the filtered location for our calculations.
 		 */
 
-        Location[] last10Points = uc.getLastMessages(R.string.key_usercache_filtered_location, 10, Location.class);
+        Location[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location, 10, Location.class);
         Long nowMs = System.currentTimeMillis();
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
                 nowMs - FIVE_MINUTES_IN_MS - 10, nowMs);
 
         Log.d(this, TAG, "Finding points in the range "+tq);
-        Location[] points5MinsAgo = uc.getMessagesForInterval(R.string.key_usercache_filtered_location,
+        Location[] points5MinsAgo = uc.getSensorDataForInterval(R.string.key_usercache_filtered_location,
                 tq, Location.class);
 
         boolean validPoint = false;
@@ -111,7 +111,7 @@ public class LocationChangeIntentService extends IntentService {
         Log.d(this, TAG, "Current point status = "+validPoint);
 
         if (validPoint) {
-            uc.putMessage(R.string.key_usercache_filtered_location, loc);
+            uc.putSensorData(R.string.key_usercache_filtered_location, loc);
         }
 
         // We will check whether the trip ended only when the point is valid.

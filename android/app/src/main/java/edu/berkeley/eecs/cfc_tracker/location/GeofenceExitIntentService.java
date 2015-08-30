@@ -51,7 +51,7 @@ public class GeofenceExitIntentService extends IntentService {
         if (parsedEvent.getGeofenceTransition() == Geofence.GEOFENCE_TRANSITION_EXIT) {
     		Log.d(this, TAG, "Geofence exited! Intent = "+ intent+" Starting ongoing monitoring...");
             // Add the exit location to the tracking database
-			UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_location,
+			UserCacheFactory.getUserCache(this).putSensorData(R.string.key_usercache_location,
                     parsedEvent.getTriggeringLocation());
             // DataUtils.addPoint(this, parsedEvent.getTriggeringLocation());
             // Let's just re-use the same event for the broadcast, since it has the location information
