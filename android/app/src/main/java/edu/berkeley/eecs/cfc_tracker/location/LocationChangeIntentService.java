@@ -20,6 +20,8 @@ import com.google.android.gms.location.FusedLocationProviderApi;
 public class LocationChangeIntentService extends IntentService {
 	private static final String TAG = "LocationChangeIntentService";
 	private static final int TRIP_END_RADIUS = Constants.TRIP_EDGE_THRESHOLD;
+    private static final int ACCURACY_THRESHOLD = 200;
+    private static final int FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
 	
 	public LocationChangeIntentService() {
 		super("LocationChangeIntentService");
@@ -44,7 +46,6 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
 		Log.d(this, TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
-        Log.d(this, TAG, "Intent Action is "+intent);
 
         UserCache uc = UserCacheFactory.getUserCache(this);
 
@@ -58,7 +59,7 @@ public class LocationChangeIntentService extends IntentService {
         PollSensorManager.getAndSaveAllValues(this);
 
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
-
+        Log.d(this, TAG, "Read location "+loc+" from intent");
 
 		/*
 		It seems that newer version of Google Play will send along an intent that does not have the
@@ -72,7 +73,50 @@ public class LocationChangeIntentService extends IntentService {
 
         uc.putMessage(R.string.key_usercache_location, loc);
 
-		if (isTripEnded(uc)) {
+        /*
+		 * So far, our analysis for detecting the end of a trip starts off with ignoring points with
+		 * low accuracy and that are exactly a duplicate of the prior point. However, it is not
+		 * clear if this is always correct, and we want to collect the raw data as well until we are
+		 * sure that the algorithm is correct. So we store both the raw location and the filtered
+		 * location and use the filtered location for our calculations.
+		 */
+
+        Location[] last10Points = uc.getLastMessages(R.string.key_usercache_filtered_location, 10, Location.class);
+        Long nowMs = System.currentTimeMillis();
+        UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
+                nowMs - FIVE_MINUTES_IN_MS - 10, nowMs);
+
+        Log.d(this, TAG, "Finding points in the range "+tq);
+        Location[] points5MinsAgo = uc.getMessagesForInterval(R.string.key_usercache_filtered_location,
+                tq, Location.class);
+
+        boolean validPoint = false;
+
+        if (loc.getAccuracy() < ACCURACY_THRESHOLD) {
+            if (last10Points.length == 0) {
+                // Insert at least one entry before we can start comparing for duplicates
+                validPoint = true;
+            } else {
+                assert(last10Points.length > 0);
+                if (loc.distanceTo(last10Points[last10Points.length - 1]) != 0) {
+                    validPoint = true;
+                } else {
+                    Log.i(this, TAG, "Duplicate point," + loc + " skipping ");
+                }
+            }
+        } else {
+            Log.d(this, TAG, "Found bad quality point "+loc+" skipping");
+        }
+
+        Log.d(this, TAG, "Current point status = "+validPoint);
+
+        if (validPoint) {
+            uc.putMessage(R.string.key_usercache_filtered_location, loc);
+        }
+
+        // We will check whether the trip ended only when the point is valid.
+        // Otherwise, we might end up with the duplicates triggering trip ends.
+		if (validPoint && isTripEnded(last10Points, points5MinsAgo)) {
 			// Stop listening to more updates
 			Intent stopMonitoringIntent = new Intent();
 			stopMonitoringIntent.setAction(getString(R.string.transition_stopped_moving));
@@ -83,23 +127,29 @@ public class LocationChangeIntentService extends IntentService {
 		}
 	}
 	
-	public boolean isTripEnded(UserCache userCache) {
+	public boolean isTripEnded(Location[] last10Points, Location[] points5MinsAgo) {
 		/* We have requested 10 points, but we might get less than 10 if the trip has just started
 		 * We request updates every 30 secs, but we might get updates more frequently if other apps have
 		 * requested that. So maybe relying on the last n updates is not such a good idea.
 		 *
 		 * TODO: Switching to all updates in the past 5 minutes may be a better choice
 		 */
-		Location[] last10Points = userCache.getLastMessages(R.string.key_usercache_location, 10, Location.class);
 		Log.d(this, TAG, "last10Points = "+ Arrays.toString(last10Points));
-		if (last10Points.length < 10) {
-			Log.i(this, TAG, "Only "+last10Points.length+
+        Log.d(this, TAG, "points5MinsAgo = "+Arrays.toString(points5MinsAgo));
+
+		if (last10Points.length < 10 || points5MinsAgo.length == 0) {
+			Log.i(this, TAG, "last10Points.length = "+last10Points.length+
+                    " points5MinsAgo.length = " + points5MinsAgo.length +
 					" points, not enough to decide, returning false");
 			return false;
 		}
 		double[] last9Distances = getDistances(last10Points);
+        double[] last5MinsDistances = getDistances(points5MinsAgo);
+
 		Log.d(this, TAG, "last9Distances = "+ Arrays.toString(last9Distances));
-		if (stoppedMoving(last9Distances)) {
+        Log.d(this, TAG, "last5MinsDistances = "+Arrays.toString(last5MinsDistances));
+
+		if (stoppedMoving(last9Distances) && stoppedMoving(last5MinsDistances)) {
 			Log.i(this, TAG, "stoppedMoving = true");
 			return true;
 		}

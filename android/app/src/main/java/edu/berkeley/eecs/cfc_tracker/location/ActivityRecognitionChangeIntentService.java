@@ -39,10 +39,14 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
             // Let's suck everything up to the server for now and optimize later
-            if (mostProbableActivity.getConfidence() > 90) {
+			// We used to only send the activities that are above 90% confidence.
+			// But it looks like that has a delay in the detection of starts, specially for train trips.
+			// Let us just suck everything up for now and see if the smoothing HMM from PerCom works
+			// better.
+            // if (mostProbableActivity.getConfidence() > 90) {
                 UserCache userCache = UserCacheFactory.getUserCache(this);
                 userCache.putMessage(R.string.key_usercache_activity, mostProbableActivity);
-            }
+            // }
 			/*
 			DetectedActivity currentActivity = DataUtils.getCurrentMode(this).getLastActivity();
 			if (currentActivity.getType() == mostProbableActivity.getType()) {
