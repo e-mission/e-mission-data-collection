@@ -14,6 +14,7 @@ import android.location.Location;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
+import edu.berkeley.eecs.cfc_tracker.wrapper.SimpleLocation;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
 
@@ -71,7 +72,8 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		if (loc == null) return;
 
-        uc.putSensorData(R.string.key_usercache_location, loc);
+        SimpleLocation simpleLoc = new SimpleLocation(loc);
+        uc.putSensorData(R.string.key_usercache_location, simpleLoc);
 
         /*
 		 * So far, our analysis for detecting the end of a trip starts off with ignoring points with
@@ -81,14 +83,16 @@ public class LocationChangeIntentService extends IntentService {
 		 * location and use the filtered location for our calculations.
 		 */
 
-        Location[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location, 10, Location.class);
+        SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location,
+				10, SimpleLocation.class);
+
         Long nowMs = System.currentTimeMillis();
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
                 nowMs - FIVE_MINUTES_IN_MS - 10, nowMs);
 
         Log.d(this, TAG, "Finding points in the range "+tq);
-        Location[] points5MinsAgo = uc.getSensorDataForInterval(R.string.key_usercache_filtered_location,
-                tq, Location.class);
+        SimpleLocation[] points5MinsAgo = uc.getSensorDataForInterval(R.string.key_usercache_filtered_location,
+                tq, SimpleLocation.class);
 
         boolean validPoint = false;
 
@@ -98,7 +102,7 @@ public class LocationChangeIntentService extends IntentService {
                 validPoint = true;
             } else {
                 assert(last10Points.length > 0);
-                if (loc.distanceTo(last10Points[last10Points.length - 1]) != 0) {
+                if (simpleLoc.distanceTo(last10Points[last10Points.length - 1]) != 0) {
                     validPoint = true;
                 } else {
                     Log.i(this, TAG, "Duplicate point," + loc + " skipping ");
@@ -111,7 +115,7 @@ public class LocationChangeIntentService extends IntentService {
         Log.d(this, TAG, "Current point status = "+validPoint);
 
         if (validPoint) {
-            uc.putSensorData(R.string.key_usercache_filtered_location, loc);
+            uc.putSensorData(R.string.key_usercache_filtered_location, simpleLoc);
         }
 
         // We will check whether the trip ended only when the point is valid.
@@ -127,7 +131,7 @@ public class LocationChangeIntentService extends IntentService {
 		}
 	}
 	
-	public boolean isTripEnded(Location[] last10Points, Location[] points5MinsAgo) {
+	public boolean isTripEnded(SimpleLocation[] last10Points, SimpleLocation[] points5MinsAgo) {
 		/* We have requested 10 points, but we might get less than 10 if the trip has just started
 		 * We request updates every 30 secs, but we might get updates more frequently if other apps have
 		 * requested that. So maybe relying on the last n updates is not such a good idea.
@@ -157,7 +161,7 @@ public class LocationChangeIntentService extends IntentService {
 		return false;
 	}
 	
-	public double[] getDistances(Location[] points) {
+	public double[] getDistances(SimpleLocation[] points) {
 		if (points.length < 2) {
 			return new double[0];
 		}
@@ -168,7 +172,7 @@ public class LocationChangeIntentService extends IntentService {
 		 * really the first point and we need to compare it against
 		 * all the others. 
 		 */
-		Location lastPoint = points[0];
+		SimpleLocation lastPoint = points[0];
 		for (int i = 0; i < points.length - 1; i++) {
 			last9Distances[i] = lastPoint.distanceTo(points[i+1]);
 		}
