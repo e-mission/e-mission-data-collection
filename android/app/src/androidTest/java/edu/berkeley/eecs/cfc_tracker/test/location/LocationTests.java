@@ -183,8 +183,8 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 
         System.out.println("ASSERT: Got "+uc.getLastMessages(R.string.key_usercache_location, 2,
                 Location.class).length+" points");
-		assertEquals(uc.getLastMessages(R.string.key_usercache_location, 2,
-                Location.class).length, 1);
+		assertEquals(1, uc.getLastMessages(R.string.key_usercache_location, 2,
+                Location.class).length);
 
         startTime = System.currentTimeMillis();
 		final BroadcastChecker enterChecker = new BroadcastChecker(stopString);

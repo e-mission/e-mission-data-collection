@@ -53,6 +53,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     private static final String METADATA_TAG = "metadata";
     private static final String DATA_TAG = "data";
 
+    private static final String SENSOR_DATA_TYPE = "sensor-data";
     private static final String MESSAGE_TYPE = "message";
     private static final String DOCUMENT_TYPE = "document";
     private static final String RW_DOCUMENT_TYPE = "rw-document";
@@ -76,6 +77,11 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     private String getKey(int keyRes) {
         return cachedCtx.getString(keyRes);
+    }
+
+    @Override
+    public void putSensorData(int keyRes, Object value) {
+        putValue(keyRes, value, SENSOR_DATA_TYPE);
     }
 
     @Override
@@ -149,6 +155,19 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     @Override
     public <T> T[] getMessagesForInterval(int keyRes, TimeQuery tq, Class<T> classOfT) {
+        return getValuesForInterval(keyRes, MESSAGE_TYPE, tq, classOfT);
+    }
+
+    @Override
+    public <T> T[] getSensorDataForInterval(int keyRes, TimeQuery tq, Class<T> classOfT) {
+        return getValuesForInterval(keyRes, SENSOR_DATA_TYPE, tq, classOfT);
+    }
+
+    public <T> T[] getValuesForInterval(int keyRes, String type, TimeQuery tq, Class<T> classOfT) {
+        /*
+         * Note: the first getKey(keyRes) is the key of the message (e.g. 'background/location').
+         * The second getKey(tq.keyRes) is the key of the time query (e.g. 'write_ts')
+         */
         String queryString = "SELECT "+KEY_DATA+" FROM "+TABLE_USER_CACHE+
                 " WHERE "+KEY_KEY+" = '"+getKey(keyRes)+ "'"+
                 " AND "+getKey(tq.keyRes)+" >= "+tq.startTs+
@@ -158,25 +177,34 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor resultCursor = db.rawQuery(queryString, null);
 
-        T[] result = getMessagesFromCursor(resultCursor, classOfT);
+        T[] result = getValuesFromCursor(resultCursor, classOfT);
         db.close();
         return result;
     }
 
     @Override
     public <T> T[] getLastMessages(int keyRes, int nEntries, Class<T> classOfT) {
+        return getLastValues(keyRes, MESSAGE_TYPE, nEntries, classOfT);
+    }
+
+    @Override
+    public <T> T[] getLastSensorData(int keyRes, int nEntries, Class<T> classOfT) {
+        return getLastValues(keyRes, SENSOR_DATA_TYPE, nEntries, classOfT);
+    }
+
+    public <T> T[] getLastValues(int keyRes, String type, int nEntries, Class<T> classOfT) {
         String queryString = "SELECT "+KEY_DATA+" FROM "+TABLE_USER_CACHE+
                 " WHERE "+KEY_KEY+" = '"+getKey(keyRes)+ "'"+
                 " ORDER BY write_ts DESC  LIMIT "+nEntries;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor resultCursor = db.rawQuery(queryString, null);
 
-        T[] result = getMessagesFromCursor(resultCursor, classOfT);
+        T[] result = getValuesFromCursor(resultCursor, classOfT);
         db.close();
         return result;
     }
 
-    private <T> T[] getMessagesFromCursor(Cursor resultCursor, Class<T> classOfT) {
+    private <T> T[] getValuesFromCursor(Cursor resultCursor, Class<T> classOfT) {
         int resultCount = resultCursor.getCount();
         T[] resultArray = (T[]) Array.newInstance(classOfT, resultCount);
         // System.out.println("resultArray is " + resultArray);
@@ -202,7 +230,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
     @Override
     public void clearMessages(TimeQuery tq) {
-        Log.d(cachedCtx, TAG, "Clearing message for timequery "+tq);
+        Log.d(cachedCtx, TAG, "Clearing message for timequery " + tq);
         String whereString = getKey(tq.keyRes) + " > ? AND " + getKey(tq.keyRes) + " < ?";
         String[] whereArgs = {String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
         Log.d(cachedCtx, TAG, "Args =  " + whereString + " : " + Arrays.toString(whereArgs));

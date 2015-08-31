@@ -7,6 +7,7 @@ import android.content.Intent;
 
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
+import edu.berkeley.eecs.cfc_tracker.wrapper.SimpleLocation;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
@@ -51,8 +52,8 @@ public class GeofenceExitIntentService extends IntentService {
         if (parsedEvent.getGeofenceTransition() == Geofence.GEOFENCE_TRANSITION_EXIT) {
     		Log.d(this, TAG, "Geofence exited! Intent = "+ intent+" Starting ongoing monitoring...");
             // Add the exit location to the tracking database
-			UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_location,
-                    parsedEvent.getTriggeringLocation());
+			UserCacheFactory.getUserCache(this).putSensorData(R.string.key_usercache_location,
+                    new SimpleLocation(parsedEvent.getTriggeringLocation()));
             // DataUtils.addPoint(this, parsedEvent.getTriggeringLocation());
             // Let's just re-use the same event for the broadcast, since it has the location information
             // in case we need it on the other side.

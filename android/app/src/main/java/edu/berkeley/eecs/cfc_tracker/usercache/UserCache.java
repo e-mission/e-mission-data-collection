@@ -26,6 +26,8 @@ public interface UserCache {
       Most objects are, but it would be good to confirm, probably by
       adding a serialization/deserialization test to WrapperTest.
      */
+    public abstract void putSensorData(int keyRes, Object value);
+
     public abstract void putMessage(int keyRes, Object value);
 
     public abstract void putReadWriteDocument(int keyRes, Object value);
@@ -33,7 +35,10 @@ public interface UserCache {
     // TODO: Should this return a JSON object or an actual object retrieved via gson?
 
     public abstract <T> T[] getMessagesForInterval(int keyRes, TimeQuery tq, Class<T> classOfT);
+    public abstract <T> T[] getSensorDataForInterval(int keyRes, TimeQuery tq, Class<T> classOfT);
+
     public abstract <T> T[] getLastMessages(int keyRes, int nEntries, Class<T> classOfT);
+    public abstract <T> T[] getLastSensorData(int keyRes, int nEntries, Class<T> classOfT);
 
         /**
          * Return the document that matches the specified key.

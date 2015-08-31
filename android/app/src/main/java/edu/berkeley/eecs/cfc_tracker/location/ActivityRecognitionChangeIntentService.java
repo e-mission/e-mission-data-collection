@@ -45,7 +45,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			// better.
             // if (mostProbableActivity.getConfidence() > 90) {
                 UserCache userCache = UserCacheFactory.getUserCache(this);
-                userCache.putMessage(R.string.key_usercache_activity, mostProbableActivity);
+                userCache.putSensorData(R.string.key_usercache_activity, mostProbableActivity);
             // }
 			/*
 			DetectedActivity currentActivity = DataUtils.getCurrentMode(this).getLastActivity();
