@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="key.usercache.OBD">background/OBD</string>
     <string name="key.usercache.location">background/location</string>
     <string name="key.usercache.filtered_location">background/filtered_location</string>
     <string name="key.usercache.activity">background/activity</string>

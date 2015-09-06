@@ -343,4 +343,9 @@ public class MainActivity extends Activity {
               }
       }
    }
+    //onClick method to start the new Activity that manages OBD connection
+    public void connectToCar(View view){
+        Intent intent = new Intent(getApplicationContext(), CarActivity.class);
+        startActivity(intent);
+    }
 }
