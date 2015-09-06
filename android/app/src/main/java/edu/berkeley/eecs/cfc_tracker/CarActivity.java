@@ -829,6 +829,7 @@ public class CarActivity extends Activity {
                 if (!fineMode) {
                     try {
                         Thread.sleep(30000);
+                        //TODO handle better the coarse mode, implementing a service that retrieves data when needed (location update)
                         //previousTime = System.currentTimeMillis();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
