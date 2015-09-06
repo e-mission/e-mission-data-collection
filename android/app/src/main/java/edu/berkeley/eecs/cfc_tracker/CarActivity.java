@@ -687,6 +687,7 @@ public class CarActivity extends Activity {
                 fuelLevelSupported = false;
                 Log.d(TAG, "error initial tankLevel: " + tankLevel);
             } catch (Exception e) {
+                //here nodata exception occurs when the command is not supported, but catching it seems not to work
                 tankLevel = -1.f;
                 fuelLevelSupported = false;
                 Log.d(TAG, "error initial tankLevel: " + tankLevel);
@@ -727,7 +728,7 @@ public class CarActivity extends Activity {
                     //managing fuel flow rate = 0 when the car is moving but you are not accelerating
                     if (engineRpmCommand.getRPM() >= 1200 && throttleSupported) {
                         throttlePositionObdCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                        if (((int) throttlePositionObdCommand.getPercentage()) == 0.f) {
+                        if (((int) throttlePositionObdCommand.getPercentage()) == 0) {
                             fuelFlow = "" + 0 + " L/h";
                             fuelResult = "" + 0 + " L/100km";
                             //cut off
