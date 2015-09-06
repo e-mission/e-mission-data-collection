@@ -1,0 +1,21 @@
+Compatible adapter:
+The app has been tested with the ObdLink LX adapter
+for multiplatform support(ios) it's recommended the kiwi plx device (http://www.plxdevices.com/Kiwi-3-OBD-Car-to-Smartphone-Connection-p/kiwi_3.htm)
+The app should work fine also with other adapters such as this (http://www.amazon.com/Veepeak-Bluetooth-Diagnostic-Scanner-diagnostics-Android/dp/B011NSX27A/ref=sr_1_4?ie=UTF8&qid=1441575414&sr=8-4&keywords=obd+bluetooth)
+
+
+
+
+
+
+To use the app:
+-pair Bluetooth adapter with the smartphone
+-run the app
+-select connect car
+-select mode(coarse or fine)
+-select connect
+-select the adapter paired
+-travel somewhere
+-stop the engine
+-select type of trip
+The data about the trip will be saved in the "EMission_tracker" folder on the memory of he phone

@@ -57,27 +57,28 @@ import edu.berkeley.eecs.cfc_tracker.obd.FuelEconomyObdCommand;
 public class CarActivity extends Activity {
     private boolean chosen = false;
     int REQUEST_ENABLE_BT = 1;
-   private String fuelType = "Gasoline";
-    String deviceAddress;
-    BluetoothSocket bluetoothSocket;
-    String TAG = "OBD Response";
-    TextView speed;
-    TextView rpm;
-    TextView fuel;
-    TextView flow;
-    TextView ODO;
-    TextView fuelConsumed;
-    Switch mode;
-    Button connect;
-    TextView fuelTypeLabel;
-    FileUtilities fileUtilities;
-    Context currContext;
+    private String fuelType = "Gasoline";
+    private String deviceAddress;
+    private BluetoothSocket bluetoothSocket;
+    private String TAG = "OBD Response";
+    private TextView speed;
+    private TextView rpm;
+    private TextView fuel;
+    private TextView flow;
+    private TextView ODO;
+    private TextView fuelConsumed;
+    private Switch mode;
+    private Button connect;
+    private TextView fuelTypeLabel;
+    private FileUtilities fileUtilities;
+    private Context currContext;
     private android.os.Handler timeHandler;
-    private boolean fineMode=true;
+    private boolean fineMode = true;
     private VehicleDataSource vehicleDataSource;
     private List<Vehicle> values;
     private Vehicle currentVehicle;
-    private boolean connected=false;
+    private boolean connected = false;
+
     public float getDistanceDriven() {
         return distanceDriven;
     }
@@ -96,6 +97,7 @@ public class CarActivity extends Activity {
 
     private float distanceDriven;
     private float fuelUsed;
+
     public void setDeviceAddress(String deviceAddress) {
         this.deviceAddress = deviceAddress;
     }
@@ -108,10 +110,12 @@ public class CarActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.car_layout);
-        vehicleDataSource= new VehicleDataSource(this);
+        //load database of vehicles
+        vehicleDataSource = new VehicleDataSource(this);
         vehicleDataSource.open();
-        values=vehicleDataSource.getAllVehicles();
-        currentVehicle=new Vehicle();
+        values = vehicleDataSource.getAllVehicles();
+        //set accurent vehicle
+        currentVehicle = new Vehicle();
         speed = (TextView) findViewById(R.id.textViewSpeed);
         rpm = (TextView) findViewById(R.id.textViewRpm);
         fuel = (TextView) findViewById(R.id.textViewFuelEco);
@@ -120,26 +124,25 @@ public class CarActivity extends Activity {
         fuelConsumed = (TextView) findViewById(R.id.textViewConsumed);
         fuelTypeLabel = (TextView) findViewById(R.id.textViewFuelType);
         connect = (Button) findViewById(R.id.button);
-        mode= (Switch) findViewById(R.id.switchMode);
+        mode = (Switch) findViewById(R.id.switchMode);
         fileUtilities = new FileUtilities(this);
-        timeHandler= new android.os.Handler();
-        currContext=this;
-        GetUpdates up;
-        if (mode!=null)
-        mode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        timeHandler = new android.os.Handler();
+        currContext = this;
+        if (mode != null)
+            mode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView,
-                                         boolean isChecked) {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView,
+                                             boolean isChecked) {
 
-                if (isChecked) {
-                    fineMode=true;
-                } else {
-                    fineMode=false;
+                    if (isChecked) {
+                        fineMode = true;
+                    } else {
+                        fineMode = false;
+                    }
+
                 }
-
-            }
-        });
+            });
 
         connect.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -147,8 +150,8 @@ public class CarActivity extends Activity {
                 if (!connected) {
                     mode.setEnabled(false);
                     selectAvailableDevices();
-                }else{
-                    connected=false;
+                } else {
+                    connected = false;
                 }
             }
         });
@@ -165,14 +168,14 @@ public class CarActivity extends Activity {
             fuelTypeObdCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
             String type = fuelTypeObdCommand.getFormattedResult();
             Log.d(TAG, "Fuel type: " + type);
-            //if fuel type can not be determined set default to gasoline
+
             if (type.equals("Gasoline")) {
                 //update view
                 fuelType = "Gasoline";
                 fuelTypeLabel.setTextColor(Color.GREEN);
                 fuelTypeLabel.setText(fuelType);
                 currentVehicle.setFuelTye(fuelType);
-                vehicleDataSource.createVehicle(currentVehicle.getVehicle(),currentVehicle.getFuelTye(),currentVehicle.getCommands());
+                vehicleDataSource.createVehicle(currentVehicle.getVehicle(), currentVehicle.getFuelTye(), currentVehicle.getCommands());
                 //launching data readings
                 new GetUpdates().execute();
 
@@ -181,7 +184,7 @@ public class CarActivity extends Activity {
                 fuelTypeLabel.setTextColor(Color.BLACK);
                 fuelTypeLabel.setText(fuelType);
                 currentVehicle.setFuelTye(fuelType);
-                vehicleDataSource.createVehicle(currentVehicle.getVehicle(),currentVehicle.getFuelTye(),currentVehicle.getCommands());
+                vehicleDataSource.createVehicle(currentVehicle.getVehicle(), currentVehicle.getFuelTye(), currentVehicle.getCommands());
                 //launching data readings
 
                 new GetUpdates().execute();
@@ -212,11 +215,10 @@ public class CarActivity extends Activity {
             fuelDialogType(this);
 
 
-        }catch(NoDataException e){
+        } catch (NoDataException e) {
             Log.d(TAG, "Fuel type: " + "unknown, NoDataException occurred");
             //ask user
             fuelDialogType(this);
-
 
 
         } catch (InterruptedException e) {
@@ -227,7 +229,7 @@ public class CarActivity extends Activity {
             //ask user
             fuelDialogType(this);
 
-        }catch (UnsupportedCommandException e) {
+        } catch (UnsupportedCommandException e) {
             Log.d(TAG, "Fuel type: " + "unknown, UnsupportedCommandException occurred");
             //ask user
             fuelDialogType(this);
@@ -236,7 +238,7 @@ public class CarActivity extends Activity {
 
     }
 
-    public synchronized void fuelDialogType(final Context c){
+    public synchronized void fuelDialogType(final Context c) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -296,14 +298,15 @@ public class CarActivity extends Activity {
         });
 
     }
+
     /**
      * initialization of bluetooth communication with adapter
-     * */
+     */
     private void initializeCom() {
 
 
         Log.d(TAG, "database: " + values.size());
-        int currVal=values.size();
+        int currVal = values.size();
         try {
             //initializing obd adapter with standard commands
             //disable echo
@@ -311,14 +314,14 @@ public class CarActivity extends Activity {
             new LineFeedOffCommand().run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
             new TimeoutCommand(200).run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
             new SelectProtocolCommand(ObdProtocols.AUTO).run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-            if (currVal==0){
+            if (currVal == 0) {
 
-                CheckObdCommands check=new CheckObdCommands();
+                CheckObdCommands check = new CheckObdCommands();
                 check.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                String checked=check.toString();
+                String checked = check.toString();
                 currentVehicle.setCommands(checked);
                 currentVehicle.setVehicle(check.getVIN());
-                Log.d(TAG, "commands supported: "+checked);
+                Log.d(TAG, "commands supported: " + checked);
                 //determine fuel type
                 whichFuelType();
             }
@@ -327,7 +330,7 @@ public class CarActivity extends Activity {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }catch(UnableToConnectException e){
+        } catch (UnableToConnectException e) {
             Log.d(TAG, "UnableToConnectException");
             runOnUiThread(new Runnable() {
                 @Override
@@ -337,38 +340,39 @@ public class CarActivity extends Activity {
             });
 
         }
-        if (currVal>0){
+        if (currVal > 0) {
             Log.d(TAG, "Database contains some vehicles");
-            String VIN="---";
+            String VIN = "---";
             try {
-                final VinCommand vinCommand= new VinCommand();
+                final VinCommand vinCommand = new VinCommand();
                 vinCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                VIN=  vinCommand.getFormattedResult();
+                VIN = vinCommand.getFormattedResult();
 
-            }catch (Exception e){
-                final EcuNameCommand nameCommand= new EcuNameCommand();
-                String name="NO NAME";
-                try{
+            } catch (Exception e) {
+                final EcuNameCommand nameCommand = new EcuNameCommand();
+                String name = "NO NAME";
+                try {
                     nameCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                    name=nameCommand.getFormattedResult();
-                    VIN=name;
-                }catch(Exception ex){
+                    name = nameCommand.getFormattedResult();
+                    VIN = name;
+                } catch (Exception ex) {
                     Log.d("CHECK", "ECU unknown");
-                    VIN= "NO NAME";
+                    VIN = "NO NAME";
+                    //TODO find a way to uniquely identify the vehicle if both vin (vehicle identification number) or ecu name are not available
                 }
             }
-            int c=0;
-            for (Vehicle v : values){
-                if (v.getVehicle().equals(VIN)&&c==0){
+            int c = 0;
+            for (Vehicle v : values) {
+                if (v.getVehicle().equals(VIN) && c == 0) {
                     c++;
-                    Log.d(TAG, "Vehicle match"+" "+v.getVehicle()
+                    Log.d(TAG, "Vehicle match" + " " + v.getVehicle()
                     );
-                    currentVehicle=v;
+                    currentVehicle = v;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            fuelType=currentVehicle.getFuelTye();
-                            if(fuelType.equals("Gasoline"))
+                            fuelType = currentVehicle.getFuelTye();
+                            if (fuelType.equals("Gasoline"))
                                 fuelTypeLabel.setTextColor(Color.GREEN);
                             else fuelTypeLabel.setTextColor(Color.BLACK);
 
@@ -378,7 +382,7 @@ public class CarActivity extends Activity {
                     //getupdates
                     new GetUpdates().execute();
                     break;
-                }else if(c==0){
+                } else if (c == 0) {
                     c++;
                     try {
                         CheckObdCommands check = new CheckObdCommands();
@@ -390,10 +394,9 @@ public class CarActivity extends Activity {
                         //determine fuel type
                         whichFuelType();
                         break;
-                    }catch(IOException e){
+                    } catch (IOException e) {
                         Log.d(TAG, "IOException check Obd");
-                    }
-                    catch(InterruptedException e){
+                    } catch (InterruptedException e) {
                         Log.d(TAG, "InterruptedException check Obd");
                     }
                 }
@@ -423,11 +426,12 @@ public class CarActivity extends Activity {
         }).start();
 
     }
-    public void resetUI(){
+
+    public void resetUI() {
         //close connection
         try {
             bluetoothSocket.close();
-            connected=false;
+            connected = false;
         } catch (IOException e) {
             Log.d(TAG, "Error closing bluetooth socket");
         }
@@ -454,7 +458,7 @@ public class CarActivity extends Activity {
                 BluetoothSocket socket = device.createInsecureRfcommSocketToServiceRecord(uuid);
                 socket.connect();
                 setBluetoothSocket(socket);
-                connected=true;
+                connected = true;
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -476,9 +480,9 @@ public class CarActivity extends Activity {
                 });
             }
         }
-        if (bluetoothSocket.getRemoteDevice().getAddress()!=null)
+        if (bluetoothSocket.getRemoteDevice().getAddress() != null)
             Log.d(TAG, "Bluetooth connected");
-        Log.d(TAG, "Device address: "+bluetoothSocket.getRemoteDevice().getAddress());
+        Log.d(TAG, "Device address: " + bluetoothSocket.getRemoteDevice().getAddress());
         initializeCom();
     }
 
@@ -495,7 +499,7 @@ public class CarActivity extends Activity {
         if (!btAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }else{
+        } else {
             btAdapter = BluetoothAdapter.getDefaultAdapter();
             Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
             if (pairedDevices.size() > 0) {
@@ -527,10 +531,11 @@ public class CarActivity extends Activity {
             alertDialog.show();
         }
     }
-    public void showEnd(final float odo, final float liters, final float finalTankLevel){
+
+    public void showEnd(final float odo, final float liters, final float finalTankLevel) {
         //final String[] trips={"School", "City", "Groceries", "Highway", "Gas station", "trip A", "trip B"};
         Resources res = getResources();
-        final String[] trips=res.getStringArray(R.array.string_array_trips);
+        final String[] trips = res.getStringArray(R.array.string_array_trips);
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.select_dialog_singlechoice,
                 trips);
@@ -541,7 +546,7 @@ public class CarActivity extends Activity {
                 int position = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
                 String trip = trips[position];
                 String currentDateandTime = new SimpleDateFormat("yyyy MM dd HH mm ss").format(new Date());
-                fileUtilities.write("DataEMissionSummary"+currentDateandTime+".txt", "trip: "+trip+ "\t" + "fuel: "+liters + "\t" +"KM: "+odo + "\t" +"fineMode: "+fineMode + "\t" +"TankLevelFinal: "+finalTankLevel +"\n");
+                fileUtilities.write("DataEMissionSummary" + currentDateandTime + ".txt", "trip: " + trip + "\t" + "fuel: " + liters + "\t" + "KM: " + odo + "\t" + "fineMode: " + fineMode + "\t" + "TankLevelFinal: " + finalTankLevel + "\n");
             }
         });
         alertDialog.setTitle(R.string.EndQuestion);
@@ -552,6 +557,7 @@ public class CarActivity extends Activity {
             }
         });
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_ENABLE_BT) {
@@ -593,7 +599,6 @@ public class CarActivity extends Activity {
     }
 
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -611,41 +616,41 @@ public class CarActivity extends Activity {
 
     /**
      * Async task responsible for getting updates from adapter and refreshing the user interface
-     * */
+     */
     private class GetUpdates extends AsyncTask<Void, String, Void> {
         /**
          * continuos execution of bluetooth commands to get data readings
          */
 
         private void testCommands() {
-            Boolean ready=false;
+            Boolean ready = false;
             String rpmResult = null;
             String speedResult = null;
             String fuelResult = "" + -1 + " L/100km";
             String fuelFlow = "" + -1 + " L/h";
             String odometer = "0 Km";
-            String consumption= "0 L";
-            float tankLevel=0.f;
-            float finalTankLevel=0.f;
-            boolean throttleSupported=false;
-            FuelLevelCommand fuelLevelCommand= new FuelLevelCommand();
+            String consumption = "0 L";
+            float tankLevel = 0.f;
+            float finalTankLevel = 0.f;
+            boolean throttleSupported = false;
+            boolean fuelLevelSupported = false;
+            FuelLevelCommand fuelLevelCommand = new FuelLevelCommand();
             RPMCommand engineRpmCommand = new RPMCommand();
             SpeedCommand speedCommand = new SpeedCommand();
-            FuelEconomyObdCommand fuelEconomy = new FuelEconomyObdCommand(currentVehicle.getFuelTye(),currentVehicle.getCommands());
+            FuelEconomyObdCommand fuelEconomy = new FuelEconomyObdCommand(currentVehicle.getFuelTye(), currentVehicle.getCommands());
             ThrottlePositionCommand throttlePositionObdCommand = new ThrottlePositionCommand();
-
-            try{
+            try {
                 throttlePositionObdCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                throttleSupported=true;
+                throttleSupported = true;
 
-            }catch(UnsupportedCommandException e){
-                throttleSupported=false;
+            } catch (UnsupportedCommandException e) {
+                throttleSupported = false;
                 Log.d(TAG, "throttleSupported false");
-            }catch (IOException e) {
-                throttleSupported=false;
+            } catch (IOException e) {
+                throttleSupported = false;
                 Log.d(TAG, "throttle IO exception");
-            }catch (InterruptedException e) {
-                throttleSupported=false;
+            } catch (InterruptedException e) {
+                throttleSupported = false;
                 Log.d(TAG, "throttle Interrupted exception");
 
             }
@@ -653,12 +658,12 @@ public class CarActivity extends Activity {
             try {
                 speedCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
                 fuelEconomy.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                ready=true;
+                ready = true;
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }catch(UnableToConnectException e){
+            } catch (UnableToConnectException e) {
                 Log.d(TAG, "UnableToConnectException inside");
                 //Toast.makeText(currContext,"Unable to connect, try again",Toast.LENGTH_SHORT).show();
                 this.cancel(true);
@@ -668,25 +673,32 @@ public class CarActivity extends Activity {
                     throwable.printStackTrace();
                 }
             }
-            try{
+            try {
                 fuelLevelCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                tankLevel= fuelLevelCommand.getFuelLevel();
+                tankLevel = fuelLevelCommand.getFuelLevel();
                 Log.d(TAG, "initial tankLevel: " + tankLevel);
-            }catch(IOException e){
-                tankLevel=-1.f;
+                fuelLevelSupported = true;
+            } catch (IOException e) {
+                tankLevel = -1.f;
                 Log.d(TAG, "error initial tankLevel: " + tankLevel);
-            }catch(InterruptedException e){
-                tankLevel=-1.f;
+                fuelLevelSupported = false;
+            } catch (InterruptedException e) {
+                tankLevel = -1.f;
+                fuelLevelSupported = false;
+                Log.d(TAG, "error initial tankLevel: " + tankLevel);
+            } catch (Exception e) {
+                tankLevel = -1.f;
+                fuelLevelSupported = false;
                 Log.d(TAG, "error initial tankLevel: " + tankLevel);
             }
 
             //getting time in order to determine distance driven
             long previousTime = System.currentTimeMillis();
-            long previousSpeed=speedCommand.getMetricSpeed();
-            float previousFlow=fuelEconomy.getFlow();
+            long previousSpeed = speedCommand.getMetricSpeed();
+            float previousFlow = fuelEconomy.getFlow();
             //distance driven
             float kmODO = 0.f;
-            float fuelCons=0.f;
+            float fuelCons = 0.f;
             while (!Thread.currentThread().isInterrupted() && ready) {
                 try {
                     long currentTime = System.currentTimeMillis();
@@ -699,15 +711,14 @@ public class CarActivity extends Activity {
                     speedResult = speedCommand.getFormattedResult();
                     Log.d(TAG, "deltaTime: " + deltaTime);
                     //calculation of distance driven
-                    if(fineMode) {
+                    if (fineMode) {
                         kmODO += ((float) speedCommand.getMetricSpeed()) * ((float) deltaTime) / 1000 / 3600;
                         odometer = "" + String.format("%.3f", kmODO) + " Km";
                         setDistanceDriven(kmODO);
-                    }
-                    else{
-                        long currSpeed=speedCommand.getMetricSpeed();
-                        long avgSpeed=(currSpeed+previousSpeed)/2;
-                        previousSpeed=currSpeed;
+                    } else {
+                        long currSpeed = speedCommand.getMetricSpeed();
+                        long avgSpeed = (currSpeed + previousSpeed) / 2;
+                        previousSpeed = currSpeed;
                         kmODO += ((float) avgSpeed) * ((float) deltaTime) / 1000 / 3600;
                         odometer = "" + String.format("%.3f", kmODO) + " Km";
                         setDistanceDriven(kmODO);
@@ -719,86 +730,91 @@ public class CarActivity extends Activity {
                         if (((int) throttlePositionObdCommand.getPercentage()) == 0.f) {
                             fuelFlow = "" + 0 + " L/h";
                             fuelResult = "" + 0 + " L/100km";
+                            //cut off
                             fuelEconomy.setFlow(0.f);
                         } else {
                             fuelEconomy.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                            fuelFlow = "" + fuelEconomy.getFlow() + " L/h";
+                            fuelFlow = "" + String.format("%.3f", fuelEconomy.getFlow()) + " L/h";
                             fuelResult = fuelEconomy.getFormattedResult();
                         }
                     } else {
                         fuelEconomy.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
                         //fuelFlow = "" + fuelEconomy.getFlow() + " L/h";
-                        fuelFlow  = "" + String.format("%.3f", fuelEconomy.getFlow()) + " L/h";
-                        if(speedCommand.getMetricSpeed()>1) {
+                        fuelFlow = "" + String.format("%.3f", fuelEconomy.getFlow()) + " L/h";
+                        if (speedCommand.getMetricSpeed() > 1) {
                             fuelResult = fuelEconomy.getFormattedResult();
-                        }else{
+                        } else {
                             fuelResult = "---";
                         }
                     }
-                    //calculating of fuel consumed
-                    if(fineMode) {
+                    //calculating fuel consumed
+                    if (fineMode) {
                         fuelCons += ((float) deltaTime) / 1000 * fuelEconomy.getFlow() / 3600;
                         consumption = "" + String.format("%.3f", fuelCons) + " L";
                         setFuelUsed(fuelCons);
-                    }else{
-                        float currFlow=fuelEconomy.getFlow();
-                        float avgFlow=(previousFlow+currFlow)/2;
-                        previousFlow=currFlow;
+                    } else {
+                        float currFlow = fuelEconomy.getFlow();
+                        float avgFlow = (previousFlow + currFlow) / 2;
+                        previousFlow = currFlow;
                         fuelCons += ((float) deltaTime) / 1000 * avgFlow / 3600;
                         consumption = "" + String.format("%.3f", fuelCons) + " L";
                         setFuelUsed(fuelCons);
                     }
-                    fuelLevelCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
-                    if (fuelLevelCommand.getFuelLevel() > 1.0f && tankLevel!=-1.0f) {
-                        finalTankLevel = tankLevel - fuelLevelCommand.getFuelLevel();
-                        Log.d(TAG, "Actual level: " + fuelLevelCommand.getFuelLevel());
-                        Log.d(TAG, "intermediate tankLevel: " + finalTankLevel);
-                    }else{
-                        Log.d(TAG, "intermediate tankLevel: " + finalTankLevel);
+                    if (fuelLevelSupported) {
+                        fuelLevelCommand.run(bluetoothSocket.getInputStream(), bluetoothSocket.getOutputStream());
+                        if (fuelLevelCommand.getFuelLevel() > 1.0f && tankLevel != -1.0f) {
+                            finalTankLevel = tankLevel - fuelLevelCommand.getFuelLevel();
+                            Log.d(TAG, "Actual level: " + fuelLevelCommand.getFuelLevel());
+                            Log.d(TAG, "intermediate tankLevel: " + finalTankLevel);
+                        } else {
+                            Log.d(TAG, "intermediate tankLevel: " + finalTankLevel);
+                        }
                     }
-
 
 
                     //Saving data to external memory for analysis
                     String currentDateandTime = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                    fileUtilities.write("DataEMission"+currentDateandTime+".txt", engineRpmCommand.getRPM() + "\t" + speedCommand.getMetricSpeed() + "\t" +/*fuelEconomy.getLitersPer100Km()*/fuelEconomy.getFlow() + "\t" + currentTime + "\n");
+                    fileUtilities.write("DataEMission" + currentDateandTime + ".txt", engineRpmCommand.getRPM() + "\t" + speedCommand.getMetricSpeed() + "\t" +/*fuelEconomy.getLitersPer100Km()*/fuelEconomy.getFlow() + "\t" + currentTime + "\n");
                     //saving to userCache, consider to use always coarseMode (finemode=false) to limit database updates
                     //you can also add if trip is ended (low rpm)
                     Bundle b = toBundle(fuelEconomy.getFlow(),speedCommand.getMetricSpeed(),getDistanceDriven(),engineRpmCommand.getRPM(),getFuelUsed());
                     Intent i= new Intent(currContext, OBDChangeIntentService.class);
                     i.putExtra("VehicleData",b);
                     startService(i);
-
                 } catch (IOException e) {
 
                     e.printStackTrace();
                     showEnd(kmODO, fuelCons, finalTankLevel);
+                    resetUI();
                     break;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                    showEnd(kmODO,fuelCons, finalTankLevel);
+                    showEnd(kmODO, fuelCons, finalTankLevel);
+                    e.printStackTrace();
                     break;
                 } catch (NoDataException e) {
-
                     Log.d(TAG, "final tankLevel: " + finalTankLevel);
 
-                    showEnd(kmODO,fuelCons, finalTankLevel);
+                    showEnd(kmODO, fuelCons, finalTankLevel);
+                    resetUI();
+                    e.printStackTrace();
                     break;
                 } catch (IndexOutOfBoundsException e) {
                     fuelResult = "NO DATA";
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
-                    //showEnd( kmODO,fuelCons, finalTankLevel);
-                    //  break;
+                    showEnd(kmODO, fuelCons, finalTankLevel);
+                    resetUI();
+                    break;
                 }
 
                 Log.d(TAG, "RPM: " + rpmResult);
                 Log.d(TAG, "Speed: " + speedResult);
                 Log.d(TAG, "ODO: " + odometer);
                 //publishing results to update the ui
-                publishProgress(speedResult, rpmResult, fuelResult, fuelFlow, odometer,consumption);
-                if(!connected){
-                    Log.d(TAG, "Disconnect button pressed, terminating..." );
+                publishProgress(speedResult, rpmResult, fuelResult, fuelFlow, odometer, consumption);
+                if (!connected) {
+                    Log.d(TAG, "Disconnect button pressed, terminating...");
                     showEnd(kmODO, fuelCons, finalTankLevel);
                     resetUI();
                     break;
@@ -809,7 +825,7 @@ public class CarActivity extends Activity {
                     resetUI();
                     break;
                 }
-                if(!fineMode){
+                if (!fineMode) {
                     try {
                         Thread.sleep(30000);
                         //previousTime = System.currentTimeMillis();
@@ -817,28 +833,29 @@ public class CarActivity extends Activity {
                         e.printStackTrace();
                     }
                 }
-                if(engineRpmCommand.getRPM()<100){
-                    //engine is shutting down
+                if (engineRpmCommand.getRPM() < 100) {
                     Log.d(TAG, "Low RPM, final tankLevel: " + finalTankLevel);
-                    showEnd(kmODO,fuelCons, finalTankLevel);
+                    showEnd(kmODO, fuelCons, finalTankLevel);
                     resetUI();
                     break;
                 }
             }
         }
+
         public Bundle toBundle(float flow, float speed, float km, int rpm, float litersSF) {
             Bundle b = new Bundle();
             b.putFloat("FuelFlow", flow);
             b.putFloat("Speed", speed);
             b.putFloat("KM", km);
             b.putInt("RPM", rpm);
-            b.putFloat("Liters",litersSF);
+            b.putFloat("Liters", litersSF);
             return b;
         }
+
         @Override
         protected Void doInBackground(Void... params) {
             //execute commands to read vehicle parameters
-            if(bluetoothSocket.isConnected()){
+            if (bluetoothSocket.isConnected()) {
                 testCommands();
             }
 

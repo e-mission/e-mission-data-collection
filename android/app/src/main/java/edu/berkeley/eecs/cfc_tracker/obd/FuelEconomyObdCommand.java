@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import edu.berkeley.eecs.cfc_tracker.obd.EngineLoadObdCommand;
 
 /**
  * Created by Patrick on 17/06/2015.
@@ -31,6 +32,7 @@ public class FuelEconomyObdCommand extends ObdCommand {
     private final float KMH_MPH_CONSTANT=0.621371f;
     private final float SECONDS_HOUR=3600.0f;
     private final float MPG_KML=235.2145833f;
+    private final float GASOLINE_DENSITY2=739.329063f;
     String TAG= "OBD Response";
     protected float flow=0.f;
     String fuelType;
@@ -98,11 +100,14 @@ public class FuelEconomyObdCommand extends ObdCommand {
             }else if(fuelType.equals("Gasoline")){
                 Log.d(TAG, "Gasoline engine + MAF:");
                 // get l/100km
-                float MPG= (float) (AIR_FUEL_RATIO*GASOLINE_DENSITY*GRAMS_POUND_CONVERSION*speed*KMH_MPH_CONSTANT)/(SECONDS_HOUR*MAF/*/100*/);
+                //float MPG= (float) (AIR_FUEL_RATIO*GASOLINE_DENSITY*GRAMS_POUND_CONVERSION*speed*KMH_MPH_CONSTANT)/(SECONDS_HOUR*MAF/*/100*/);
                 // float MPG= (float) (710.7 * speedCommand.getMetricSpeed() / MAF);
-                kml = MPG_KML/MPG;
+                float fuelFlow=(float)(MAF*SECONDS_HOUR)/(GASOLINE_DENSITY2*AIR_FUEL_RATIO);
+                setFlow(fuelFlow);
+                kml=100/(speed/fuelFlow);
+                float MPG= MPG_KML/kml;
 
-                setFlow((speed*kml)/100);
+
             }
         }else if (!supMaf && fuelType.equals("Gasoline")){
             Log.d(TAG, "Alternative MAF + Gasoline:");
@@ -119,17 +124,19 @@ public class FuelEconomyObdCommand extends ObdCommand {
             temperatureCommand.run(in, out);
             float INTAKE_TEMP= temperatureCommand.getTemperature();
             MAF=RPM * (MAP / INTAKE_TEMP);
-
             // get l/100km
-            float MPG= (float) (AIR_FUEL_RATIO*GASOLINE_DENSITY*GRAMS_POUND_CONVERSION*speed*KMH_MPH_CONSTANT)/(SECONDS_HOUR*MAF/*/100*/);
-            // float MPG= (float) (710.7 * speedCommand.getMetricSpeed() / MAF);
-            kml = MPG_KML/MPG;
 
-            setFlow((speed*kml)/100);
+            float fuelFlow=(float)(MAF*SECONDS_HOUR)/(GASOLINE_DENSITY2*AIR_FUEL_RATIO);
+
+            setFlow(fuelFlow);
+            kml=100/(speed/fuelFlow);
+            float MPG= MPG_KML/kml;
+
+
         }
 
 
-     }
+    }
 
     @Override
     public String getFormattedResult() {
@@ -168,4 +175,4 @@ public class FuelEconomyObdCommand extends ObdCommand {
         return AvailableCommandNames.FUEL_CONSUMPTION_RATE.getValue();
     }
 
-    }
+}
