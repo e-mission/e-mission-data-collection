@@ -3,6 +3,7 @@ package edu.berkeley.eecs.cfc_tracker.wrapper;
 /**
  * Created by shankari on 7/5/15.
  */
+
 public class Metadata {
     public long getWrite_ts() {
         return write_ts;
@@ -44,8 +45,14 @@ public class Metadata {
         this.plugin = plugin;
     }
 
+    public void setTimeZone(String timeZone) { this.time_zone = timeZone; }
+
+    public String getTimeZone() { return time_zone; }
+
+
     private long write_ts;
     private long read_ts;
+    private String time_zone;
     private String type;
     private String key;
     private String plugin;
