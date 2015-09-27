@@ -1,0 +1,104 @@
+<html>
+	<head>
+		<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+	    <meta charset="utf-8" />
+	    <title>E-Mission Analytics</title>
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.js"></script>
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+	    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+	</head>
+
+	<style>
+		body {
+			font-family: 'Open Sans', sans-serif, Arial; 
+			font-weight:300;
+		}
+
+		h2 {
+			font-weight:300;
+		}
+
+		#header {
+			width:80%;
+			height:10%;
+			border-bottom:1px solid #ccc;
+			margin:auto;
+		}
+
+		#header_left {
+			width:30%;
+			height:100%;
+			float:left;
+		}
+
+		#header_right {
+			width:70%;
+			float:left;
+		}
+
+		#content {
+			width:75%;
+			margin:auto;
+			padding-left:2.5%;
+			padding-right:2.5%;
+		}
+
+		#graph {
+			width:80%;
+			height:50%;
+			margin:auto;
+		}
+
+		#query {
+			width:80%;
+			margin:auto;
+		}
+
+		input[type="text"] {
+			width:110px;
+			height:30px;
+			border:1px solid #ccc;
+			margin-left:10px;
+			margin-right:10px;
+			padding-left:10px;
+			padding-right:10px;
+			padding-top:5px;
+			padding-bottom:5px;
+		}
+
+		.submit {
+			border-radius:0px;
+			border:1px solid #ccc;
+			padding-left:10px;
+			padding-right:10px;
+			padding-top:5px;
+			padding-bottom:5px;
+		}
+
+		.submit:hover {
+			background-color:#ccc;
+		}
+
+		.queryEngine {
+			width:100%;
+			margin:auto;
+			text-align:center;
+		}
+
+	</style>
+
+	<body>
+		<div id="header">
+			<div id="header_left">
+				<h2>E-Mission <b>Analytics</b></h2>
+			</div>
+		</div>
+		<div id="content"></div>
+		<script type="text/babel" src="dashboard.js">
+		</script>
+	</body>
+
+
+</html>
