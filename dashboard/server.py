@@ -16,7 +16,6 @@ def load_stat(dataset, header, val):
 	except Exception as e:
 		return None
 	
-
 @route('/')
 def index():
 	return static_file('index.html', '')
