@@ -71,7 +71,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String CREATE_USER_CACHE_TABLE = "CREATE TABLE " + TABLE_USER_CACHE +" (" +
                 KEY_WRITE_TS + " INTEGER, "+ KEY_READ_TS +" INTEGER, " +
-                KEY_TIMEZONE + "TEXT, " +
+                KEY_TIMEZONE + " TEXT, " +
                 KEY_TYPE + " TEXT, " + KEY_KEY + " TEXT, "+
                 KEY_PLUGIN + " TEXT, " + KEY_DATA + " TEXT)";
         System.out.println("CREATE_USER_CACHE_TABLE = " + CREATE_USER_CACHE_TABLE);
@@ -346,7 +346,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
         String selectQuery = "SELECT * from " + TABLE_USER_CACHE +
                 " WHERE " + KEY_TYPE + " = '"+ MESSAGE_TYPE +
-                "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "'" +
+                "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE +
                 "' OR " + KEY_TYPE + " = '" + SENSOR_DATA_TYPE + "'" +
                 " AND " + KEY_WRITE_TS + " < " + lastTripEndTs +
                 " ORDER BY "+KEY_WRITE_TS;
