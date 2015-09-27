@@ -3,6 +3,22 @@
  */
 package edu.berkeley.eecs.cfc_tracker.smap;
 
+import android.accounts.Account;
+import android.content.AbstractThreadedSyncAdapter;
+import android.content.ContentProviderClient;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SyncResult;
+import android.net.http.AndroidHttpClient;
+import android.os.Bundle;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,31 +29,13 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import edu.berkeley.eecs.cfc_tracker.CommunicationHelper;
 import edu.berkeley.eecs.cfc_tracker.ConnectionSettings;
 import edu.berkeley.eecs.cfc_tracker.Constants;
 import edu.berkeley.eecs.cfc_tracker.R;
 import edu.berkeley.eecs.cfc_tracker.auth.GoogleAccountManagerAuth;
 import edu.berkeley.eecs.cfc_tracker.auth.UserProfile;
-
-import android.accounts.Account;
-import android.content.AbstractThreadedSyncAdapter;
-import android.content.ContentProviderClient;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SyncResult;
-import android.net.http.AndroidHttpClient;
-import android.os.Bundle;
-
-import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineReceiver;
-import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
+import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineIntentService;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
@@ -170,9 +168,9 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
         /*
          * Check for being in geofence if in waiting_for_trip_state.
          */
-        if (TripDiaryStateMachineReceiver.getState(mContext).equals(mContext.getString(R.string.state_start))) {
+        if (TripDiaryStateMachineIntentService.getState(mContext).equals(mContext.getString(R.string.state_start))) {
             mContext.sendBroadcast(new Intent(mContext.getString(R.string.transition_initialize)));
-        } else if (TripDiaryStateMachineReceiver.getState(mContext).equals(
+        } else if (TripDiaryStateMachineIntentService.getState(mContext).equals(
                 mContext.getString(R.string.state_waiting_for_trip_start))) {
             // check in geofence
         }

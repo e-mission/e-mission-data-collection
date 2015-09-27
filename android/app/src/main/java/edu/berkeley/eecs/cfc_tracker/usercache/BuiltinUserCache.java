@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.TimeZone;
 
 import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
 import edu.berkeley.eecs.cfc_tracker.R;
@@ -43,6 +44,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     // We expand the metadata and store the data as a JSON blob
     private static final String KEY_WRITE_TS = "write_ts";
     private static final String KEY_READ_TS = "read_ts";
+    private static final String KEY_TIMEZONE = "timezone";
     private static final String KEY_TYPE = "type";
     private static final String KEY_KEY = "key";
     private static final String KEY_PLUGIN = "plugin";
@@ -69,6 +71,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String CREATE_USER_CACHE_TABLE = "CREATE TABLE " + TABLE_USER_CACHE +" (" +
                 KEY_WRITE_TS + " INTEGER, "+ KEY_READ_TS +" INTEGER, " +
+                KEY_TIMEZONE + "TEXT, " +
                 KEY_TYPE + " TEXT, " + KEY_KEY + " TEXT, "+
                 KEY_PLUGIN + " TEXT, " + KEY_DATA + " TEXT)";
         System.out.println("CREATE_USER_CACHE_TABLE = " + CREATE_USER_CACHE_TABLE);
@@ -99,6 +102,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
 
         ContentValues newValues = new ContentValues();
         newValues.put(KEY_WRITE_TS, System.currentTimeMillis());
+        newValues.put(KEY_TIMEZONE, TimeZone.getDefault().getID());
         newValues.put(KEY_TYPE, type);
         newValues.put(KEY_KEY, getKey(keyRes));
         newValues.put(KEY_DATA, new Gson().toJson(value));
@@ -341,7 +345,9 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         }
 
         String selectQuery = "SELECT * from " + TABLE_USER_CACHE +
-                " WHERE " + KEY_TYPE + " = '"+ MESSAGE_TYPE + "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "'" +
+                " WHERE " + KEY_TYPE + " = '"+ MESSAGE_TYPE +
+                "' OR " + KEY_TYPE + " = '" + RW_DOCUMENT_TYPE + "'" +
+                "' OR " + KEY_TYPE + " = '" + SENSOR_DATA_TYPE + "'" +
                 " AND " + KEY_WRITE_TS + " < " + lastTripEndTs +
                 " ORDER BY "+KEY_WRITE_TS;
 
@@ -358,10 +364,11 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
                 Metadata md = new Metadata();
                 md.setWrite_ts(queryVal.getLong(0));
                 md.setRead_ts(queryVal.getLong(1));
-                md.setType(queryVal.getString(2));
-                md.setKey(queryVal.getString(3));
-                md.setPlugin(queryVal.getString(4));
-                String dataStr = queryVal.getString(5);
+                md.setTimeZone(queryVal.getString(2));
+                md.setType(queryVal.getString(3));
+                md.setKey(queryVal.getString(4));
+                md.setPlugin(queryVal.getString(5));
+                String dataStr = queryVal.getString(6);
                 /*
                  * I used to have a GSON wrapper here called "Entry" which encapsulated the metadata
                  * and the data. However, that didn't really work because it was unclear what type

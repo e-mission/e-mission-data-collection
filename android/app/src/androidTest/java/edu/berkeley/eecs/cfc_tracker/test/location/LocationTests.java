@@ -26,6 +26,7 @@ import java.util.Arrays;
 import edu.berkeley.eecs.cfc_tracker.BootReceiver;
 import edu.berkeley.eecs.cfc_tracker.MainActivity;
 import edu.berkeley.eecs.cfc_tracker.R;
+import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineIntentService;
 import edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.cfc_tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
@@ -257,7 +258,7 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
 
     public void verifyTDSMState(int expectedStateId) {
         // Before we get the broadcast, the state should be "START"
-        String currState = TripDiaryStateMachineReceiver.getState(appCtxt);
+        String currState = TripDiaryStateMachineIntentService.getState(appCtxt);
         String expectedState = null;
         if (expectedStateId != -1) {
             expectedState = appCtxt.getString(expectedStateId);
