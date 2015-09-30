@@ -35,7 +35,7 @@ import edu.berkeley.eecs.cfc_tracker.wrapper.Transition;
  * Created by shankari on 9/12/15.
  */
 
-public class TripDiaryStateMachineIntentService extends Service implements
+public class TripDiaryStateMachineService extends Service implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     public static String TAG = "TripDiaryStateMachineService";
 
@@ -59,7 +59,7 @@ public class TripDiaryStateMachineIntentService extends Service implements
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
 
-    public TripDiaryStateMachineIntentService() {
+    public TripDiaryStateMachineService() {
         super();
     }
 
