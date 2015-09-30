@@ -1,6 +1,6 @@
 package edu.berkeley.eecs.cfc_tracker.location;
 
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,7 +35,7 @@ import edu.berkeley.eecs.cfc_tracker.wrapper.Transition;
  * Created by shankari on 9/12/15.
  */
 
-public class TripDiaryStateMachineIntentService extends IntentService implements
+public class TripDiaryStateMachineService extends Service implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     public static String TAG = "TripDiaryStateMachineService";
 
@@ -59,12 +59,27 @@ public class TripDiaryStateMachineIntentService extends IntentService implements
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
 
-    public TripDiaryStateMachineIntentService() {
-        super(TAG);
+    public TripDiaryStateMachineService() {
+        super();
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
+    public void onDestroy() {
+        Log.i(this, TAG, "Service destroyed. So long, suckers!");
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public int onStartCommand(Intent intent,  int flags, int startId) {
+        Log.d(this, TAG, "service started with flags = "+flags+" startId = "+startId
+                +" action = "+intent.getAction());
+        if (flags == Service.START_FLAG_REDELIVERY) {
+            Log.d(this, TAG, "service restarted! need to check idempotency!");
+        }
         mTransition = intent.getAction();
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mCurrState = mPrefs.getString(CURR_STATE_KEY, this.getString(R.string.state_start));
@@ -87,6 +102,18 @@ public class TripDiaryStateMachineIntentService extends IntentService implements
         // TODO: Also figure out whether it is best to create it here or in the constructor.
         // If it in the constructor, where do we get the context from?
         mApiClient.connect();
+        /*
+         We are returning with START_REDELIVER_INTENT, so the process will be restarted with the
+         same intent if it is killed. We need to think through the implications of this. If the
+         process was killed before any of the actions were performed, then we are fine. If the
+         process was killed after the actions were performed, then we are in trouble, because the
+         actions are not necessarily idempotent.
+
+         Some of the actions are clearly idempotent. For example, starting the activity recognition
+         API. For example, deleting a geofence. It might be easiest to convert the actions to be
+         idempotent, but that requires some careful work. TODO: Need to think through this carefully.
+         */
+        return START_REDELIVER_INTENT;
     }
 
     @Override
@@ -116,10 +143,11 @@ public class TripDiaryStateMachineIntentService extends IntentService implements
         SharedPreferences.Editor prefsEditor =
                 PreferenceManager.getDefaultSharedPreferences(this).edit();
         prefsEditor.putString(CURR_STATE_KEY, newState);
-        prefsEditor.apply();
+        prefsEditor.commit();
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         CURR_STATE_KEY, "not found"));
+        stopSelf();
     }
 
     @Override
