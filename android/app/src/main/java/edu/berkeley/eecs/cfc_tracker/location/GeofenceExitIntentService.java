@@ -44,6 +44,7 @@ public class GeofenceExitIntentService extends IntentService {
 		 */
         Log.d(this, TAG, "geofence exit intent action = "+intent.getAction());
         GeofencingEvent parsedEvent = GeofencingEvent.fromIntent(intent);
+		Log.d(this, TAG, "parsedEvent = "+parsedEvent);
         Log.d(this, TAG, "got geofence intent callback with type "+parsedEvent.getGeofenceTransition()+
             " and location "+parsedEvent.getTriggeringLocation());
 

@@ -97,7 +97,7 @@
 		    android:exported="false">
 		</service>
         <service
-            android:name="edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineIntentService"
+            android:name="edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineService"
             android:enabled="true"
             android:exported="false">
         </service>

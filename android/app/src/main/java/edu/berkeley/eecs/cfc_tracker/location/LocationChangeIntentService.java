@@ -1,5 +1,6 @@
 package edu.berkeley.eecs.cfc_tracker.location;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 // import com.google.android.gms.location.LocationClient;
@@ -12,6 +13,7 @@ import android.content.Intent;
 import android.location.Location;
 
 import edu.berkeley.eecs.cfc_tracker.log.Log;
+import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
 import edu.berkeley.eecs.cfc_tracker.wrapper.SimpleLocation;
@@ -118,6 +120,10 @@ public class LocationChangeIntentService extends IntentService {
             uc.putSensorData(R.string.key_usercache_filtered_location, simpleLoc);
         }
 
+		long lastTransitionTs = ((BuiltinUserCache)uc).getTsOfLastTransition();
+		last10Points = filterAfterTransition(last10Points, lastTransitionTs);
+		points5MinsAgo = filterAfterTransition(points5MinsAgo, lastTransitionTs);
+
         // We will check whether the trip ended only when the point is valid.
         // Otherwise, we might end up with the duplicates triggering trip ends.
 		if (validPoint && isTripEnded(last10Points, points5MinsAgo)) {
@@ -129,6 +135,19 @@ public class LocationChangeIntentService extends IntentService {
             Log.d(this, TAG, "Finished broadcasting state change to receiver, ending trip now");
             // DataUtils.endTrip(this);
 		}
+	}
+
+	public SimpleLocation[] filterAfterTransition(SimpleLocation[] orig, long lastTransitionTs) {
+		ArrayList<SimpleLocation> tempArray = new ArrayList<SimpleLocation>();
+		for (SimpleLocation loc: orig) {
+			if (loc.getTs() > lastTransitionTs) {
+				tempArray.add(loc);
+			}
+		}
+		Log.d(this, TAG, "After filtering at "+lastTransitionTs+" number of points goes from "+
+				orig.length+" -> "+tempArray.size());
+		SimpleLocation[] retArray = new SimpleLocation[tempArray.size()];
+		return tempArray.toArray(retArray);
 	}
 	
 	public boolean isTripEnded(SimpleLocation[] last10Points, SimpleLocation[] points5MinsAgo) {
