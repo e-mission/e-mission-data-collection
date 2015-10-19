@@ -2,7 +2,7 @@ e-mission is a project to gather data about user travel patterns using phone app
 
 The current version integrates with moves for the data collection. This repository tracks our attempts to move to our own data collection.
 
-This currently contains only the android implementation of the data collection.
+The data collection uses a geofence for duty cycling, the fused API for location, and the built-in activity recognition for segmentation. 
 
 ## Instructions ##
 ### Android ###
