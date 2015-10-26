@@ -66,9 +66,16 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             return;
         }
 
-        Intent serviceStartIntent = new Intent(context, TripDiaryStateMachineService.class);
+        Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
         context.startService(serviceStartIntent);
     }
-	
+
+    private Intent getStateMachineServiceIntent(Context context) {
+        if (LocationTrackingConfig.getConfig(context).isDutyCycling()) {
+            return new Intent(context, TripDiaryStateMachineService.class);
+        } else {
+            return new Intent(context, TripDiaryStateMachineServiceOngoing.class);
+        }
+    }
 }

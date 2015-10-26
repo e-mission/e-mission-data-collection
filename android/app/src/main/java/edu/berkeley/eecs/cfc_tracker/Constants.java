@@ -14,6 +14,8 @@ public final class Constants {
 
     public static final int MILLISECONDS = 1000; // used to make constants like 30 * MILLISECONDS
 	public static final int THIRTY_SECONDS = 30 * MILLISECONDS; // 30 secs, keep it similar to GPS
+	public static final int TWO_SECONDS = 2 * MILLISECONDS; // 2 secs, similar to Zheng 2010 paper
+	public static final int SIXTY_SECONDS = 60 * MILLISECONDS; // 1 min, similar to smalldata mobility
     public static final long NANO2MS = 1000000;
 
     public static String[] sensors = {LONGITUDE,

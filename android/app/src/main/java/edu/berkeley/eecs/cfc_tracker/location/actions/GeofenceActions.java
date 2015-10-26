@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.location.Location;
 
 import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
+import edu.berkeley.eecs.cfc_tracker.location.LocationTrackingConfig;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -27,8 +28,6 @@ import edu.berkeley.eecs.cfc_tracker.location.GeofenceExitIntentService;
 public class GeofenceActions {
     private static final String GEOFENCE_REQUEST_ID = "DYNAMIC_EXIT_GEOFENCE";
     private static final int GEOFENCE_IN_NUMBERS = 43633623; // GEOFENCE
-    private static final float DEFAULT_GEOFENCE_RADIUS = Constants.TRIP_EDGE_THRESHOLD; // meters.
-    private static final int GEOFENCE_RESPONSIVENESS = 5 * Constants.MILLISECONDS;
     // TODO: need to check what the definition of a city block is
     // Apparently city block sizes vary dramatically depending on the city.
     // Per wikipedia, http://en.wikipedia.org/wiki/City_block,
@@ -107,11 +106,12 @@ public class GeofenceActions {
      */
     public GeofencingRequest createGeofenceRequest(double lat, double lng) {
         Log.d(mCtxt, TAG, "creating geofence at location "+lat+", "+lng);
+        LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(this.mCtxt);
         Geofence currGeofence =
                 new Geofence.Builder().setRequestId(GEOFENCE_REQUEST_ID)
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setCircularRegion(lat, lng, DEFAULT_GEOFENCE_RADIUS)
-                        .setNotificationResponsiveness(GEOFENCE_RESPONSIVENESS) // 5 secs
+                        .setCircularRegion(lat, lng, cfg.getRadius())
+                        .setNotificationResponsiveness(cfg.getResponsiveness()) // 5 secs
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
                         .build();
         return new GeofencingRequest.Builder()

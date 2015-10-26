@@ -10,6 +10,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 
 import edu.berkeley.eecs.cfc_tracker.Constants;
+import edu.berkeley.eecs.cfc_tracker.location.LocationTrackingConfig;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentService;
 
@@ -18,8 +19,7 @@ import edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentSer
  */
 public class ActivityRecognitionActions {
     private static final int ACTIVITY_IN_NUMBERS = 22848489;
-    private static final int ACTIVITY_DETECTION_INTERVAL = Constants.THIRTY_SECONDS;
-    // ~ 2.5 minutes - the same change that we used to use to detect the end of a trip
+    private int ACTIVITY_DETECTION_INTERVAL;
 
     private static final String TAG = "ActivityRecognitionHandler";
 
@@ -29,6 +29,7 @@ public class ActivityRecognitionActions {
     public ActivityRecognitionActions(Context context, GoogleApiClient apiClient) {
         this.mCtxt = context;
         this.mGoogleApiClient = apiClient;
+        ACTIVITY_DETECTION_INTERVAL = LocationTrackingConfig.getConfig(context).getDetectionInterval();
     }
 
     public PendingResult<Status> start() {
