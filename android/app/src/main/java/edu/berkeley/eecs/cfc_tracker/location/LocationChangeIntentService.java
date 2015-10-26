@@ -77,6 +77,22 @@ public class LocationChangeIntentService extends IntentService {
         SimpleLocation simpleLoc = new SimpleLocation(loc);
         uc.putSensorData(R.string.key_usercache_location, simpleLoc);
 
+		/*
+		 * If we are going to read data continuously and never stop, then we don't need to read any
+		 * points. We can deal with everything exclusively on the server side.
+		 */
+
+		if (!LocationTrackingConfig.getConfig(this).isDutyCycling()) {
+			// Server-side currently expects filtered location, but if we just put everything
+			// into filtered location, it won't be filtered any more.
+			// Let's just assume that we will have to generate filtered_location on the server side
+			// in that case.
+			// So in that case, we won't do anything here.
+			// We could filter, but that seems like extra work, so it is not a fair comparison with
+			// just dumping the data to the server.
+			return;
+		}
+
         /*
 		 * So far, our analysis for detecting the end of a trip starts off with ignoring points with
 		 * low accuracy and that are exactly a duplicate of the prior point. However, it is not

@@ -18,6 +18,7 @@ import java.util.TimeZone;
 
 import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
 import edu.berkeley.eecs.cfc_tracker.R;
+import edu.berkeley.eecs.cfc_tracker.location.LocationTrackingConfig;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.wrapper.Metadata;
 
@@ -332,11 +333,40 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     /*
+     * If we never duty cycle, we don't have any transitions. So we can push to the server without
+     * any issues. So we just find the last entry in the cache.
+     */
+    private long getTsOfLastEntry() {
+        String selectQuery = "SELECT * FROM " + TABLE_USER_CACHE +
+                " ORDER BY write_ts DESC LIMIT 1";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor resultCursor = db.rawQuery(selectQuery, null);
+        Log.d(cachedCtx, TAG, "While searching for regex, got " + resultCursor.getCount() + " results");
+        if (resultCursor.moveToFirst()) {
+            Log.d(cachedCtx, TAG, resultCursor.getLong(resultCursor.getColumnIndex(KEY_WRITE_TS)) + ": " +
+                    resultCursor.getString(resultCursor.getColumnIndex(KEY_DATA)));
+            return resultCursor.getLong(resultCursor.getColumnIndex(KEY_WRITE_TS));
+        } else {
+            Log.d(cachedCtx, TAG, "There are no entries in the usercache." +
+                    "A sync must have just completed!");
+        }
+        return -1;
+    }
+
+    private long getLastTs() {
+        if (LocationTrackingConfig.getConfig(cachedCtx).isDutyCycling()) {
+            return getTsOfLastTransition();
+        } else {
+            return getTsOfLastEntry();
+        }
+    }
+
+    /*
      * Return a string version of the messages and rw documents that need to be sent to the server.
      */
 
     public JSONArray sync_phone_to_server() throws JSONException {
-        long lastTripEndTs = getTsOfLastTransition();
+        long lastTripEndTs = getLastTs();
         Log.d(cachedCtx, TAG, "Last trip end was at "+lastTripEndTs);
 
         if (lastTripEndTs < 0) {

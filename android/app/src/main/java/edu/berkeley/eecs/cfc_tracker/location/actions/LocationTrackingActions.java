@@ -3,6 +3,8 @@ package edu.berkeley.eecs.cfc_tracker.location.actions;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+
+import edu.berkeley.eecs.cfc_tracker.location.LocationTrackingConfig;
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -21,7 +23,6 @@ import edu.berkeley.eecs.cfc_tracker.location.LocationChangeIntentService;
 public class LocationTrackingActions {
     private static final String TAG = "LocationHandler";
     private static final int LOCATION_IN_NUMBERS = 56228466;
-    private static final int LOCATION_UPDATE_INTERVAL = Constants.THIRTY_SECONDS;
 
     private Context mCtxt;
     private GoogleApiClient mGoogleApiClient;
@@ -39,11 +40,12 @@ public class LocationTrackingActions {
     }
 
     public LocationRequest getLocationRequest() {
+        LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(this.mCtxt);
         LocationRequest defaultRequest = LocationRequest.create();
         Log.d(mCtxt, TAG, "default request is " + defaultRequest);
         return defaultRequest
-                .setInterval(30 * 1000)
-                .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+                .setInterval(cfg.getDetectionInterval())
+                .setPriority(cfg.getAccuracy());
     }
 
     ResultCallback<Status> startCallback = new ResultCallback<Status>() {

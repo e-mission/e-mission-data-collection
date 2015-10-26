@@ -149,7 +149,7 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
          */
         try {
             JSONArray entriesReceived = CommunicationHelper.server_to_phone(mContext, userToken);
-            biuc.sync_server_to_phone(entriesReceived);
+            // biuc.sync_server_to_phone(entriesReceived);
         } catch (JSONException e) {
             Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");
         } catch (IOException e) {
