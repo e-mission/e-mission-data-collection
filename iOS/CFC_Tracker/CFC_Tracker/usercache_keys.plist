@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>key.usercache.location</key>
+	<string>background/location</string>
+	<key>key.usercache.filtered_location</key>
+	<string>background/filtered_location</string>
+	<key>key.usercache.activity</key>
+	<string>background/motion_activity</string>
+	<key>key.usercache.accelerometer</key>
+	<string>background/accelerometer</string>
+	<key>key.usercache.battery</key>
+	<string>background/battery</string>
+	<key>key.usercache.transition</key>
+	<string>statemachine/transition</string>
+	<key>metadata.usercache.write_ts</key>
+	<string>write_ts</string>
+</dict>
+</plist>
