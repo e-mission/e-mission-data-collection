@@ -12,6 +12,7 @@
 
 #import "DataUtils.h"
 #import "StoredTripsDatabase.h"
+#import "SimpleLocation.h"
 
 @interface DataUtilsTests : XCTestCase
 
@@ -44,10 +45,37 @@
     return fourPoints;
 }
 
+- (void) testLocToJSONWrapper {
+    CLLocation* testLoc = [self makeLoc:@[@37, @-122, @1]];
+    SimpleLocation* wrapperLoc = [[SimpleLocation alloc] initWithCLLocation:testLoc];
+    // Let's try to serialize it directly
+    NSLog(@"location object is %@, wrapperLoc = %@, valid = %d", testLoc, wrapperLoc,
+          [NSJSONSerialization isValidJSONObject:wrapperLoc]);
+    NSString* serializedString = [DataUtils wrapperToString:wrapperLoc];
+    NSLog(@"location object is %@, json is %@", testLoc, serializedString);
+}
+
+-(void) testDynamicClassCreation {
+    Class cls = [SimpleLocation class];
+    NSLog(@"Simple location class is %@", cls);
+    XCTAssert([SimpleLocation class] != NULL);
+    NSLog(@"Created object = %@", [cls new]);
+    XCTAssert([cls new] != NULL);
+}
+
+-(void) testJSONToLoc {
+    CLLocation* testLoc = [self makeLoc:@[@37, @-122, @1]];
+    SimpleLocation* wrapperLoc = [[SimpleLocation alloc] initWithCLLocation:testLoc];
+    NSString* serializedString = [DataUtils wrapperToString:wrapperLoc];
+    SimpleLocation* readWrapperLoc = (SimpleLocation*)[DataUtils stringToWrapper:serializedString wrapperClass:[SimpleLocation class]];
+    XCTAssert(readWrapperLoc.latitude == wrapperLoc.latitude);
+    XCTAssert(readWrapperLoc.ts == wrapperLoc.ts);
+}
+
 - (void)testDateToString {
     NSDate* testDate = [NSDate dateWithTimeIntervalSinceReferenceDate:0];
     NSString* testDateString = [DataUtils dateToString:testDate];
-    XCTAssert([testDateString isEqualToString:@"20001231T160000-0800"]);
+    XCTAssert([testDateString isEqualToString:@"2000-12-31T16:00:00-0800"]);
 }
 
 - (void)testAddPoint {
