@@ -101,9 +101,9 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
     [executor execute];
 }
 
-+(void)storeTripsForUser:(NSArray *)tripJSON completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
++(void)phoneToServer:(NSArray *)entriesToPush completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
     NSMutableDictionary *toPush = [[NSMutableDictionary alloc] init];
-    [toPush setObject:tripJSON forKey:@"sections"];
+    [toPush setObject:entriesToPush forKey:@"phone_to_server"];
     
     NSURL* kBaseURL = [[ConnectionSettings sharedInstance] getConnectUrl];
     NSURL* kStoreUserSectionsURL = [NSURL URLWithString:kStoreUserSectionsPath

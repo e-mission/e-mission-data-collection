@@ -19,7 +19,7 @@
 +(void)setClassifiedSections:(NSArray*)sectionDicts completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;
 +(void)movesCallback:(NSMutableDictionary*)movesParams completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;
 +(void)setClientStats:(NSDictionary*)statsToSend completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;
-+(void)storeTripsForUser:(NSArray*) tripJSON completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;;
++(void)phone_to_server:(NSArray*) entriesToPush completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;;
 
 // Generic GET and POST methods
 +(void)getData:(NSURL *)url completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler;
