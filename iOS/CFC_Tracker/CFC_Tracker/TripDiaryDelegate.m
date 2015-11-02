@@ -72,7 +72,7 @@
             NSLog(@"Adding point with timestamp %ld", (long)[currLoc.timestamp timeIntervalSince1970]);
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Recieved location %@, ongoing trip = true", currLoc]];
-            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:currLoc];
+            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:[[SimpleLocation alloc] initWithCLLocation:currLoc]];
         }
     }
 }

@@ -225,7 +225,9 @@
 }
 
 + (void) pushTripToServer {
-    [DataUtils endTrip];
+    [DataUtils pushAndClearData:^(BOOL status) {
+        NSLog(@"pushAndClearData was successful in pushTripToServer");
+    }];
     /*
     UIApplication *theApp = [UIApplication sharedApplication];
     [theApp.delegate application:theApp performFetchWithCompletionHandler:^(UIBackgroundFetchResult result) {
