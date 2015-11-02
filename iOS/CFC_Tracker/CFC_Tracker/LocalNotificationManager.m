@@ -7,7 +7,7 @@
 //
 
 #import "LocalNotificationManager.h"
-#import "OngoingTripsDatabase.h"
+#import "DbLogging.h"
 #import <UIKit/UIKit.h>
 
 @implementation LocalNotificationManager
@@ -16,7 +16,7 @@ static int notificationCount = 0;
 
 +(void)clearNotifications {
     notificationCount = 0;
-    [[OngoingTripsDatabase database] clearTransitions];
+    [[DbLogging database] clearTransitions];
 }
 
 +(void)addNotification:(NSString *)notificationMessage {
@@ -26,7 +26,7 @@ static int notificationCount = 0;
 +(void)addNotification:(NSString *)notificationMessage showUI:(BOOL)showUI {
     NSLog(@"Generating local notification with message %@", notificationMessage);
     notificationCount++;
-    [[OngoingTripsDatabase database] addTransition:notificationMessage];
+    [[DbLogging database] addTransition:notificationMessage];
 
     if (showUI) {
         UILocalNotification *localNotif = [[UILocalNotification alloc] init];

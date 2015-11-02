@@ -8,7 +8,7 @@
 
 #import "ViewController.h"
 #import "TripDiaryStateMachine.h"
-#import "OngoingTripsDatabase.h"
+#import "DbLogging.h"
 #import "AuthInspectorViewController.h"
 #import "SignInViewController.h"
 #import "AuthCompletionHandler.h"
@@ -92,7 +92,7 @@
 }
 
 - (IBAction)clearTransitions:(id)sender {
-    [[OngoingTripsDatabase database] clearTransitions];
+    [[DbLogging database] clearTransitions];
     [self.transitionTable reloadData];
 }
 
@@ -108,7 +108,7 @@
 
 - (NSInteger)tableView:(UITableView *)tableView
  numberOfRowsInSection:(NSInteger)section {
-    _transitionMessages = [[OngoingTripsDatabase database] getTransitions];
+    _transitionMessages = [[DbLogging database] getTransitions];
     return _transitionMessages.count;
 }
 

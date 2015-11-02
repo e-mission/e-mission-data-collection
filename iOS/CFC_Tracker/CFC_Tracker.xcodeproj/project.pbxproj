@@ -7,19 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B61AB75172009373BF /* StoredTripsAuto.db */; };
 		D062E7B91AB802CB009373BF /* GTMOAuth2ViewTouch.xib in Resources */ = {isa = PBXBuildFile; fileRef = D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */; };
 		D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */; };
 		D062E7BD1AC4CFAE009373BF /* DataUtilsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BC1AC4CFAE009373BF /* DataUtilsTests.m */; };
 		D062E7C01AC4D619009373BF /* TestUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BF1AC4D619009373BF /* TestUtils.m */; };
 		D062E7C31ACA50DA009373BF /* EMActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7C21ACA50DA009373BF /* EMActivity.m */; };
 		D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */; };
-		D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */; };
-		D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */ = {isa = PBXBuildFile; fileRef = D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */; };
 		D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */; };
 		D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */; };
 		D06DDA871AAE44CB00E6CF9B /* DataUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA861AAE44CB00E6CF9B /* DataUtils.m */; };
-		D06DDA8D1AAE576A00E6CF9B /* StoredTripsDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA8C1AAE576A00E6CF9B /* StoredTripsDatabase.m */; };
 		D06DDA931AB510AF00E6CF9B /* AuthCompletionHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */; };
 		D06DDA941AB510AF00E6CF9B /* AuthInspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA921AB510AF00E6CF9B /* AuthInspectorViewController.m */; };
 		D06DDA981AB510BD00E6CF9B /* SignInViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA961AB510BD00E6CF9B /* SignInViewController.m */; };
@@ -28,6 +24,8 @@
 		D06DDAA11AB512DB00E6CF9B /* CommunicationHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA9E1AB512DB00E6CF9B /* CommunicationHelper.m */; };
 		D06DDAA21AB512DB00E6CF9B /* CustomSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDAA01AB512DB00E6CF9B /* CustomSettings.m */; };
 		D06DDAA51AB516B900E6CF9B /* Constants.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDAA41AB516B900E6CF9B /* Constants.m */; };
+		D072E1DD1BE69ACB000932E1 /* DbLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1DC1BE69ACB000932E1 /* DbLogging.m */; };
+		D072E1DF1BE69AEC000932E1 /* DBLogger.db in Resources */ = {isa = PBXBuildFile; fileRef = D072E1DE1BE69AEC000932E1 /* DBLogger.db */; };
 		D07790811ACB04C700634A05 /* EMActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7C21ACA50DA009373BF /* EMActivity.m */; };
 		D087C25F1BE326D800E8A72E /* UserCacheTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D087C25E1BE326D800E8A72E /* UserCacheTest.m */; };
 		D0A3F5721BDE91EA00112CE7 /* BuiltinUserCache.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */; };
@@ -69,7 +67,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D062E7B61AB75172009373BF /* StoredTripsAuto.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = StoredTripsAuto.db; sourceTree = "<group>"; };
 		D062E7B81AB802CB009373BF /* GTMOAuth2ViewTouch.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = GTMOAuth2ViewTouch.xib; sourceTree = "<group>"; };
 		D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryStateMachineTests.m; sourceTree = "<group>"; };
 		D062E7BC1AC4CFAE009373BF /* DataUtilsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DataUtilsTests.m; sourceTree = "<group>"; };
@@ -78,17 +75,12 @@
 		D062E7C11ACA50DA009373BF /* EMActivity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EMActivity.h; sourceTree = "<group>"; };
 		D062E7C21ACA50DA009373BF /* EMActivity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EMActivity.m; sourceTree = "<group>"; };
 		D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
-		D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OngoingTripsDatabase.h; sourceTree = "<group>"; };
-		D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OngoingTripsDatabase.m; sourceTree = "<group>"; };
-		D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = OngoingTripsAuto.db; sourceTree = "<group>"; };
 		D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryActions.h; sourceTree = "<group>"; };
 		D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryActions.m; sourceTree = "<group>"; };
 		D06DDA811AAC1F7E00E6CF9B /* TripDiaryDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryDelegate.h; sourceTree = "<group>"; };
 		D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryDelegate.m; sourceTree = "<group>"; };
 		D06DDA851AAE44CB00E6CF9B /* DataUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataUtils.h; sourceTree = "<group>"; };
 		D06DDA861AAE44CB00E6CF9B /* DataUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DataUtils.m; sourceTree = "<group>"; };
-		D06DDA8B1AAE576A00E6CF9B /* StoredTripsDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StoredTripsDatabase.h; sourceTree = "<group>"; };
-		D06DDA8C1AAE576A00E6CF9B /* StoredTripsDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StoredTripsDatabase.m; sourceTree = "<group>"; };
 		D06DDA8F1AB510AF00E6CF9B /* AuthCompletionHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AuthCompletionHandler.h; sourceTree = "<group>"; };
 		D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AuthCompletionHandler.m; sourceTree = "<group>"; };
 		D06DDA911AB510AF00E6CF9B /* AuthInspectorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AuthInspectorViewController.h; sourceTree = "<group>"; };
@@ -103,6 +95,9 @@
 		D06DDAA01AB512DB00E6CF9B /* CustomSettings.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomSettings.m; sourceTree = "<group>"; };
 		D06DDAA31AB516B900E6CF9B /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		D06DDAA41AB516B900E6CF9B /* Constants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Constants.m; sourceTree = "<group>"; };
+		D072E1DB1BE69ACB000932E1 /* DbLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DbLogging.h; sourceTree = "<group>"; };
+		D072E1DC1BE69ACB000932E1 /* DbLogging.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DbLogging.m; sourceTree = "<group>"; };
+		D072E1DE1BE69AEC000932E1 /* DBLogger.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = DBLogger.db; sourceTree = "<group>"; };
 		D087C25E1BE326D800E8A72E /* UserCacheTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserCacheTest.m; sourceTree = "<group>"; };
 		D0A3F5701BDE91EA00112CE7 /* BuiltinUserCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuiltinUserCache.h; sourceTree = "<group>"; };
 		D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BuiltinUserCache.m; sourceTree = "<group>"; };
@@ -177,12 +172,8 @@
 			children = (
 				D0A3F5701BDE91EA00112CE7 /* BuiltinUserCache.h */,
 				D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */,
-				D06C946F1A86672E00D9CCC0 /* OngoingTripsDatabase.m */,
-				D06C946E1A86672E00D9CCC0 /* OngoingTripsDatabase.h */,
 				D06DDA851AAE44CB00E6CF9B /* DataUtils.h */,
 				D06DDA861AAE44CB00E6CF9B /* DataUtils.m */,
-				D06DDA8B1AAE576A00E6CF9B /* StoredTripsDatabase.h */,
-				D06DDA8C1AAE576A00E6CF9B /* StoredTripsDatabase.m */,
 			);
 			name = Storage;
 			sourceTree = "<group>";
@@ -214,6 +205,15 @@
 				D06DDAA01AB512DB00E6CF9B /* CustomSettings.m */,
 			);
 			name = Sync;
+			sourceTree = "<group>";
+		};
+		D072E1DA1BE696BF000932E1 /* Log */ = {
+			isa = PBXGroup;
+			children = (
+				D072E1DB1BE69ACB000932E1 /* DbLogging.h */,
+				D072E1DC1BE69ACB000932E1 /* DbLogging.m */,
+			);
+			name = Log;
 			sourceTree = "<group>";
 		};
 		D0A3F57A1BE0045700112CE7 /* Wrapper */ = {
@@ -282,6 +282,7 @@
 		D0EC6B4A1A7CBEBB00E8841B /* CFC_Tracker */ = {
 			isa = PBXGroup;
 			children = (
+				D072E1DA1BE696BF000932E1 /* Log */,
 				D0A3F57A1BE0045700112CE7 /* Wrapper */,
 				D06DDAA31AB516B900E6CF9B /* Constants.h */,
 				D06DDAA41AB516B900E6CF9B /* Constants.m */,
@@ -309,10 +310,9 @@
 		D0EC6B4B1A7CBEBB00E8841B /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				D072E1DE1BE69AEC000932E1 /* DBLogger.db */,
 				D0A3F58D1BE2E9CC00112CE7 /* userCacheDB */,
 				D0A3F5871BE05ADE00112CE7 /* usercache_keys.plist */,
-				D062E7B61AB75172009373BF /* StoredTripsAuto.db */,
-				D06C94711A8844B800D9CCC0 /* OngoingTripsAuto.db */,
 				D0EC6B4C1A7CBEBB00E8841B /* Info.plist */,
 				D0EC6B4D1A7CBEBB00E8841B /* main.m */,
 			);
@@ -439,12 +439,11 @@
 				D0EC6B571A7CBEBB00E8841B /* Main.storyboard in Resources */,
 				D0B0669D1B153DE40023DA44 /* SkipAuthEmailViewController.xib in Resources */,
 				D0A74D8C1AAA2F57005BE6B2 /* connect.plist in Resources */,
-				D062E7B71AB75172009373BF /* StoredTripsAuto.db in Resources */,
 				D0EC6B5C1A7CBEBB00E8841B /* LaunchScreen.xib in Resources */,
 				D0EC6B591A7CBEBB00E8841B /* Images.xcassets in Resources */,
 				D06DDA991AB510BD00E6CF9B /* SignInViewController.xib in Resources */,
-				D06C94721A8844B800D9CCC0 /* OngoingTripsAuto.db in Resources */,
 				D0A3F58E1BE2E9CC00112CE7 /* userCacheDB in Resources */,
+				D072E1DF1BE69AEC000932E1 /* DBLogger.db in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -476,13 +475,12 @@
 				D06DDAA21AB512DB00E6CF9B /* CustomSettings.m in Sources */,
 				D06DDAA51AB516B900E6CF9B /* Constants.m in Sources */,
 				D0EC6B541A7CBEBB00E8841B /* ViewController.m in Sources */,
+				D072E1DD1BE69ACB000932E1 /* DbLogging.m in Sources */,
 				D0EC6B511A7CBEBB00E8841B /* AppDelegate.m in Sources */,
 				D06DDA871AAE44CB00E6CF9B /* DataUtils.m in Sources */,
-				D06C94701A86672E00D9CCC0 /* OngoingTripsDatabase.m in Sources */,
 				D0A3F5831BE0368500112CE7 /* SimpleLocation.m in Sources */,
 				D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */,
 				D0A3F5861BE04CA500112CE7 /* Transition.m in Sources */,
-				D06DDA8D1AAE576A00E6CF9B /* StoredTripsDatabase.m in Sources */,
 				D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */,
 				D0A3F5801BE006EA00112CE7 /* TimeQuery.m in Sources */,
 				D0EC6B4E1A7CBEBB00E8841B /* main.m in Sources */,
