@@ -218,36 +218,10 @@
  * occurred. If the update was greater than the time for detecting the end of a trip (10 minutes), then the trip has ended,
  * otherwise, it has not.
  * TODO: Add a "machine" or "state" parameter if we want to check the current state.
- * Also, it seems like this would be a good fit for DataUtils instead of being here...
  */
 
 + (BOOL) hasTripEnded {
-
-    NSArray* last3Points = [DataUtils getLastPoints:3];
-    if (last3Points.count == 0) {
-        /*
-         * There are no points in the database. This means that no trip has been started in the past 30 minutes.
-         * This should never happen because we only invoke this when we are in the ongoing trip state, so let's generate a
-         * notification here.
-         */
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"last3Points.count = %lu while checking for trip end",
-                                                   (unsigned long)last3Points.count]];
-        // Let's also return "NO", since it is the safer option
-        return NO;
-    } else {
-        NSDate* lastDate = ((CLLocation*)last3Points.firstObject).timestamp;
-        NSDate* firstDate = ((CLLocation*)last3Points.lastObject).timestamp;
-        NSLog(@"firstDate = %@, lastDate = %@", firstDate, lastDate);
-        
-        if (fabs(lastDate.timeIntervalSinceNow) > kTripEndStationaryMins * 60) {
-            NSLog(@"interval to the last date = %f, returning YES", [firstDate timeIntervalSinceDate:lastDate]);
-            return YES;
-        } else {
-            NSLog(@"interval to the last date = %f, returning NO", [firstDate timeIntervalSinceDate:lastDate]);
-            return NO;
-        }
-    }
+    return [DataUtils hasTripEnded:kTripEndStationaryMins];
 }
 
 + (void) pushTripToServer {

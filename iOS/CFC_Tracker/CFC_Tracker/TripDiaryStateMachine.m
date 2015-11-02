@@ -12,7 +12,9 @@
 
 #import "LocalNotificationManager.h"
 
-#import "OngoingTripsDatabase.h"
+#import "BuiltinUserCache.h"
+#import "Transition.h"
+
 #import <CoreMotion/CoreMotion.h>
 
 @interface TripDiaryStateMachine() {
@@ -148,6 +150,10 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                @"Received transition %@ in state %@",
                                                transition,
                                                [TripDiaryStateMachine getStateName:self.currState]]];
+    Transition* transitionWrapper = [Transition new];
+    transitionWrapper.currState = [TripDiaryStateMachine getStateName:self.currState];
+    transitionWrapper.transition = transition;
+    [[BuiltinUserCache database] putMessage:@"key.usercache.transition" value:transitionWrapper];
     
     if (self.currState == kStartState) {
         [self handleStart:transition];

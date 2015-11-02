@@ -20,18 +20,22 @@ static int notificationCount = 0;
 }
 
 +(void)addNotification:(NSString *)notificationMessage {
+    [self addNotification:notificationMessage showUI:false];
+}
+
++(void)addNotification:(NSString *)notificationMessage showUI:(BOOL)showUI {
     NSLog(@"Generating local notification with message %@", notificationMessage);
     notificationCount++;
     [[OngoingTripsDatabase database] addTransition:notificationMessage];
 
-    /*
-    UILocalNotification *localNotif = [[UILocalNotification alloc] init];
-    if (localNotif) {
-        localNotif.alertBody = notificationMessage;
-        localNotif.applicationIconBadgeNumber = notificationCount;
-        [[UIApplication sharedApplication] presentLocalNotificationNow:localNotif];
+    if (showUI) {
+        UILocalNotification *localNotif = [[UILocalNotification alloc] init];
+        if (localNotif) {
+            localNotif.alertBody = notificationMessage;
+            localNotif.applicationIconBadgeNumber = notificationCount;
+            [[UIApplication sharedApplication] presentLocalNotificationNow:localNotif];
+        }
     }
-     */ 
 }
 
 @end

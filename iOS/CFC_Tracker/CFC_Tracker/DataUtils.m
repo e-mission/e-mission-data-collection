@@ -6,23 +6,87 @@
 //  Copyright (c) 2015 Kalyanaraman Shankari. All rights reserved.
 //
 
+#import <Foundation/NSObjCRuntime.h>
+#import <objc/objc.h>
+#import <objc/runtime.h>
 #import "DataUtils.h"
 #import "OngoingTripsDatabase.h"
 #import "StoredTripsDatabase.h"
 #import "LocalNotificationManager.h"
+#import "BuiltinUserCache.h"
+#import "SimpleLocation.h"
+#import "TimeQuery.h"
+#import "CommunicationHelper.h"
 
 @implementation DataUtils
 
 + (NSString*)dateToString:(NSDate*)date {
     NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-    [dateFormat setDateFormat:@"yyyyMMdd'T'HHmmssZ"];
+    [dateFormat setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZ"];
     return [dateFormat stringFromDate:date];
 }
 
 + (NSDate*)dateFromString:(NSString*)string {
     NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-    [dateFormat setDateFormat:@"yyyyMMdd'T'HHmmssZ"];
+    [dateFormat setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZ"];
     return [dateFormat dateFromString:string];
+}
+
++ (double)dateToTs:(NSDate*)date {
+    return [date timeIntervalSince1970];
+}
+
++ (NSDate*)dateFromTs:(double)ts {
+    return [NSDate dateWithTimeIntervalSince1970:ts];
+}
+
+/*
+ * Converts the specified wrapper object into a dictionary that can be serialized using
+ * NSJSONSerialization. It does this by doing the following:
+ * - Determine the set of properties in the class
+ * - Generate a dictionary for the set of properties using the  NSKeyValueCoding protocol
+ * (dictionaryWithValuesForKeys).
+ * The code to do this is largely inspired by: https://dzone.com/articles/objective-c-categories-groovy#!
+ * and https://www.bignerdranch.com/blog/inside-the-bracket-part-6-using-the-runtime-api/
+ * 
+ * Note that we could create a wrapper protocol which would define this, but
+ * then it won't work on existing objects such as CLLocation. There are fancy ways to add decorations to existing classes
+ * in objective C, but then you would need to add a decoration for each type of object.
+ * 
+ * Let's keep things simple here.
+ */
++ (NSDictionary*)wrapperToDict:(NSObject*)obj {
+    if ([self isKindOfClass:[NSDictionary class]] || [self isKindOfClass:[NSArray class]]) {
+        return (NSDictionary*)obj;
+    } else {
+        unsigned int propertyCount = 0;
+        objc_property_t* properties = class_copyPropertyList([obj class], &propertyCount);
+        NSMutableArray *keys = [NSMutableArray new];
+        for (NSUInteger i = 0; i < propertyCount; i++) {
+            objc_property_t property = *(properties + i);
+            [keys addObject:[NSString stringWithCString:property_getName(property) encoding:NSASCIIStringEncoding]];
+        }
+        free(properties);
+        NSDictionary *dictionary = [obj dictionaryWithValuesForKeys:keys];
+        return dictionary;
+    }
+}
+
++ (void)dictToWrapper:(NSDictionary*)dict wrapper:(NSObject*)obj {
+    return [obj setValuesForKeysWithDictionary:dict];
+}
+
++ (NSString*)wrapperToString:(NSObject*)obj {
+    NSDictionary* wrapperDict = [DataUtils wrapperToDict:obj];
+    NSString* serializedString = [DataUtils saveToJSONString:wrapperDict];
+    return serializedString;
+}
+
++ (NSObject*)stringToWrapper:(NSString*)str wrapperClass:(Class)cls {
+    NSDictionary* wrapperDict = [DataUtils loadFromJSONString:str];
+    NSObject* obj = [cls new];
+    [self dictToWrapper:wrapperDict wrapper:obj];
+    return obj;
 }
 
 + (void) addPoint:(CLLocation*) currLoc {
@@ -32,7 +96,7 @@
 
 + (NSArray*) getLastPoints:(int) nPoints {
     NSLog(@"addLastPoints(%d) called", nPoints);
-    return [[OngoingTripsDatabase database] getLastPoints:nPoints];
+    return [[BuiltinUserCache database] getLastSensorData:@"key.usercache.location" nEntries:nPoints wrapperClass:[SimpleLocation class]];
 }
 
 
@@ -111,6 +175,37 @@
     }
     [self clearOngoingDb];
 }
+
++(BOOL) hasTripEnded:(int)tripEndThresholdMins {
+    
+    NSArray* last3Points = [DataUtils getLastPoints:3];
+    if (last3Points.count == 0) {
+        /*
+         * There are no points in the database. This means that no trip has been started in the past 30 minutes.
+         * This should never happen because we only invoke this when we are in the ongoing trip state, so let's generate a
+         * notification here.
+         */
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"last3Points.count = %lu while checking for trip end",
+                                                   (unsigned long)last3Points.count]];
+        // Let's also return "NO", since it is the safer option
+        return NO;
+    } else {
+        SimpleLocation *lastLoc = ((SimpleLocation*)last3Points.firstObject);
+        SimpleLocation *firstLoc = ((SimpleLocation*)last3Points.lastObject);
+        
+        NSLog(@"firstDate = %@, lastDate = %@", firstLoc.fmt_time, lastLoc.fmt_time);
+        NSDate* lastDate = [DataUtils dateFromTs:lastLoc.ts];
+        if (fabs(lastDate.timeIntervalSinceNow) > tripEndThresholdMins * 60) {
+            NSLog(@"interval to the last date = %f, returning YES", lastDate.timeIntervalSinceNow);
+            return YES;
+        } else {
+            NSLog(@"interval to the last date = %f, returning NO", lastDate.timeIntervalSinceNow);
+            return NO;
+        }
+    }
+}
+
 
 + (NSDate*) getMidnight {
     NSDate* now = [NSDate date];
@@ -381,14 +476,14 @@
     return [self loadFromJSONData:jsonData];
 }
 
-+ (NSData*)saveToJSONData:(NSMutableDictionary*) jsonDict {
++ (NSData*)saveToJSONData:(NSDictionary*) jsonDict {
     NSError *error;
     NSData *bytesToSend = [NSJSONSerialization dataWithJSONObject:jsonDict
                                                           options:kNilOptions error:&error];
     return bytesToSend;
 }
 
-+ (NSString*)saveToJSONString:(NSMutableDictionary*) jsonDict {
++ (NSString*)saveToJSONString:(NSDictionary*) jsonDict {
     NSData *bytesToSend = [self saveToJSONData:jsonDict];
     
     // This is copied from the earlier code, but doesn't seem to work here!
@@ -398,6 +493,27 @@
     
     NSLog(@"data has %lu bytes, str has size %lu", bytesToSend.length, strToSend.length);
     return strToSend;
+}
+
++ (void) pushAndClearData:(void (^)(BOOL))completionHandler {
+    NSArray* entriesToPush = [[BuiltinUserCache database] syncPhoneToServer];
+    if (entriesToPush.count == 0) {
+        NSLog(@"No data to send, returning early");
+    } else {
+        [CommunicationHelper phone_to_server:entriesToPush
+                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                 [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                                            @"successfully pushed %ld entries to the server",
+                                                                            (unsigned long)entriesToPush.count]];
+                                 // Only delete trips after they have been successfully pushed
+                                 if (error == nil) {
+                                     TimeQuery* tq = [BuiltinUserCache getTimeQuery:entriesToPush];
+                                     [[BuiltinUserCache database] clearEntries:tq];
+                                 }
+                                 NSLog(@"Returning from silent push");
+                                 completionHandler(TRUE);
+                             }];
+    }
 }
 
 + (NSArray*) getTripsToPush {

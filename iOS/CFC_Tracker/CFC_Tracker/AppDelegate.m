@@ -71,11 +71,13 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 
 - (void)handleNotifications:(NSNotification*)note {
     if (_silentPushHandler != nil) {
-        NSLog(@"Received notification %@ while processing silent push notification", note.object);
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Received notification %@ while processing silent push notification", note.object]];
         // we only care about notifications when we are processing a silent remote push notification
         if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
             // if we got a trip end detected, we want to wait until the geofence is created
-            NSLog(@"Detected trip end, waiting until geofence is created to return from silent push");
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Detected trip end, waiting until geofence is created to return from silent push"]];
         } else {
             // for everything else, we don't need to wait for processing
             // But let's push any data that is pending
@@ -86,6 +88,13 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
             // in particular, it should be possible to test the crash, although it does not appear
             // to be happening right now.
             // Let's just deploy this on the phone tonight and go to sleep!
+
+            [DataUtils pushAndClearData:^(BOOL status) {
+                // We only ever call this with true right now
+                assert(status == TRUE);
+                _silentPushHandler(UIBackgroundFetchResultNewData);
+            }];
+            /*
             NSArray* tripsToPush = [DataUtils getTripsToPush];
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"pushing %ld trips to the server",
@@ -104,12 +113,14 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                                      _silentPushHandler(UIBackgroundFetchResultNewData);
                                  }];
             }
+             */
         }
         // TODO: Figure out whether we should set it to NULL here or whether parts of
         // the system will still try to access the handler.
         // _silentPushHandler = nil;
     } else {
         // Not processing a silent remote push notification
+        NSLog(@"Ignoring silent push notification");
     }
 }
 
@@ -166,18 +177,10 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     NSLog(@"performFetchWithCompletionHandler called at %@", [NSDate date]);
-    NSArray* tripsToPush = [DataUtils getTripsToPush];
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"pushing %ld trips to the server",
-                                               (unsigned long)tripsToPush.count]];
-    [CommunicationHelper storeTripsForUser:tripsToPush
-                         completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                                        @"successfully pushed %ld trips to the server",
-                                                                        (unsigned long)tripsToPush.count]];
-                             // Only delete trips after they have been successfully pushed
-                             [DataUtils deletePushedTrips:tripsToPush];
-                         }];
+    [DataUtils pushAndClearData:^(BOOL status) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"in background fetch, finished pushing entries to the server"]];
+    }];
 }
 
 @end

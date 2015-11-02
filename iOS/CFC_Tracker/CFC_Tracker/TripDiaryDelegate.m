@@ -9,10 +9,11 @@
 #import "TripDiaryDelegate.h"
 #import "ConnectionSettings.h"
 #import <Parse/Parse.h>
-#import "OngoingTripsDatabase.h"
+#import "BuiltinUserCache.h"
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
 #import "LocalNotificationManager.h"
+#import "SimpleLocation.h"
 
 @interface TripDiaryDelegate() {
     TripDiaryStateMachine* _tdsm;
@@ -71,7 +72,7 @@
             NSLog(@"Adding point with timestamp %ld", (long)[currLoc.timestamp timeIntervalSince1970]);
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Recieved location %@, ongoing trip = true", currLoc]];
-            [[OngoingTripsDatabase database] addPoint:currLoc];
+            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:currLoc];
         }
     }
 }
@@ -93,9 +94,14 @@
          * If this turns out to be a performance hassle, replace by
          */
         NSDate* hourAgo = [dateNow dateByAddingTimeInterval:-(60 * 60)];
-        NSArray* pastHourTrips = [[OngoingTripsDatabase database]
-                                  getPointsFrom: hourAgo
-                                  to:dateNow];
+        TimeQuery* tq = [TimeQuery new];
+        tq.timeKey = @"metadata.usercache.write_ts";
+        tq.startDate = hourAgo;
+        tq.endDate = dateNow;
+
+        NSArray* pastHourTrips = [[BuiltinUserCache database]
+                                  getSensorDataForInterval:@"key.usercache.location" tq:tq wrapperClass:[SimpleLocation class]];
+
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Recived = %ld updates in the %ld hour of %ld day",
                                                    (long)pastHourTrips.count, (long)[dayHourMinuteComponents hour],
@@ -213,19 +219,19 @@
 {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received visit notification = %@",
-                                               visit]];
+                                               visit] showUI:true];
 }
 
 - (void)locationManagerDidPauseLocationUpdates:(CLLocationManager *)manager
 {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Location updates PAUSED"]];
+                                               @"Location updates PAUSED"] showUI:true];
 }
 
 - (void)locationManagerDidResumeLocationUpdates:(CLLocationManager *)manager
 {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Location updates RESUMED"]];
+                                               @"Location updates RESUMED"] showUI:true];
 }
 
 - (void)locationManager:(CLLocationManager *)manager
