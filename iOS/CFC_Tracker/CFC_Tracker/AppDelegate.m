@@ -91,8 +91,11 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 
             [DataUtils pushAndClearData:^(BOOL status) {
                 // We only ever call this with true right now
-                assert(status == TRUE);
-                _silentPushHandler(UIBackgroundFetchResultNewData);
+                if (status == true) {
+                    _silentPushHandler(UIBackgroundFetchResultNewData);
+                } else {
+                    _silentPushHandler(UIBackgroundFetchResultNoData);
+                }
             }];
             /*
             NSArray* tripsToPush = [DataUtils getTripsToPush];
