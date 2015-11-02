@@ -124,6 +124,21 @@ static BuiltinUserCache *_database;
     return [@([self getCurrentTimeSecs]) stringValue];
 }
 
+-(NSDictionary*)createSensorData:key write_ts:(NSDate*)write_ts timezone:(NSString*)ts data:(NSObject*)data {
+    Metadata* md = [Metadata new];
+    md.write_ts = [DataUtils dateToTs:write_ts];
+    md.time_zone = ts;
+    md.type = SENSOR_DATA_TYPE;
+    md.key = [self getStatName:key];
+    NSDictionary* mdDict = [DataUtils wrapperToDict:md];
+    NSDictionary* dataDict = [DataUtils wrapperToDict:data];
+    
+    NSMutableDictionary* entry = [NSMutableDictionary new];
+    [entry setObject:mdDict forKey:METADATA_TAG];
+    [entry setObject:dataDict forKey:DATA_TAG];
+    return entry;
+}
+
 -(void)putSensorData:(NSString *)label value:(NSObject *)value {
     [self putValue:label value:value type:SENSOR_DATA_TYPE];
 }
@@ -162,7 +177,7 @@ static BuiltinUserCache *_database;
     // http://www.raywenderlich.com/902/sqlite-tutorial-for-ios-creating-and-scripting
     NSInteger execCode = sqlite3_step(compiledStatement);
     if (execCode != SQLITE_DONE) {
-        NSLog(@"Got error code %ld while executing statement %@", execCode, insertStatement);
+        NSLog(@"Got error code %ld while executing statement %@", (long)execCode, insertStatement);
     }
     sqlite3_finalize(compiledStatement);
 }
@@ -196,7 +211,7 @@ static BuiltinUserCache *_database;
             [retVal addObject:currRow];
         }
     } else {
-        NSLog(@"Error code %ld while compiling query %@", selPrepCode, selectQuery);
+        NSLog(@"Error code %ld while compiling query %@", (long)selPrepCode, selectQuery);
     }
     sqlite3_finalize(compiledStatement);
     return retVal;
@@ -317,7 +332,7 @@ static BuiltinUserCache *_database;
             [resultArray addObject:entry];
         }
     } else {
-        NSLog(@"Error code %ld while compiling query %@", selPrepCode, retrieveDataQuery);
+        NSLog(@"Error code %ld while compiling query %@", (long)selPrepCode, retrieveDataQuery);
     }
 
     /*
@@ -329,6 +344,7 @@ static BuiltinUserCache *_database;
 }
 
 + (TimeQuery*) getTimeQuery:(NSArray*)pointList {
+    assert(pointList.count != 0);
     Metadata* startMd = [Metadata new];
     [DataUtils dictToWrapper:[pointList[0] objectForKey:METADATA_TAG] wrapper:startMd];
     double start_ts = startMd.write_ts;
@@ -343,6 +359,18 @@ static BuiltinUserCache *_database;
     tq.startTs = start_ts - 1;
     tq.endTs = end_ts + 1;
     return tq;
+}
+
++ (NSString*) getTimezone:(NSDictionary*)entry {
+    Metadata* md = [Metadata new];
+    [DataUtils dictToWrapper:[entry objectForKey:METADATA_TAG] wrapper:md];
+    return md.time_zone;
+}
+
++ (NSDate*) getWriteTs:(NSDictionary *)entry {
+    Metadata* md = [Metadata new];
+    [DataUtils dictToWrapper:[entry objectForKey:METADATA_TAG] wrapper:md];
+    return [DataUtils dateFromTs:md.write_ts];
 }
 
 /* TODO: Consider refactoring this along with the code in TripSectionDB to have generic read code.
