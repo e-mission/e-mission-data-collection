@@ -392,7 +392,7 @@ static NSString * const kSignOutAlertConfirmTitle = @"Continue";
   if ([label isEqualToString:kForceSyncLabel]) {
       UIApplication *theApp = [UIApplication sharedApplication];
       [theApp.delegate application:theApp performFetchWithCompletionHandler:^(UIBackgroundFetchResult result) {
-          NSLog(@"Completion handler result = %lu", result);
+          NSLog(@"Completion handler result = %lu", (unsigned long)result);
       }];
   } else if ([label isEqualToString:kGetServerToken]) {
       [[AuthCompletionHandler sharedInstance] trySilentAuthentication];

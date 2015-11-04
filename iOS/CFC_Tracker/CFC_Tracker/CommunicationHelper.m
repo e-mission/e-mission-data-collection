@@ -101,7 +101,7 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
     [executor execute];
 }
 
-+(void)phoneToServer:(NSArray *)entriesToPush completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
++(void)phone_to_server:(NSArray *)entriesToPush completionHandler:(void (^)(NSData *data, NSURLResponse *response, NSError *error))completionHandler {
     NSMutableDictionary *toPush = [[NSMutableDictionary alloc] init];
     [toPush setObject:entriesToPush forKey:@"phone_to_server"];
     

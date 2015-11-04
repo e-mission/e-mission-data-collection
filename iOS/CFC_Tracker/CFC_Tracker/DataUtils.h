@@ -26,25 +26,8 @@
 + (NSMutableDictionary*)loadFromJSONString:(NSString *)jsonString;
 + (NSString*)saveToJSONString:(NSDictionary*) jsonDict;
 
-+ (NSDate*) getMidnight;
-
-+ (void) addPoint:(CLLocation*) currLoc;
 + (NSArray*) getLastPoints:(int) nPoints;
-
-+ (void) addModeChange:(EMActivity*) activity;
-
-+ (void) clearOngoingDb;
-+ (void) clearStoredDb;
-
 + (BOOL)hasTripEnded:(int)tripEndThresholdMins;
-+ (void) endTrip;
-+ (void) convertOngoingToStored;
 + (void) pushAndClearData:(void (^)(BOOL))completionHandler;
 
-+ (NSArray*) getTripsToPush;
-+ (void) deletePushedTrips:(NSArray*) tripsToPush;
-+ (void) deleteAllStoredTrips;
-
-+ (NSMutableDictionary*) getJSONPlace:(CLLocation*) loc;
-+ (NSMutableDictionary*) getTrackPoint:(CLLocation*) loc;
 @end

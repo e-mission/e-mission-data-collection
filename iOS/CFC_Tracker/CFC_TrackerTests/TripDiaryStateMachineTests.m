@@ -51,8 +51,8 @@ typedef void(^ExecutionStep)();
     [super setUp];
     // We could set this to the delegate of the state machine
     // But that is not available publicly
-    [DataUtils clearOngoingDb];
-    [DataUtils clearStoredDb];
+//    [Builtin clearOngoingDb];
+//    [DataUtils clearStoredDb];
 
     UIApplication* currApp = [UIApplication sharedApplication];
     AppDelegate* currDelegate = currApp.delegate;
@@ -252,7 +252,8 @@ typedef void(^ExecutionStep)();
 
     [self executeSteps:steps];
     
-    NSArray* retPoints = [DataUtils getLastPoints:5];
+//    NSArray* retPoints = [DataUtils getLastPoints:5];
+    NSArray* retPoints = [NSArray new];
     XCTAssert(retPoints.count == 3, @"ret Points.count = %lu, expected 3", retPoints.count);
     
     CLLocation* firstPoint = (CLLocation*)retPoints[2];

@@ -20,6 +20,8 @@
 + (double) getCurrentTimeSecs;
 + (NSString*) getCurrentTimeSecsString;
 
+-(NSDictionary*)createSensorData:key write_ts:(NSDate*)write_ts timezone:(NSString*)tz data:(NSObject*)data;
+
 // We implement the same interface as the android code, to use somewhat tested code
 - (void) putSensorData:(NSString*) label value:(NSObject*)value;
 - (void) putMessage:(NSString*) label value:(NSObject*)value;
@@ -34,6 +36,8 @@
 - (NSArray*) syncPhoneToServer;
 
 + (TimeQuery*) getTimeQuery:(NSArray*)pointList;
++ (NSString*) getTimezone:(NSDictionary*)entry;
++ (NSDate*) getWriteTs:(NSDictionary*)entry;
 
 - (void) clearEntries:(TimeQuery*)tq;
 - (void) clear;
