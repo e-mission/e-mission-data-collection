@@ -23,7 +23,7 @@
 */
 
 static NSString* kUncommittedSectionsPath = @"/tripManager/getUnclassifiedSections";
-static NSString* kStoreUserSectionsPath = @"/tripManager/storeSensedTrips";
+static NSString* kUsercachePutPath = @"/usercache/put";
 static NSString* kSaveSectionsPath = @"/tripManager/setSectionClassification";
 static NSString* kMovesCallbackPath = @"/movesCallback";
 static NSString* kSetStatsPath = @"/stats/set";
@@ -106,10 +106,10 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
     [toPush setObject:entriesToPush forKey:@"phone_to_server"];
     
     NSURL* kBaseURL = [[ConnectionSettings sharedInstance] getConnectUrl];
-    NSURL* kStoreUserSectionsURL = [NSURL URLWithString:kStoreUserSectionsPath
+    NSURL* kUsercachePutURL = [NSURL URLWithString:kUsercachePutPath
                                  relativeToURL:kBaseURL];
     
-    CommunicationHelper *executor = [[CommunicationHelper alloc] initPost:kStoreUserSectionsURL data:toPush completionHandler:completionHandler];
+    CommunicationHelper *executor = [[CommunicationHelper alloc] initPost:kUsercachePutURL data:toPush completionHandler:completionHandler];
     [executor execute];
 }
 
