@@ -63,11 +63,28 @@ static NSString * const kCurrState = @"CURR_STATE";
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Restart = YES, initializing TripDiaryStateMachine with state = %@",
                                                    [TripDiaryStateMachine getStateName:kStartState]]];
-        [self setState:kStartState];
+        // [self setState:kStartState];
+        /*
+         * If restart = true, we used to initialize to the start state. But the problem with doing that is that
+         * if you are restarted at the start of, or during a trip, then you lose the state, go back to the
+         * beginning and miss the trip. For example, the following sequence occured today:
+         * 2pm, at school: initialized with restart = NO, WAITING_FOR_TRIP_START
+         * 2:39pm, leaving school: exited geofence, moved to ONGOING_TRIP
+         * 2:39pm, TRIP_RESTARTED
+         * 2:49pm, launched with restart = YES, move to STATE_START
+         * 2:49pm, INITIALIZE
+         * 2.49pm, geofence created, WAITING_FOR_TRIP_START
+         * silent push came in when trip was in WAITING_FOR_TRIP_START
+         * so was ignored and trip never ended, nothing was ever pushed
+         * Starting in ONGOING_TRIP would have retained state and allowed us to detect the trip end properly
+         */
+        self.currState = [defaults integerForKey:kCurrState];
+        /*
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionInitialize];
+         */
     } else {
-        /* 
+        /*
          * In this case, we re-initialized the code because the FSM was NULL. LaunchOptionsLocationKey = NO,
          * so one might think that we don't need to reinitialize the location manager. However, if the FSM is 
          * null, then the trip manager, which is a field of the location manager, is also null. In particular,
