@@ -80,14 +80,6 @@
 }
 
 
-- (EMActivity*) getMockEMA:(TripActivityStates) mode startsAt:(NSDate*) startDate {
-    EMActivity* ema1 = [[EMActivity alloc] init];
-    ema1.mode = mode;
-    ema1.confidence = CMMotionActivityConfidenceHigh;
-    ema1.startDate = startDate;
-    return ema1;
-}
-
 - (CLLocation*) dateHoursAgo:(int)hours {
     NSDate* hoursAgo = [NSDate dateWithTimeIntervalSinceNow:(-hours*60*60)];
     NSTimeInterval timeAgo = hoursAgo.timeIntervalSince1970;
