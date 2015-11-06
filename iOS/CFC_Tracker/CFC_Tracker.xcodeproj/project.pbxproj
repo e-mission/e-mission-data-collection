@@ -11,7 +11,6 @@
 		D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BA1ABB1039009373BF /* TripDiaryStateMachineTests.m */; };
 		D062E7BD1AC4CFAE009373BF /* DataUtilsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BC1AC4CFAE009373BF /* DataUtilsTests.m */; };
 		D062E7C01AC4D619009373BF /* TestUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7BF1AC4D619009373BF /* TestUtils.m */; };
-		D062E7C31ACA50DA009373BF /* EMActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7C21ACA50DA009373BF /* EMActivity.m */; };
 		D06C946A1A858F2600D9CCC0 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */; };
 		D06DDA801AAC0B8400E6CF9B /* TripDiaryActions.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */; };
 		D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */; };
@@ -26,7 +25,7 @@
 		D06DDAA51AB516B900E6CF9B /* Constants.m in Sources */ = {isa = PBXBuildFile; fileRef = D06DDAA41AB516B900E6CF9B /* Constants.m */; };
 		D072E1DD1BE69ACB000932E1 /* DbLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1DC1BE69ACB000932E1 /* DbLogging.m */; };
 		D072E1DF1BE69AEC000932E1 /* DBLogger.db in Resources */ = {isa = PBXBuildFile; fileRef = D072E1DE1BE69AEC000932E1 /* DBLogger.db */; };
-		D07790811ACB04C700634A05 /* EMActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D062E7C21ACA50DA009373BF /* EMActivity.m */; };
+		D072E1E21BE7DE60000932E1 /* MotionActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1E11BE7DE60000932E1 /* MotionActivity.m */; };
 		D087C25F1BE326D800E8A72E /* UserCacheTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D087C25E1BE326D800E8A72E /* UserCacheTest.m */; };
 		D0A3F5721BDE91EA00112CE7 /* BuiltinUserCache.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */; };
 		D0A3F57D1BE0047500112CE7 /* Metadata.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F57C1BE0047500112CE7 /* Metadata.m */; };
@@ -72,8 +71,6 @@
 		D062E7BC1AC4CFAE009373BF /* DataUtilsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DataUtilsTests.m; sourceTree = "<group>"; };
 		D062E7BE1AC4D619009373BF /* TestUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestUtils.h; sourceTree = "<group>"; };
 		D062E7BF1AC4D619009373BF /* TestUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TestUtils.m; path = CFC_TrackerTests/TestUtils.m; sourceTree = SOURCE_ROOT; };
-		D062E7C11ACA50DA009373BF /* EMActivity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EMActivity.h; sourceTree = "<group>"; };
-		D062E7C21ACA50DA009373BF /* EMActivity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EMActivity.m; sourceTree = "<group>"; };
 		D06C94691A858F2600D9CCC0 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryActions.h; sourceTree = "<group>"; };
 		D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryActions.m; sourceTree = "<group>"; };
@@ -98,6 +95,8 @@
 		D072E1DB1BE69ACB000932E1 /* DbLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DbLogging.h; sourceTree = "<group>"; };
 		D072E1DC1BE69ACB000932E1 /* DbLogging.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DbLogging.m; sourceTree = "<group>"; };
 		D072E1DE1BE69AEC000932E1 /* DBLogger.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = DBLogger.db; sourceTree = "<group>"; };
+		D072E1E01BE7DE60000932E1 /* MotionActivity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MotionActivity.h; sourceTree = "<group>"; };
+		D072E1E11BE7DE60000932E1 /* MotionActivity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MotionActivity.m; sourceTree = "<group>"; };
 		D087C25E1BE326D800E8A72E /* UserCacheTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserCacheTest.m; sourceTree = "<group>"; };
 		D0A3F5701BDE91EA00112CE7 /* BuiltinUserCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuiltinUserCache.h; sourceTree = "<group>"; };
 		D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BuiltinUserCache.m; sourceTree = "<group>"; };
@@ -227,6 +226,8 @@
 				D0A3F5821BE0368500112CE7 /* SimpleLocation.m */,
 				D0A3F5841BE04CA500112CE7 /* Transition.h */,
 				D0A3F5851BE04CA500112CE7 /* Transition.m */,
+				D072E1E01BE7DE60000932E1 /* MotionActivity.h */,
+				D072E1E11BE7DE60000932E1 /* MotionActivity.m */,
 			);
 			name = Wrapper;
 			sourceTree = "<group>";
@@ -253,8 +254,6 @@
 				D0EC6B721A7D57D300E8841B /* TripDiaryStateMachine.m */,
 				D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */,
 				D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */,
-				D062E7C11ACA50DA009373BF /* EMActivity.h */,
-				D062E7C21ACA50DA009373BF /* EMActivity.m */,
 			);
 			name = Location;
 			sourceTree = "<group>";
@@ -462,7 +461,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D07790811ACB04C700634A05 /* EMActivity.m in Sources */,
 				D06DDA981AB510BD00E6CF9B /* SignInViewController.m in Sources */,
 				D0B0669C1B153DE40023DA44 /* SkipAuthEmailViewController.m in Sources */,
 				D06DDA931AB510AF00E6CF9B /* AuthCompletionHandler.m in Sources */,
@@ -484,6 +482,7 @@
 				D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */,
 				D0A3F5801BE006EA00112CE7 /* TimeQuery.m in Sources */,
 				D0EC6B4E1A7CBEBB00E8841B /* main.m in Sources */,
+				D072E1E21BE7DE60000932E1 /* MotionActivity.m in Sources */,
 				D0A3F5721BDE91EA00112CE7 /* BuiltinUserCache.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -497,7 +496,6 @@
 				D062E7BB1ABB1039009373BF /* TripDiaryStateMachineTests.m in Sources */,
 				D0EC6B681A7CBEBB00E8841B /* CFC_TrackerTests.m in Sources */,
 				D062E7C01AC4D619009373BF /* TestUtils.m in Sources */,
-				D062E7C31ACA50DA009373BF /* EMActivity.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

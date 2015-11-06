@@ -11,7 +11,6 @@
 #import "LocalNotificationManager.h"
 #import "DataUtils.h"
 #import "CommunicationHelper.h"
-#import "EMActivity.h"
 
 
 @implementation TripDiaryActions
@@ -189,9 +188,6 @@
     NSOperationQueue* mq = [NSOperationQueue mainQueue];
     [manager startActivityUpdatesToQueue:mq
                              withHandler:^(CMMotionActivity *activity) {
-                                 NSString *activityName = [EMActivity getActivityName:[EMActivity getRelevantActivity:activity]];
-                                 [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                                            @"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence]];
 //                                 NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence);
                              }];
 }

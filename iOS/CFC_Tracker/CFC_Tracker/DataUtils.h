@@ -8,7 +8,6 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
-#import "EMActivity.h"
 
 @interface DataUtils : NSObject
 + (NSString*)dateToString:(NSDate*)date;

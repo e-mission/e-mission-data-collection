@@ -14,6 +14,7 @@
 #import "BuiltinUserCache.h"
 #import "SimpleLocation.h"
 #import "TimeQuery.h"
+#import "MotionActivity.h"
 #import "CommunicationHelper.h"
 
 @implementation DataUtils
@@ -223,7 +224,7 @@
     for (int i=0; i < locEntries.count; i++) {
         NSDictionary* currEntry = locEntries[i];
         NSString* currTimezone = [BuiltinUserCache getTimezone:currEntry];
-        if ([currTimezone isEqual:prevTimezone]) {
+        if (![currTimezone isEqual:prevTimezone]) {
             [timezoneChanges addObject:currEntry];
         }
     }
@@ -238,13 +239,15 @@
     NSMutableArray* entryArray = [NSMutableArray new];
     for (int i=0; i < activities.count; i++) {
         CMMotionActivity* activity = activities[i];
+        MotionActivity* activityWrapper = [[MotionActivity alloc] initWithCMMotionActivity:activity];
+        
         // if startDate > next timezone change.date, then we want to move to the next entry
         if (nextTimezoneChange != nil &&
             [activity.startDate compare:[BuiltinUserCache getWriteTs:nextTimezoneChange]] == NSOrderedDescending) {
             currTimezoneChange = nextTimezoneChange;
             nextTimezoneChange = [timezoneChangesEnum nextObject];
         }
-        [entryArray addObject:[[BuiltinUserCache database] createSensorData:@"key.usercache.activity" write_ts:activity.startDate timezone:[BuiltinUserCache getTimezone:currTimezoneChange] data:activity]];
+        [entryArray addObject:[[BuiltinUserCache database] createSensorData:@"key.usercache.activity" write_ts:activity.startDate timezone:[BuiltinUserCache getTimezone:currTimezoneChange] data:activityWrapper]];
     }
     return entryArray;
 }
