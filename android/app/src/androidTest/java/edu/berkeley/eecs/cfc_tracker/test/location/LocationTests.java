@@ -213,7 +213,7 @@ public class LocationTests extends ActivityInstrumentationTestCase2<MainActivity
         // assertEquals(entriesToPush.length(), 20);
 
         UserCache.TimeQuery tq = AddDataAdapter.getTimeQuery(entriesToPush);
-		uc.clearMessages(tq);
+		uc.clearEntries(tq);
         System.out.println("timequery = "+tq);
         assertEquals(uc.getLastMessages(R.string.key_usercache_location, 20,
                 Location.class).length, 0);

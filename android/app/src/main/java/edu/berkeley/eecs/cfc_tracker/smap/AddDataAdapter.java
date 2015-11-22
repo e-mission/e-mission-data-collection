@@ -133,7 +133,7 @@ public class AddDataAdapter extends AbstractThreadedSyncAdapter {
             } else {
 				CommunicationHelper.phone_to_server(mContext, userToken, entriesToPush);
 				UserCache.TimeQuery tq = getTimeQuery(entriesToPush);
-				biuc.clearMessages(tq);
+				biuc.clearEntries(tq);
 			}
         } catch (JSONException e) {
 			Log.e(mContext, TAG, "Error "+e+" while saving converting trips to JSON, skipping all of them");

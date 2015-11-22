@@ -12,8 +12,6 @@
 #import "TripDiaryStateMachine.h"
 
 #define kCurrGeofenceID @"STATIONARY_GEOFENCE_LOCATION"
-#define kHundred_Meters 100 // in meters
-#define kTripEndStationaryMins 10 // in minutes
 
 @interface TripDiaryActions : NSObject
 

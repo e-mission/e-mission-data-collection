@@ -52,5 +52,5 @@ public interface UserCache {
      * Delete documents that match the specified time query.
      * This allows us to support eventual consistency without locking.
      */
-    public abstract void clearMessages(TimeQuery tq);
+    public abstract void clearEntries(TimeQuery tq);
 }

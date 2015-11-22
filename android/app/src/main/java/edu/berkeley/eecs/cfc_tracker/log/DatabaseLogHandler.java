@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -65,13 +66,28 @@ public class DatabaseLogHandler extends SQLiteOpenHelper {
             String ourFileName = Log.getLogBase(cachedContext) + "/dumped_log_file.txt";
             System.out.println("ourFileName = "+ourFileName);
             PrintStream out = new PrintStream(new FileOutputStream(ourFileName, true));
-            String queryString = "SELECT "+KEY_LINE+" from " + TABLE_LOG;
+            String queryString = "SELECT "+KEY_LINE+" from " + TABLE_LOG + " ORDER BY "+KEY_ID+" DESC LIMIT 1000";
             Cursor cur = db.rawQuery(queryString, null);
             int resultCount = cur.getCount();
+            System.out.println("resultCount = "+resultCount);
+            System.out.println("result columns are " + Arrays.toString(cur.getColumnNames()));
             if (cur.moveToFirst()) {
                 for (int i = 0; i < resultCount; i++) {
-                    out.println(cur.getString(0));
-                    cur.moveToNext();
+                    try {
+                        // System.out.println("About to read string at i = " + i + " whose null status = "+cur.isNull(0));
+                        if (!cur.isNull(0)) {
+                            out.println(cur.getString(0));
+                        } else {
+                            System.out.println("Current cursor location is null, skipping entry");
+                            continue;
+                        }
+                        if (!cur.moveToNext()) {
+                            System.out.println("cur.moveToNext() == false, skipping entry");
+                            continue;
+                        }
+                    } catch (IllegalStateException e) {
+                        System.out.println("IllegalStateException while reading row "+i+" skipping...");
+                    }
                 }
             }
         } catch (IOException e) {

@@ -58,8 +58,8 @@
     <string name="transition_exited_geofence">local.transition.exited_geofence</string>
     <string name="transition_stopped_moving">local.transition.stopped_moving</string>
     <string name="transition_stop_tracking">local.transition.stop_tracking</string>
-    <string name="transition_actions_started">local.transition.actions_started</string>
-    <string name="transition_actions_complete">local.transition.actions_complete</string>
+<!--    <string name="transition_actions_started">local.transition.actions_started</string>
+    <string name="transition_actions_complete">local.transition.actions_complete</string> -->
 
     <string name="broadcast_extra_key_old_state">broadcast.extra.key.old_state</string>
     <string name="broadcast_extra_key_new_state">broadcast.extra.key.new_state</string>
