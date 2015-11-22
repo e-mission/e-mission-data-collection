@@ -10,6 +10,7 @@
 #import "DataUtils.h"
 #import "SimpleLocation.h"
 #import "Metadata.h"
+#import "LocationTrackingConfig.h"
 
 // Table name
 #define TABLE_USER_CACHE @"userCache"
@@ -270,7 +271,7 @@ static BuiltinUserCache *_database;
 
 -(double)getTsOfLastTransition {
     NSString* whereClause = @" '%_transition_:_T_TRIP_ENDED_%' ORDER BY write_ts DESC LIMIT 1";
-    NSString* selectQuery = [NSString stringWithFormat:@"SELECT write_ts FROM %@ WHERE %@ = '%@' AND %@ LIKE %@ ", TABLE_USER_CACHE, KEY_KEY,
+    NSString* selectQuery = [NSString stringWithFormat:@"SELECT write_ts FROM %@ WHERE %@ = '%@' AND %@ LIKE %@", TABLE_USER_CACHE, KEY_KEY,
                              [self getStatName:@"key.usercache.transition"], KEY_DATA, whereClause];
 
     NSLog(@"selectQuery = %@", selectQuery);
@@ -285,8 +286,36 @@ static BuiltinUserCache *_database;
             return -1;
         }
     } else {
-        NSLog(@"Error while getting the timestamp of the last transition, skipping");
+        NSLog(@"Error %ld while compiling query %@", selPrepCode, selectQuery);
         return -1;
+    }
+}
+
+-(double)getTsOfLastEntry {
+    NSString* selectQuery = [NSString stringWithFormat:@"SELECT write_ts FROM %@ ORDER BY write_ts DESC LIMIT 1", TABLE_USER_CACHE];
+    
+    NSLog(@"selectQuery = %@", selectQuery);
+    sqlite3_stmt *compiledStatement;
+    NSInteger selPrepCode = sqlite3_prepare_v2(_database, [selectQuery UTF8String], -1,
+                                               &compiledStatement, NULL);
+    if (selPrepCode == SQLITE_OK) {
+        if (sqlite3_step(compiledStatement) == SQLITE_ROW) {
+            return sqlite3_column_double(compiledStatement, 0);
+        } else {
+            NSLog(@"There are no T_TRIP_ENDED entries in the usercache. A sync must have just completed.");
+            return -1;
+        }
+    } else {
+        NSLog(@"Error %ld while compiling query %@", selPrepCode, selectQuery);
+        return -1;
+    }
+}
+
+-(double)getLastTs {
+    if ([LocationTrackingConfig instance].isDutyCycling) {
+        return [self getTsOfLastTransition];
+    } else {
+        return [self getTsOfLastEntry];
     }
 }
 
@@ -300,8 +329,9 @@ static BuiltinUserCache *_database;
  */
 
 - (NSArray*) syncPhoneToServer {
-    double lastTripEndTs = [self getTsOfLastTransition];
+    double lastTripEndTs = [self getLastTs];
     if (lastTripEndTs < 0) {
+        NSLog(@"lastTripEndTs = %f, nothing to push, returning", lastTripEndTs);
         // we don't have a completed trip, we don't want to push anything yet
         return [NSArray new];
     }

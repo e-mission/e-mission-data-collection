@@ -15,6 +15,8 @@
 #import "BuiltinUserCache.h"
 #import "Transition.h"
 
+#import "LocationTrackingConfig.h"
+
 #import <CoreMotion/CoreMotion.h>
 
 @interface TripDiaryStateMachine() {
@@ -49,13 +51,17 @@ static NSString * const kCurrState = @"CURR_STATE";
      */
     
     // Register for notifications related to the state machine
-    [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil usingBlock:^(NSNotification* note) {
+    if ([LocationTrackingConfig instance].isDutyCycling) {
+        // Only if we are using geofencing
+        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil         usingBlock:^(NSNotification* note) {
         [self handleTransition:(NSString*)note.object];
-    }];
+        }];
+    }
 
     if (restart) {
         self.locMgr = [[CLLocationManager alloc] init];
         self.locMgr.pausesLocationUpdatesAutomatically = NO;
+        self.locMgr.allowsBackgroundLocationUpdates = YES;
         
         _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
         self.locMgr.delegate = _locDelegate;
@@ -96,6 +102,7 @@ static NSString * const kCurrState = @"CURR_STATE";
          */
         self.locMgr = [[CLLocationManager alloc] init];
         self.locMgr.pausesLocationUpdatesAutomatically = NO;
+        self.locMgr.allowsBackgroundLocationUpdates = YES;
         
         _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
         self.locMgr.delegate = _locDelegate;
@@ -107,6 +114,20 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                    [TripDiaryStateMachine getStateName:self.currState]]];
 
     }
+    
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"After state machine init, current state is %@",
+                                               [TripDiaryStateMachine getStateName:self.currState]]];
+    if (self.currState == kOngoingTripState) {
+        // If we restarted, we recreate the location manager, but then it won't have
+        // the fine location turned on, since that is not carried through over restarts.
+        // So let's restart the tracking
+        // Both continuous
+        [TripDiaryActions startTracking:CFCTransitionTripRestarted withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        // And one-time
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+    }
+
     
     if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
         if ([CLLocationManager instancesRespondToSelector:@selector(requestAlwaysAuthorization)]) {
@@ -133,6 +154,17 @@ static NSString * const kCurrState = @"CURR_STATE";
         }
     }
     
+    if (![LocationTrackingConfig instance].isDutyCycling) {
+        /* If we are not using geofencing, then we don't need to listen to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes it easier for us to ignore silent
+            push as well as the transitions generated from here. Note that this means that we can't turn off
+            tracking manually either, so if this is to be a viable alternative, we really need to do something
+            more sophisticated in the state machine. But let's start with something simple for now.
+         */
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [self setState:kOngoingTripState];
+        [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+    }
+
     /*
      * Make sure that we start with a clean state, at least while debugging.
      * TODO: Check how often this is initialized, and whether we should do this even when we are out of debugging.

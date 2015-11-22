@@ -26,6 +26,7 @@
 		D072E1DD1BE69ACB000932E1 /* DbLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1DC1BE69ACB000932E1 /* DbLogging.m */; };
 		D072E1DF1BE69AEC000932E1 /* DBLogger.db in Resources */ = {isa = PBXBuildFile; fileRef = D072E1DE1BE69AEC000932E1 /* DBLogger.db */; };
 		D072E1E21BE7DE60000932E1 /* MotionActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1E11BE7DE60000932E1 /* MotionActivity.m */; };
+		D072E1E51BED5D90000932E1 /* LocationTrackingConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1E41BED5D90000932E1 /* LocationTrackingConfig.m */; };
 		D087C25F1BE326D800E8A72E /* UserCacheTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D087C25E1BE326D800E8A72E /* UserCacheTest.m */; };
 		D0A3F5721BDE91EA00112CE7 /* BuiltinUserCache.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */; };
 		D0A3F57D1BE0047500112CE7 /* Metadata.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F57C1BE0047500112CE7 /* Metadata.m */; };
@@ -97,6 +98,8 @@
 		D072E1DE1BE69AEC000932E1 /* DBLogger.db */ = {isa = PBXFileReference; lastKnownFileType = file; path = DBLogger.db; sourceTree = "<group>"; };
 		D072E1E01BE7DE60000932E1 /* MotionActivity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MotionActivity.h; sourceTree = "<group>"; };
 		D072E1E11BE7DE60000932E1 /* MotionActivity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MotionActivity.m; sourceTree = "<group>"; };
+		D072E1E31BED5D90000932E1 /* LocationTrackingConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocationTrackingConfig.h; sourceTree = "<group>"; };
+		D072E1E41BED5D90000932E1 /* LocationTrackingConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocationTrackingConfig.m; sourceTree = "<group>"; };
 		D087C25E1BE326D800E8A72E /* UserCacheTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserCacheTest.m; sourceTree = "<group>"; };
 		D0A3F5701BDE91EA00112CE7 /* BuiltinUserCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuiltinUserCache.h; sourceTree = "<group>"; };
 		D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BuiltinUserCache.m; sourceTree = "<group>"; };
@@ -254,6 +257,8 @@
 				D0EC6B721A7D57D300E8841B /* TripDiaryStateMachine.m */,
 				D06DDA7E1AAC0B8400E6CF9B /* TripDiaryActions.h */,
 				D06DDA7F1AAC0B8400E6CF9B /* TripDiaryActions.m */,
+				D072E1E31BED5D90000932E1 /* LocationTrackingConfig.h */,
+				D072E1E41BED5D90000932E1 /* LocationTrackingConfig.m */,
 			);
 			name = Location;
 			sourceTree = "<group>";
@@ -482,6 +487,7 @@
 				D06DDA831AAC1F7E00E6CF9B /* TripDiaryDelegate.m in Sources */,
 				D0A3F5801BE006EA00112CE7 /* TimeQuery.m in Sources */,
 				D0EC6B4E1A7CBEBB00E8841B /* main.m in Sources */,
+				D072E1E51BED5D90000932E1 /* LocationTrackingConfig.m in Sources */,
 				D072E1E21BE7DE60000932E1 /* MotionActivity.m in Sources */,
 				D0A3F5721BDE91EA00112CE7 /* BuiltinUserCache.m in Sources */,
 			);

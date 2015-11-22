@@ -11,6 +11,7 @@
 #import "LocalNotificationManager.h"
 #import "DataUtils.h"
 #import "CommunicationHelper.h"
+#import "LocationTrackingConfig.h"
 
 
 @implementation TripDiaryActions
@@ -80,7 +81,7 @@
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In createGeofenceHere"]];
     CLLocation* currLoc = manager.location;
-    if (currLoc == nil || (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > kTripEndStationaryMins * 60)) {
+    if (currLoc == nil || (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [LocationTrackingConfig instance].tripEndStationaryMins * 60)) {
         [LocalNotificationManager addNotification:[NSString
                                                    stringWithFormat:@"currLoc = %@, which is stale, restarting location updates", currLoc]];
         [self startTrackingLocation:manager];
@@ -92,7 +93,7 @@
         // If we are restarting, then the location will be nil
         // If not, we just finished
         CLCircularRegion *geofenceRegion = [[CLCircularRegion alloc] initWithCenter:currLoc.coordinate
-                                                                             radius:kHundred_Meters
+                                                                             radius:[LocationTrackingConfig instance].geofenceRadius
                                                                          identifier:kCurrGeofenceID];
     
         geofenceRegion.notifyOnEntry = YES;
@@ -152,12 +153,13 @@
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"started fine location tracking"]];
     // Switch to a more fine grained tracking during the trip
-    manager.desiredAccuracy = kCLLocationAccuracyHundredMeters;
+    manager.desiredAccuracy = [LocationTrackingConfig instance].accuracy;
     /* If we use a distance filter, we can lower the power consumption because we will get updates less
      * frequently. HOWEVER, we won't be able to detect a trip end because of the above.
      * Going with the push notification route...
      */
-    manager.distanceFilter = kHundred_Meters;
+    manager.distanceFilter = [LocationTrackingConfig instance].filterDistance;
+    manager.allowsBackgroundLocationUpdates = YES;
     [manager startUpdatingLocation];
 }
 
@@ -217,7 +219,7 @@
  */
 
 + (BOOL) hasTripEnded {
-    return [DataUtils hasTripEnded:kTripEndStationaryMins];
+    return [DataUtils hasTripEnded:[LocationTrackingConfig instance].tripEndStationaryMins];
 }
 
 + (void) pushTripToServer {
