@@ -234,8 +234,8 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     }
 
     @Override
-    public void clearMessages(TimeQuery tq) {
-        Log.d(cachedCtx, TAG, "Clearing message for timequery " + tq);
+    public void clearEntries(TimeQuery tq) {
+        Log.d(cachedCtx, TAG, "Clearing entries for timequery " + tq);
         String whereString = getKey(tq.keyRes) + " > ? AND " + getKey(tq.keyRes) + " < ?";
         String[] whereArgs = {String.valueOf(tq.startTs), String.valueOf(tq.endTs)};
         Log.d(cachedCtx, TAG, "Args =  " + whereString + " : " + Arrays.toString(whereArgs));
