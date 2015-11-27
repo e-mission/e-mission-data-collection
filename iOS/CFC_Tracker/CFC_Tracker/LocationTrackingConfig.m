@@ -37,7 +37,7 @@ static LocationTrackingConfig *_instance;
 }
 
 - (int)filterDistance {
-    return kFifty_Meters;
+    return kHundred_Meters;
 }
 
 - (int)geofenceRadius {
