@@ -32,6 +32,8 @@
 #define CFCTransitionTripEnded @"T_TRIP_ENDED"
 #define CFCTransitionForceStopTracking @"T_FORCE_STOP_TRACKING"
 #define CFCTransitionTrackingStopped @"T_TRACKING_STOPPED"
+#define CFCTransitionVisitStarted @"T_VISIT_STARTED"
+#define CFCTransitionVisitEnded @"T_VISIT_ENDED"
 #define CFCTransitionNOP @"T_NOP"
 
 /*

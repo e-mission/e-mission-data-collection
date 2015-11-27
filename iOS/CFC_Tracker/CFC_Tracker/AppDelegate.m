@@ -92,8 +92,14 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
             [DataUtils pushAndClearData:^(BOOL status) {
                 // We only ever call this with true right now
                 if (status == true) {
+                    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                               @"Returning with fetch result = new data"]
+                                                       showUI:TRUE];
                     _silentPushHandler(UIBackgroundFetchResultNewData);
                 } else {
+                    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                               @"Returning with fetch result = no data"]
+                                                       showUI:TRUE];
                     _silentPushHandler(UIBackgroundFetchResultNoData);
                 }
             }];
@@ -144,6 +150,9 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 - (void)application:(UIApplication *)application
                     didReceiveRemoteNotification:(NSDictionary *)userInfo
                     fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Received remote push, about to check whether a trip has ended"]
+                                       showUI:TRUE];
     NSLog(@"About to check whether a trip has ended");
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush];
     _silentPushHandler = completionHandler;
@@ -182,7 +191,8 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
     NSLog(@"performFetchWithCompletionHandler called at %@", [NSDate date]);
     [DataUtils pushAndClearData:^(BOOL status) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"in background fetch, finished pushing entries to the server"]];
+                                                   @"in background fetch, finished pushing entries to the server"]
+                                           showUI:TRUE];
     }];
 }
 

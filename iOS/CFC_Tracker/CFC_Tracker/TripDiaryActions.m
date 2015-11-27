@@ -100,7 +100,10 @@
         geofenceRegion.notifyOnExit = YES;
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"BEFORE creating region"]];
         [self printGeofences:manager];
-    
+
+        [LocalNotificationManager addNotification:[NSString
+                                                   stringWithFormat:@"About to start monitoring for region around (%f, %f, %f)", currLoc.coordinate.latitude, currLoc.coordinate.longitude, currLoc.horizontalAccuracy]
+                                           showUI:TRUE];
         [manager startMonitoringForRegion:geofenceRegion];
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"AFTER creating region"]];
         [self printGeofences:manager];

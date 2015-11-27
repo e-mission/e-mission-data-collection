@@ -198,7 +198,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received transition %@ in state %@",
                                                transition,
-                                               [TripDiaryStateMachine getStateName:self.currState]]];
+                                               [TripDiaryStateMachine getStateName:self.currState]] showUI:TRUE];
     Transition* transitionWrapper = [Transition new];
     transitionWrapper.currState = [TripDiaryStateMachine getStateName:self.currState];
     transitionWrapper.transition = transition;
