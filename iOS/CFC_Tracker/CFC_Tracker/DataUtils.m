@@ -16,6 +16,7 @@
 #import "TimeQuery.h"
 #import "MotionActivity.h"
 #import "CommunicationHelper.h"
+#import "LocationTrackingConfig.h"
 
 @implementation DataUtils
 
@@ -89,9 +90,12 @@
     return obj;
 }
 
+/*
+ * Returns the last n filtered points from the local database.
+ */
 + (NSArray*) getLastPoints:(int) nPoints {
     NSLog(@"addLastPoints(%d) called", nPoints);
-    return [[BuiltinUserCache database] getLastSensorData:@"key.usercache.location" nEntries:nPoints wrapperClass:[SimpleLocation class]];
+    return [[BuiltinUserCache database] getLastSensorData:@"key.usercache.filtered_location" nEntries:nPoints wrapperClass:[SimpleLocation class]];
 }
 
 +(BOOL) hasTripEnded:(int)tripEndThresholdMins {
@@ -110,14 +114,22 @@
         return NO;
     } else {
         SimpleLocation *lastLoc = ((SimpleLocation*)last3Points.firstObject);
+        SimpleLocation *middleLoc = ((SimpleLocation*)last3Points[1]);
         SimpleLocation *firstLoc = ((SimpleLocation*)last3Points.lastObject);
         
-        NSLog(@"firstDate = %@, lastDate = %@", firstLoc.fmt_time, lastLoc.fmt_time);
+        NSLog(@"firstDate = %@, middleDate = %@, lastDate = %@", firstLoc.fmt_time, middleLoc.fmt_time, lastLoc.fmt_time);
         NSDate* lastDate = [DataUtils dateFromTs:lastLoc.ts];
+        // We are using a distance filter, so if we have no inputs for time greater than the threshold, the trip is done
         if (fabs(lastDate.timeIntervalSinceNow) > tripEndThresholdMins * 60) {
             NSLog(@"interval to the last date = %f, returning YES", lastDate.timeIntervalSinceNow);
             return YES;
         } else {
+        // Either the trip has not ended, or it is jumping back and forth between a valid and invalid point.
+            if (([firstLoc distanceFromLocation:lastLoc] < [LocationTrackingConfig instance].filterDistance) &&
+                ([firstLoc distanceFromLocation:middleLoc] < [LocationTrackingConfig instance].filterDistance)) {
+                NSLog(@"distances between first loc and middle loc is %f, and between first loc and last loc is %f, returning YES", [firstLoc distanceFromLocation:middleLoc], [firstLoc distanceFromLocation:lastLoc]);
+                return YES;
+            }
             NSLog(@"interval to the last date = %f, returning NO", lastDate.timeIntervalSinceNow);
             return NO;
         }

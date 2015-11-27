@@ -27,4 +27,10 @@
     
     return self;
 }
+
+- (CLLocationDistance) distanceFromLocation:(SimpleLocation*)otherSimpleLoc {
+    CLLocation* currLoc = [[CLLocation alloc] initWithLatitude:self.latitude longitude:self.longitude];
+    CLLocation* otherLoc = [[CLLocation alloc] initWithLatitude:otherSimpleLoc.latitude longitude:otherSimpleLoc.longitude];
+    return [currLoc distanceFromLocation:otherLoc];
+}
 @end

@@ -27,4 +27,6 @@
 
 @property NSInteger floor;
 
+- (CLLocationDistance) distanceFromLocation:(SimpleLocation*)otherLoc;
+
 @end

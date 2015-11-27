@@ -14,6 +14,9 @@
 #import "TripDiaryActions.h"
 #import "LocalNotificationManager.h"
 #import "SimpleLocation.h"
+#import "LocationTrackingConfig.h"
+
+#define ACCURACY_THRESHOLD 200
 
 @interface TripDiaryDelegate() {
     TripDiaryStateMachine* _tdsm;
@@ -51,7 +54,8 @@
     if (_tdsm.currState != kOngoingTripState) {
         for (CLLocation* currLoc in locations) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Recieved location %@, ongoing trip = false", currLoc]];
+                                                       @"Recieved location %@, ongoing trip = false", currLoc]
+                                               showUI:TRUE];
         }
     }
     
@@ -72,7 +76,41 @@
             NSLog(@"Adding point with timestamp %ld", (long)[currLoc.timestamp timeIntervalSince1970]);
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Recieved location %@, ongoing trip = true", currLoc]];
-            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:[[SimpleLocation alloc] initWithCLLocation:currLoc]];
+            SimpleLocation* currSimpleLoc = [[SimpleLocation alloc] initWithCLLocation:currLoc];
+            [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:currSimpleLoc];
+            
+            if (![LocationTrackingConfig instance].isDutyCycling) {
+                // We are not going to do any special filtering on the client side, so let's just return here
+                return;
+            }
+            
+            // Else, we want to only consider valid points while deciding whether a trip has ended or not
+            // Let's get the last 10 points, just like on android
+
+            NSArray* last10Points = [[BuiltinUserCache database]
+                                      getLastSensorData:@"key.usercache.location" nEntries:10
+                                        wrapperClass:[SimpleLocation class]];
+            BOOL validPoint = FALSE;
+            
+            if (currLoc.horizontalAccuracy < ACCURACY_THRESHOLD) {
+                if (last10Points.count == 0) {
+                    validPoint = TRUE;
+                } else {
+                    assert(last10Points.count > 0);
+                    SimpleLocation* lastPoint = last10Points[last10Points.count - 1];
+                    if ([currSimpleLoc distanceFromLocation:lastPoint] != 0) {
+                        validPoint = TRUE;
+                    } else {
+                        NSLog(@"Duplicate point, %@, skipping", currLoc);
+                    }
+                }
+            } else {
+                NSLog(@"Found bad quality point %@, skipping ", currLoc);
+            }
+            NSLog(@"Current point status = %@", @(validPoint));
+            if (validPoint) {
+                [[BuiltinUserCache database] putSensorData:@"key.usercache.filtered_location" value:currSimpleLoc];
+            }
         }
     }
 }
