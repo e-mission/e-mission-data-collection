@@ -16,11 +16,9 @@
 
 @implementation TripDiaryActions
 
-+ (void) resetFSM:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-                              withActivityMgr:(CMMotionActivityManager*)activityMgr {
++ (void) resetFSM:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
     if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [self stopTrackingLocation:locMgr];
-        [self stopTrackingActivity:activityMgr];
         [self deleteGeofence:locMgr];
         [self stopTrackingSignificantLocationChanges:locMgr];
         [self stopTrackingVisits:locMgr];
@@ -29,26 +27,21 @@
     }
 }
 
-+ (void) oneTimeInitTracking:(NSString *)transition withLocationMgr:(CLLocationManager *)locMgr
-             withActivityMgr:(CMMotionActivityManager *)activityMgr {
++ (void) oneTimeInitTracking:(NSString *)transition withLocationMgr:(CLLocationManager *)locMgr {
     if ([transition isEqualToString:CFCTransitionInitialize]) {
         [self startTrackingSignificantLocationChanges:locMgr];
         [self startTrackingVisits:locMgr];
     }
 }
 
-+ (void) startTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-       withActivityMgr:(CMMotionActivityManager*)activityMgr {
++ (void) startTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
     [self startTrackingLocation:locMgr];
-    [self startTrackingActivity:activityMgr];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionTripStarted];
 }
 
-+ (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-                                             withActivityMgr:(CMMotionActivityManager*)activityMgr {
++ (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
     [self stopTrackingLocation:locMgr];
-    [self stopTrackingActivity:activityMgr];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionTripEnded];
 }
@@ -179,26 +172,6 @@
 
 + (void)stopTrackingSignificantLocationChanges:(CLLocationManager*) manager {
     [manager stopMonitoringSignificantLocationChanges];
-}
-
-/*
- Since we are not actually doing any real-time tweaking on the phone at this point, it is
- sufficient to read the activity list at the end of the trip. It looks like motion data is
- always being collected, even if we haven't registered for activity updates. I'm leaving this
- commented out in case we do want to get ongoing activity updates and do more processing on the
- phone going forward...
-*/
- 
-+ (void)startTrackingActivity:(CMMotionActivityManager*) manager {
-    NSOperationQueue* mq = [NSOperationQueue mainQueue];
-    [manager startActivityUpdatesToQueue:mq
-                             withHandler:^(CMMotionActivity *activity) {
-//                                 NSLog(@"Got activity change %@ starting at %@ with confidence %d", activityName, activity.startDate, (int)activity.confidence);
-                             }];
-}
-
-+ (void)stopTrackingActivity:(CMMotionActivityManager*) manager {
-    [manager stopActivityUpdates];
 }
 
 +(void)startTrackingVisits:(CLLocationManager*) manager {

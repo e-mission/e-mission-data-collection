@@ -15,17 +15,13 @@
 
 @interface TripDiaryActions : NSObject
 
-+ (void) resetFSM:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-  withActivityMgr:(CMMotionActivityManager*)activityMgr;
++ (void) resetFSM:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
 
-+ (void) oneTimeInitTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-     withActivityMgr:(CMMotionActivityManager*)activityMgr;
++ (void) oneTimeInitTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
 
-+ (void) startTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-       withActivityMgr:(CMMotionActivityManager*)activityMgr;
++ (void) startTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
 
-+ (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr
-      withActivityMgr:(CMMotionActivityManager*)activityMgr;
++ (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
 
 + (void)createGeofenceHere:(CLLocationManager *)manager inState:(TripDiaryStates)currState;
 

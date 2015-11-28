@@ -123,9 +123,9 @@ static NSString * const kCurrState = @"CURR_STATE";
         // the fine location turned on, since that is not carried through over restarts.
         // So let's restart the tracking
         // Both continuous
-        [TripDiaryActions startTracking:CFCTransitionTripRestarted withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:CFCTransitionTripRestarted withLocationMgr:self.locMgr];
         // And one-time
-        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
     }
 
     
@@ -160,9 +160,9 @@ static NSString * const kCurrState = @"CURR_STATE";
             tracking manually either, so if this is to be a viable alternative, we really need to do something
             more sophisticated in the state machine. But let's start with something simple for now.
          */
-        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
         [self setState:kOngoingTripState];
-        [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr];
     }
 
     /*
@@ -244,7 +244,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         // TODO: Stop all actions in order to cleanup
         
         // Start monitoring significant location changes at start and never stop
-        [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr];
     
         // Start location services so that we can get the current location
         // We will receive the first location asynchronously
@@ -254,7 +254,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
         [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
@@ -276,7 +276,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     // TODO: Make removing the geofence conditional on the type of service
     if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         // We first start tracking and then delete the geofence to make sure that we are always tracking something
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
@@ -285,7 +285,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         // NOP at this time
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
-        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
         [self setState:kStartState];
     } else  {
@@ -323,14 +323,14 @@ static NSString * const kCurrState = @"CURR_STATE";
         NSLog(@"Restarted trip, continuing tracking");
     } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
         [TripDiaryActions pushTripToServer];
-        [TripDiaryActions stopTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions stopTracking:transition withLocationMgr:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
         // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
-        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
         [self setState:kStartState];
     } else {
