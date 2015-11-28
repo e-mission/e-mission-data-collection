@@ -168,7 +168,8 @@
 - (void)locationManager:(CLLocationManager *)manager
                 didStartMonitoringForRegion:(CLRegion *)region {
     [LocalNotificationManager addNotification:
-        [NSString stringWithFormat:@"started monitoring for region %@", region.identifier]];
+            [NSString stringWithFormat:@"started monitoring for region %@", region.identifier]
+                                       showUI:TRUE];
     // Needed in order to avoid getting a failure in the geofence creation by querying it too quickly
     // http://www.cocoanetics.com/2014/05/radar-monitoring-clregion-immediately-after-removing-one-fails/
     // Not documented anywhere other than a blog post!!
@@ -257,7 +258,25 @@
 {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received visit notification = %@",
-                                               visit] showUI:true];
+                                               visit]];
+
+    // According to the design pattern that I have followed here, I should post a notification from here
+    // which will be handled by the state machine. However, as we have seen in the past, this does not really work
+    // completely, because if a trip has ended, we want to create a geofence, and when we start monitoring the geofence,
+    // it issues a callback, and the callback is not delivered while the application is in the background.
+    // So what we want to do here is to do as much as we can in the same thread, and then wait for the geofence
+    // monitoring to restart.
+    // The methods of your delegate object are called from the thread in which you started the corresponding
+    // location services. That thread must itself have an active run loop,
+    // like the one found in your application’s main thread.
+    if (visit.departureDate == NULL) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionVisitStarted];
+    } else {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionVisitEnded];
+
+    }
 }
 
 - (void)locationManagerDidPauseLocationUpdates:(CLLocationManager *)manager

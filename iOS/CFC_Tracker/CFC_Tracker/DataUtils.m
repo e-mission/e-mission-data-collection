@@ -185,7 +185,8 @@
      * Since we now detect trip end only after the user has been stationary for a while, this should be fine.
      * We need to test this more carefully when we switch to the visit-based tracking.
      */
-    
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"pushAndClearData called"] showUI:TRUE];
     NSArray* locEntriesToPush = [[BuiltinUserCache database] syncPhoneToServer];
     if (locEntriesToPush.count == 0) {
         NSLog(@"No location data to send, returning early");
@@ -272,7 +273,8 @@
                              completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
                                  [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                                             @"successfully pushed %ld entries to the server",
-                                                                            (unsigned long)entriesToPush.count]];
+                                                                            (unsigned long)entriesToPush.count]
+                                                                    showUI:TRUE];
                                  // Only delete trips after they have been successfully pushed
                                  if (error == nil) {
                                      [[BuiltinUserCache database] clearEntries:tq];
