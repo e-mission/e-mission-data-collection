@@ -9,6 +9,7 @@
 #import "LocationTrackingConfig.h"
 @import CoreLocation;
 
+#define kFiveMeters 5 // in meters
 #define kFifty_Meters 50 // in meters
 #define kHundred_Meters 100 // in meters
 #define kTripEndStationaryMins 10 // in minutes
