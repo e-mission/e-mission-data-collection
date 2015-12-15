@@ -23,21 +23,21 @@ public class LocationTrackingConfig {
         return new LocationTrackingConfig(context);
     }
 
-    public boolean isDutyCycling() {
-        return false;
-    }
+    public boolean isDutyCycling() { return true; }
 
     public int getDetectionInterval() {
         return Constants.THIRTY_SECONDS;
     }
 
     public int getAccuracy() {
-        return LocationRequest.PRIORITY_HIGH_ACCURACY;
+        return LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
     }
 
     public int getRadius() {
-        return Constants.TRIP_EDGE_THRESHOLD;
+        return 100;
     }
+
+    public int getAccuracyThreshold() { return 200; }
 
     public int getResponsiveness() {
         return 5 * Constants.MILLISECONDS;

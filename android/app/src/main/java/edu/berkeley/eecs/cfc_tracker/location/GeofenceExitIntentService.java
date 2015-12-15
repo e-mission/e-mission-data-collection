@@ -4,6 +4,7 @@ import edu.berkeley.eecs.cfc_tracker.R;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.location.Location;
 
 import edu.berkeley.eecs.cfc_tracker.log.Log;
 import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
@@ -48,19 +49,28 @@ public class GeofenceExitIntentService extends IntentService {
         Log.d(this, TAG, "got geofence intent callback with type "+parsedEvent.getGeofenceTransition()+
             " and location "+parsedEvent.getTriggeringLocation());
 
+		int ACCURACY_THRESHOLD = LocationTrackingConfig.getConfig(this).getAccuracyThreshold();
+
         // This is the only transition we are listening to
         assert(parsedEvent.getGeofenceTransition() == Geofence.GEOFENCE_TRANSITION_EXIT);
         if (parsedEvent.getGeofenceTransition() == Geofence.GEOFENCE_TRANSITION_EXIT) {
-    		Log.d(this, TAG, "Geofence exited! Intent = "+ intent+" Starting ongoing monitoring...");
-            // Add the exit location to the tracking database
-			UserCacheFactory.getUserCache(this).putSensorData(R.string.key_usercache_location,
-                    new SimpleLocation(parsedEvent.getTriggeringLocation()));
-            // DataUtils.addPoint(this, parsedEvent.getTriggeringLocation());
-            // Let's just re-use the same event for the broadcast, since it has the location information
-            // in case we need it on the other side.
-            // intent.setAction(getString(R.string.transition_exited_geofence));
-            // sendBroadcast(intent);
-            sendBroadcast(new Intent(getString(R.string.transition_exited_geofence)));
+			Location triggeringLoc = parsedEvent.getTriggeringLocation();
+			Log.d(this, TAG, "Geofence exited! triggering location accuracy = " +
+					triggeringLoc.getAccuracy());
+			if (triggeringLoc.getAccuracy() > ACCURACY_THRESHOLD) {
+				Log.d(this, TAG, "Low accuracy point, "+ triggeringLoc +" ignoring");
+			} else {
+				Log.d(this, TAG, "High accuracy point! " + triggeringLoc + " Starting ongoing monitoring...");
+				// Add the exit location to the tracking database
+				UserCacheFactory.getUserCache(this).putSensorData(R.string.key_usercache_location,
+						new SimpleLocation(parsedEvent.getTriggeringLocation()));
+				// DataUtils.addPoint(this, parsedEvent.getTriggeringLocation());
+				// Let's just re-use the same event for the broadcast, since it has the location information
+				// in case we need it on the other side.
+				// intent.setAction(getString(R.string.transition_exited_geofence));
+				// sendBroadcast(intent);
+				sendBroadcast(new Intent(getString(R.string.transition_exited_geofence)));
+			}
         }
 	}
 }
