@@ -23,7 +23,6 @@ import com.google.android.gms.location.FusedLocationProviderApi;
 public class LocationChangeIntentService extends IntentService {
 	private static final String TAG = "LocationChangeIntentService";
 	private static final int TRIP_END_RADIUS = Constants.TRIP_EDGE_THRESHOLD;
-    private static final int ACCURACY_THRESHOLD = 200;
     private static final int FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
 	
 	public LocationChangeIntentService() {
@@ -49,6 +48,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
 		Log.d(this, TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
+		int ACCURACY_THRESHOLD = LocationTrackingConfig.getConfig(this).getAccuracyThreshold();
 
         UserCache uc = UserCacheFactory.getUserCache(this);
 
@@ -102,7 +102,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 
         SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location,
-				10, SimpleLocation.class);
+				FIVE_MINUTES_IN_MS / LocationTrackingConfig.getConfig(this).getDetectionInterval(), SimpleLocation.class);
 
         Long nowMs = System.currentTimeMillis();
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
