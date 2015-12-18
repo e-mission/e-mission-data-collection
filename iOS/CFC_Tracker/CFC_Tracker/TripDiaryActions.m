@@ -12,6 +12,7 @@
 #import "DataUtils.h"
 #import "CommunicationHelper.h"
 #import "LocationTrackingConfig.h"
+#import "GeofenceActions.h"
 
 
 @implementation TripDiaryActions
@@ -59,7 +60,8 @@
     }
 }
 
-+ (void)createGeofenceHere:(CLLocationManager *)manager inState:(TripDiaryStates)currState {
++ (void)createGeofenceHere:(CLLocationManager *)manager withGeofenceLocator:(GeofenceActions *) locator
+        inState:(TripDiaryStates)currState {
 
     /*
      * There are two main use cases for which we would need to create a geofence.
@@ -71,36 +73,43 @@
      * also check to see if the existing cached location is fairly recent, but that makes the logic more complicated, so
      * let's punt for now ( )
      */
-    
+
     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In createGeofenceHere"]];
     CLLocation* currLoc = manager.location;
-    if (currLoc == nil || (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [LocationTrackingConfig instance].tripEndStationaryMins * 60)) {
+    if (currLoc == nil || (currLoc.horizontalAccuracy > 200) ||
+            (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [LocationTrackingConfig instance].tripEndStationaryMins * 60)) {
         [LocalNotificationManager addNotification:[NSString
-                                                   stringWithFormat:@"currLoc = %@, which is stale, restarting location updates", currLoc]];
-        [self startTrackingLocation:manager];
-        [self stopTrackingLocation:manager];
-        // TODO: Figure out if we will get an update even if we stop tracking right here
+                                                   stringWithFormat:@"currLoc = %@, which is stale, need to read a new location", currLoc]];
+        [locator getLocationForGeofence:manager withCallback:^(CLLocation *locationToUse) {
+            [LocalNotificationManager addNotification:[NSString
+                                                       stringWithFormat:@"received new location %@, using it", locationToUse]];
+            [TripDiaryActions createGeofenceAtLocation:manager atLocation:locationToUse];
+        }];
     } else {
-        CLLocation* currLoc = manager.location;
-        // We shouldn't need to check the timestamp on the location here.
-        // If we are restarting, then the location will be nil
-        // If not, we just finished
-        CLCircularRegion *geofenceRegion = [[CLCircularRegion alloc] initWithCenter:currLoc.coordinate
-                                                                             radius:[LocationTrackingConfig instance].geofenceRadius
-                                                                         identifier:kCurrGeofenceID];
-    
-        geofenceRegion.notifyOnEntry = YES;
-        geofenceRegion.notifyOnExit = YES;
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"BEFORE creating region"]];
-        [self printGeofences:manager];
-
         [LocalNotificationManager addNotification:[NSString
-                                                   stringWithFormat:@"About to start monitoring for region around (%f, %f, %f)", currLoc.coordinate.latitude, currLoc.coordinate.longitude, currLoc.horizontalAccuracy]
-                                           showUI:TRUE];
-        [manager startMonitoringForRegion:geofenceRegion];
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"AFTER creating region"]];
-        [self printGeofences:manager];
+                                                   stringWithFormat:@"currLoc = %@, which is current, can use it", currLoc]];
+        [TripDiaryActions createGeofenceAtLocation:manager atLocation:currLoc];
     }
+}
+
++ (void)createGeofenceAtLocation:(CLLocationManager *)manager atLocation:(CLLocation*)currLoc {
+    // We shouldn't need to check the timestamp on the location here since we expect that a "fresh"
+    // location will be passed in.
+    CLCircularRegion *geofenceRegion = [[CLCircularRegion alloc] initWithCenter:currLoc.coordinate
+                                                                         radius:[LocationTrackingConfig instance].geofenceRadius
+                                                                     identifier:kCurrGeofenceID];
+    
+    geofenceRegion.notifyOnEntry = YES;
+    geofenceRegion.notifyOnExit = YES;
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"BEFORE creating region"]];
+    [self printGeofences:manager];
+    
+    [LocalNotificationManager addNotification:[NSString
+                                               stringWithFormat:@"About to start monitoring for region around (%f, %f, %f)", currLoc.coordinate.latitude, currLoc.coordinate.longitude, currLoc.horizontalAccuracy]
+                                       showUI:TRUE];
+    [manager startMonitoringForRegion:geofenceRegion];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"AFTER creating region"]];
+    [self printGeofences:manager];
 }
 
 + (CLCircularRegion*)getGeofence:(CLLocationManager *)manager {
