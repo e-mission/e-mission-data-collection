@@ -44,17 +44,11 @@
     CLLocation *lastLocation = locations[locations.count - 1];
     NSLog(@"lastLocation is %f, %f", lastLocation.coordinate.longitude, lastLocation.coordinate.latitude);
     
-    if (_tdsm.currState == kStartState) {
-        // Find the last location
-//        [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:manager];
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Re-entering call to create geofence at location %@", lastLocation]];
-        [TripDiaryActions createGeofenceHere:manager inState:_tdsm.currState];
-    }
-    
     if (_tdsm.currState != kOngoingTripState) {
         for (CLLocation* currLoc in locations) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Recieved location %@, ongoing trip = false", currLoc]
+                                                       @"In state %@, Recieved location %@",
+                                                       [TripDiaryStateMachine getStateName:_tdsm.currState], currLoc]
                                                showUI:TRUE];
         }
     }
