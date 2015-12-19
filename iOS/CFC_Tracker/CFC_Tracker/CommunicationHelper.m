@@ -235,10 +235,11 @@ static inline NSString* NSStringFromBOOL(BOOL aBool) {
 - (void)postToHost {
     NSLog(@"postToHost called with url = %@", self.mUrl);
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc]
-                                    initWithURL:self.mUrl];
+                                    initWithURL:self.mUrl
+                                    cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:500];
     [request setHTTPMethod:@"POST"];
     [request setValue:@"application/json"
-   forHTTPHeaderField:@"Content-Type"];
+        forHTTPHeaderField:@"Content-Type"];
     
     NSString *userToken = [AuthCompletionHandler sharedInstance].getIdToken;
     // At this point, we assume that all the authentication is done correctly

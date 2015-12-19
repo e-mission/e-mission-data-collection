@@ -21,6 +21,7 @@
 
 @interface TripDiaryStateMachine() {
     TripDiaryDelegate* _locDelegate;
+    GeofenceActions* _geofenceLocator;
 }
 @end
 
@@ -46,86 +47,35 @@ static NSString * const kCurrState = @"CURR_STATE";
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
     /*
-     * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager
-     * first if required.
+     * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager first
+     * if required. Note that we actually recreate the locManager in both cases, so we might as well do it outside
+     * the if check.
      */
+    self.locMgr = [[CLLocationManager alloc] init];
+    self.locMgr.pausesLocationUpdatesAutomatically = NO;
+    self.locMgr.allowsBackgroundLocationUpdates = YES;
+    _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
+    self.locMgr.delegate = _locDelegate;
+    self.currState = [defaults integerForKey:kCurrState];
     
-    // Register for notifications related to the state machine
-    if ([LocationTrackingConfig instance].isDutyCycling) {
-        // Only if we are using geofencing
-        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil         usingBlock:^(NSNotification* note) {
-        [self handleTransition:(NSString*)note.object];
-        }];
-    }
-
-    if (restart) {
-        self.locMgr = [[CLLocationManager alloc] init];
-        self.locMgr.pausesLocationUpdatesAutomatically = NO;
-        self.locMgr.allowsBackgroundLocationUpdates = YES;
-        
-        _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
-        self.locMgr.delegate = _locDelegate;
-        
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Restart = YES, initializing TripDiaryStateMachine with state = %@",
-                                                   [TripDiaryStateMachine getStateName:kStartState]]];
-        // [self setState:kStartState];
-        /*
-         * If restart = true, we used to initialize to the start state. But the problem with doing that is that
-         * if you are restarted at the start of, or during a trip, then you lose the state, go back to the
-         * beginning and miss the trip. For example, the following sequence occured today:
-         * 2pm, at school: initialized with restart = NO, WAITING_FOR_TRIP_START
-         * 2:39pm, leaving school: exited geofence, moved to ONGOING_TRIP
-         * 2:39pm, TRIP_RESTARTED
-         * 2:49pm, launched with restart = YES, move to STATE_START
-         * 2:49pm, INITIALIZE
-         * 2.49pm, geofence created, WAITING_FOR_TRIP_START
-         * silent push came in when trip was in WAITING_FOR_TRIP_START
-         * so was ignored and trip never ended, nothing was ever pushed
-         * Starting in ONGOING_TRIP would have retained state and allowed us to detect the trip end properly
-         */
-        self.currState = [defaults integerForKey:kCurrState];
-        /*
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionInitialize];
-         */
-    } else {
-        /*
-         * In this case, we re-initialized the code because the FSM was NULL. LaunchOptionsLocationKey = NO,
-         * so one might think that we don't need to reinitialize the location manager. However, if the FSM is 
-         * null, then the trip manager, which is a field of the location manager, is also null. In particular,
-         * without this, when the app is started up for the first time, it won't create the location manager
-         * and will not be able to start the state machine in any serious way.
-         *
-         * However, in this case, we restart the FSM from the current state rather than resetting to the
-         * start state.
-         */
-        self.locMgr = [[CLLocationManager alloc] init];
-        self.locMgr.pausesLocationUpdatesAutomatically = NO;
-        self.locMgr.allowsBackgroundLocationUpdates = YES;
-        
-        _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
-        self.locMgr.delegate = _locDelegate;
-        
-
-        self.currState = [defaults integerForKey:kCurrState];
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Restart = NO, initializing TripDiaryStateMachine with state = %@",
-                                                   [TripDiaryStateMachine getStateName:self.currState]]];
-
-    }
+    _geofenceLocator = [GeofenceActions new];
+    
+    // The operations in the one time init tracking are idempotent, so let's start them anyway
+    [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"After state machine init, current state is %@",
-                                               [TripDiaryStateMachine getStateName:self.currState]]];
+                                               @"Restart = %@, initializing TripDiaryStateMachine with state = %@",
+                                               @(restart), [TripDiaryStateMachine getStateName:self.currState]]];
+    
     if (self.currState == kOngoingTripState) {
         // If we restarted, we recreate the location manager, but then it won't have
         // the fine location turned on, since that is not carried through over restarts.
         // So let's restart the tracking
-        // Both continuous
-        [TripDiaryActions startTracking:CFCTransitionTripRestarted withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
-        // And one-time
-        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:CFCTransitionTripRestarted withLocationMgr:self.locMgr];
+        // Note that if the phone was shut down when the app was in the ongoing trip state, and it was
+        // turned back on at home, we will start tracking here but will most probably not get a visit transition
+        // so the data collection will be turned on until the NEXT trip ends. This is why we need remote pushes, I think.
+        // would be good to test, though.
     }
 
     
@@ -160,9 +110,9 @@ static NSString * const kCurrState = @"CURR_STATE";
             tracking manually either, so if this is to be a viable alternative, we really need to do something
             more sophisticated in the state machine. But let's start with something simple for now.
          */
-        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
         [self setState:kOngoingTripState];
-        [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr];
     }
 
     /*
@@ -171,6 +121,16 @@ static NSString * const kCurrState = @"CURR_STATE";
      */
     // [self deleteGeofence:locMgr];
     return [super init];
+}
+
+-(void) registerForNotifications {
+    // Register for notifications related to the state machine
+    if ([LocationTrackingConfig instance].isDutyCycling) {
+        // Only if we are using geofencing
+        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil         usingBlock:^(NSNotification* note) {
+            [self handleTransition:(NSString*)note.object];
+        }];
+    }
 }
 
 +(void) showAlert:(NSString*)message withTitle:(NSString*)title {
@@ -244,17 +204,20 @@ static NSString * const kCurrState = @"CURR_STATE";
         // TODO: Stop all actions in order to cleanup
         
         // Start monitoring significant location changes at start and never stop
-        [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr];
     
         // Start location services so that we can get the current location
         // We will receive the first location asynchronously
-        [TripDiaryActions createGeofenceHere:self.locMgr inState:self.currState];
+        [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
-        // Nothing to do at this time
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionNOP];
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
+        // Geofence has been successfully created and we are inside it so we are about to move to
+        // the WAITING_FOR_TRIP_START state.
         [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
@@ -276,16 +239,19 @@ static NSString * const kCurrState = @"CURR_STATE";
     // TODO: Make removing the geofence conditional on the type of service
     if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         // We first start tracking and then delete the geofence to make sure that we are always tracking something
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
-        // NOP at this time
+        // Let's push any pending changes since we know that the trip has ended
+        [TripDiaryActions pushTripToServer];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionNOP];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
-        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
         [self setState:kStartState];
     } else  {
@@ -316,21 +282,27 @@ static NSString * const kCurrState = @"CURR_STATE";
             // because they both have the same identifier
         } else {
             NSLog(@"Trip has not yet ended, continuing tracking");
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionNOP];
         }
     } else if ([transition isEqualToString:CFCTransitionTripEndDetected]) {
-        [TripDiaryActions createGeofenceHere:self.locMgr inState:self.currState];
+        [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
         NSLog(@"Restarted trip, continuing tracking");
     } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
-        [TripDiaryActions pushTripToServer];
-        [TripDiaryActions stopTracking:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        // [TripDiaryActions pushTripToServer];
+        [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+        // stopTracking automatically generates TripEnded so we don't need this here.
+        // TODO: Refactor to remove side effect
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
+        // Geofence has been successfully created and we are inside it so we are about to move to
+        // the WAITING_FOR_TRIP_START state.
         // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
-        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr withActivityMgr:self.activityMgr];
+        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
         [self setState:kStartState];
     } else {

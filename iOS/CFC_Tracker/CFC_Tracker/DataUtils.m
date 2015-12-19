@@ -98,8 +98,47 @@
     return [[BuiltinUserCache database] getLastSensorData:@"key.usercache.filtered_location" nEntries:nPoints wrapperClass:[SimpleLocation class]];
 }
 
-+(BOOL) hasTripEnded:(int)tripEndThresholdMins {
+/*
+ * Returns the last n filtered points from the local database.
+ */
++ (NSArray*) getPointsSince:(int) nMinutes {
+    NSLog(@"getPointsSince(%d) called", nMinutes);
     
+    NSDate* dateNow = [NSDate date];
+    double nowTs = [DataUtils dateToTs:dateNow];
+    double startTs = nowTs - nMinutes * 60;
+    
+    TimeQuery* tq = [TimeQuery new];
+    tq.timeKey = @"metadata.usercache.write_ts";
+    tq.startTs = startTs;
+    tq.endTs = nowTs;
+
+    return [[BuiltinUserCache database] getSensorDataForInterval:@"key.usercache.filtered_location" tq:tq wrapperClass:[SimpleLocation class]];
+}
+
+
++ (NSArray*) distanceFrom:(SimpleLocation*)lastPoint forArray:(NSArray*)lastNPoints {
+    NSMutableArray* retArray = [[NSMutableArray alloc] init];
+    for (int i = 0; i < lastNPoints.count; i++) {
+        [retArray addObject:@(fabs([lastPoint distanceFromLocation:lastNPoints[i]]))];
+    }
+    return retArray;
+}
+
++ (NSArray*) distanceBetweenPoints:(NSArray*)lastNPoints {
+    NSMutableArray* retArray = [[NSMutableArray alloc] init];
+    if (lastNPoints.count == 0 || lastNPoints.count == 1) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"lastNPoints.count = %@, early return", @(lastNPoints.count)]];
+        return retArray;
+    }
+    // We know that there are at least two points, so it is safe to access the i+1th point
+    for (int i = 0; i < lastNPoints.count - 1; i++) {
+        [retArray addObject:@(fabs([lastNPoints[i] distanceFromLocation:lastNPoints[i+1]]))];
+    }
+    return retArray;
+}
+
++(BOOL) hasTripEnded:(int)tripEndThresholdMins {
     NSArray* last3Points = [DataUtils getLastPoints:3];
     if (last3Points.count == 0) {
         /*
@@ -108,34 +147,68 @@
          * notification here.
          */
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"last3Points.count = %lu while checking for trip end",
+                                                   @"last5Points.count = %lu while checking for trip end",
                                                    (unsigned long)last3Points.count]];
         // Let's also return "NO", since it is the safer option
         return NO;
+    }
+    
+    // There are points in the database
+    NSArray* pointsWithinThreshold = [DataUtils getPointsSince:tripEndThresholdMins];
+    SimpleLocation *lastLoc = ((SimpleLocation*)last3Points.firstObject);
+    NSDate* lastDate = [DataUtils dateFromTs:lastLoc.ts];
+    
+    if (pointsWithinThreshold.count == 0) {
+        // We have a distance filter, so if all points are more than the trip end threshold ago, trip has ended
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"interval to the last date = %f, returning YES", lastDate.timeIntervalSinceNow] showUI:TRUE];
+        return YES;
     } else {
-        SimpleLocation *lastLoc = ((SimpleLocation*)last3Points.firstObject);
-        SimpleLocation *middleLoc = ((SimpleLocation*)last3Points[1]);
-        SimpleLocation *firstLoc = ((SimpleLocation*)last3Points.lastObject);
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"found %lu points in the last %d minutes, checking their distances from here", (unsigned long)pointsWithinThreshold.count, tripEndThresholdMins * 60] showUI:TRUE];
+
+        // But what if we receive a bunch of noisy updates although the trip has ended. I thought that this
+        // might result in points that are below the distance filter, but it actually results in points that
+        // are just above the distance filter distance - e.g.
+        // So the challenge is distinguishing loitering points from ongoing trip points when
+        // both of them generate points that are above the distance filter (e.g. even when the trip has ended,
+        // with filterDistance = 5m, the distance between first and middle was 5.382 and the
+        // distance between first and last was 5.595. Let's try comparing both last to all of them, and
+        // the inter point distances.
+        // Doesn't help - all the values are larger than the filter, e.g. for filter = 5m,
+        // the distances are:
+        // distances from last = (0, "5.893507513473614", "12.62960144819151", "19.24935624718944", "24.63277283953604")
+        // and distances between = ("5.893507513473614", "6.746749622275789", "6.990052045853307", "5.470282826818653")
+        // Generating local notification with message maxFrom = 24.63277283953604, maxBetween = 6.990052045853307
+        // The point is that with a distance filter, the last n points may actually include part of the real trip.
+        // So instead, we only use points that are within the trip threshold filter. If they are all within the
+        // the geofence threshold, then we have been within the threshold for the trip end time, and so we can end
+        // the trip. Note that this means that a smaller geofence radius will reinstate the geofence less quickly,
+        // so there will be greater power drain, which gives us a nice tradeoff between accuracy and power drain.
         
-        NSLog(@"firstDate = %@, middleDate = %@, lastDate = %@", firstLoc.fmt_time, middleLoc.fmt_time, lastLoc.fmt_time);
-        NSDate* lastDate = [DataUtils dateFromTs:lastLoc.ts];
-        // We are using a distance filter, so if we have no inputs for time greater than the threshold, the trip is done
-        if (fabs(lastDate.timeIntervalSinceNow) > tripEndThresholdMins * 60) {
-            NSLog(@"interval to the last date = %f, returning YES", lastDate.timeIntervalSinceNow);
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"distances from last = %@",
+                                                   [self distanceFrom:lastLoc forArray:pointsWithinThreshold]]];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"distances between = %@",
+                                                   [self distanceBetweenPoints:pointsWithinThreshold]]];
+        
+        NSNumber* maxFrom = [[self distanceFrom:lastLoc forArray:pointsWithinThreshold] valueForKeyPath:@"@max.self"];
+        NSNumber* maxBetween = [[self distanceBetweenPoints:pointsWithinThreshold] valueForKeyPath:@"@max.self"];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"maxFrom = %@, maxBetween = %@",
+                                                   maxFrom, maxBetween]];
+        
+        // One option might be to compare against the geofence radius instead of the filterDistance, since it
+        // represents our "loitering radius". The problem, though, is that if we look at too few points, then
+        // our updates will always be less than the geofence radius (e.g. with a filter distance = 5m, and 5
+        // points, we expect a max distance of 25m). So we first calculate the number of points that we expect
+        // to get to the geofence radius, assuming a straight line. With a filter distance = 5m and a
+        // geofence radius = 100m, this would be 20 points. Then, we compare the distance between the first
+        // and last points. But what if the points are not in a straight line (e.g. they could be in a curve).
+        if ([maxFrom doubleValue] < [LocationTrackingConfig instance].geofenceRadius) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"max distance in the past %d minutes is %@, returning YES", tripEndThresholdMins, maxFrom] showUI:TRUE];
             return YES;
-        } else {
-        // Either the trip has not ended, or it is jumping back and forth between a valid and invalid point.
-            if (([firstLoc distanceFromLocation:lastLoc] < [LocationTrackingConfig instance].filterDistance) &&
-                ([firstLoc distanceFromLocation:middleLoc] < [LocationTrackingConfig instance].filterDistance)) {
-                NSLog(@"distances between first loc and middle loc is %f, and between first loc and last loc is %f, returning YES", [firstLoc distanceFromLocation:middleLoc], [firstLoc distanceFromLocation:lastLoc]);
-                return YES;
-            }
-            NSLog(@"interval to the last date = %f, returning NO", lastDate.timeIntervalSinceNow);
-            return NO;
         }
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"max distance in the past %d minutes is %@, returning NO", tripEndThresholdMins, maxFrom] showUI:TRUE];
+        return NO;
     }
 }
-
 
 // TODO: Refactor this to be common with the TripSection loading code when we merge this into e-mission
 + (NSMutableDictionary*)loadFromJSONData:(NSData*)jsonData {

@@ -44,17 +44,11 @@
     CLLocation *lastLocation = locations[locations.count - 1];
     NSLog(@"lastLocation is %f, %f", lastLocation.coordinate.longitude, lastLocation.coordinate.latitude);
     
-    if (_tdsm.currState == kStartState) {
-        // Find the last location
-//        [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:manager];
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Re-entering call to create geofence at location %@", lastLocation]];
-        [TripDiaryActions createGeofenceHere:manager inState:_tdsm.currState];
-    }
-    
     if (_tdsm.currState != kOngoingTripState) {
         for (CLLocation* currLoc in locations) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Recieved location %@, ongoing trip = false", currLoc]
+                                                       @"In state %@, Recieved location %@",
+                                                       [TripDiaryStateMachine getStateName:_tdsm.currState], currLoc]
                                                showUI:TRUE];
         }
     }
@@ -258,7 +252,7 @@
 {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received visit notification = %@",
-                                               visit]];
+                                               visit] showUI:true];
 
     // According to the design pattern that I have followed here, I should post a notification from here
     // which will be handled by the state machine. However, as we have seen in the past, this does not really work
@@ -269,7 +263,7 @@
     // The methods of your delegate object are called from the thread in which you started the corresponding
     // location services. That thread must itself have an active run loop,
     // like the one found in your application’s main thread.
-    if (visit.departureDate == NULL) {
+    if (visit.departureDate == nil) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionVisitStarted];
     } else {

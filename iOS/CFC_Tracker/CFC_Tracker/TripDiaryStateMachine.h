@@ -56,6 +56,7 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 @interface TripDiaryStateMachine : NSObject
 -(id)initRelaunchLocationManager:(BOOL)restart;
+-(void)registerForNotifications;
 
 @property CLLocationManager *locMgr;
 @property CMMotionActivityManager *activityMgr;

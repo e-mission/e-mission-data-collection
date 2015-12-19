@@ -28,6 +28,7 @@
 		D072E1E21BE7DE60000932E1 /* MotionActivity.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1E11BE7DE60000932E1 /* MotionActivity.m */; };
 		D072E1E51BED5D90000932E1 /* LocationTrackingConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D072E1E41BED5D90000932E1 /* LocationTrackingConfig.m */; };
 		D087C25F1BE326D800E8A72E /* UserCacheTest.m in Sources */ = {isa = PBXBuildFile; fileRef = D087C25E1BE326D800E8A72E /* UserCacheTest.m */; };
+		D08B83B01C0FCB1900669D63 /* GeofenceActions.m in Sources */ = {isa = PBXBuildFile; fileRef = D08B83AF1C0FCB1900669D63 /* GeofenceActions.m */; };
 		D0A3F5721BDE91EA00112CE7 /* BuiltinUserCache.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */; };
 		D0A3F57D1BE0047500112CE7 /* Metadata.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F57C1BE0047500112CE7 /* Metadata.m */; };
 		D0A3F5801BE006EA00112CE7 /* TimeQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = D0A3F57F1BE006EA00112CE7 /* TimeQuery.m */; };
@@ -78,7 +79,7 @@
 		D06DDA811AAC1F7E00E6CF9B /* TripDiaryDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TripDiaryDelegate.h; sourceTree = "<group>"; };
 		D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TripDiaryDelegate.m; sourceTree = "<group>"; };
 		D06DDA851AAE44CB00E6CF9B /* DataUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataUtils.h; sourceTree = "<group>"; };
-		D06DDA861AAE44CB00E6CF9B /* DataUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DataUtils.m; sourceTree = "<group>"; };
+		D06DDA861AAE44CB00E6CF9B /* DataUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = DataUtils.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		D06DDA8F1AB510AF00E6CF9B /* AuthCompletionHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AuthCompletionHandler.h; sourceTree = "<group>"; };
 		D06DDA901AB510AF00E6CF9B /* AuthCompletionHandler.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AuthCompletionHandler.m; sourceTree = "<group>"; };
 		D06DDA911AB510AF00E6CF9B /* AuthInspectorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AuthInspectorViewController.h; sourceTree = "<group>"; };
@@ -101,6 +102,8 @@
 		D072E1E31BED5D90000932E1 /* LocationTrackingConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocationTrackingConfig.h; sourceTree = "<group>"; };
 		D072E1E41BED5D90000932E1 /* LocationTrackingConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocationTrackingConfig.m; sourceTree = "<group>"; };
 		D087C25E1BE326D800E8A72E /* UserCacheTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserCacheTest.m; sourceTree = "<group>"; };
+		D08B83AE1C0FCB1900669D63 /* GeofenceActions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GeofenceActions.h; sourceTree = "<group>"; };
+		D08B83AF1C0FCB1900669D63 /* GeofenceActions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeofenceActions.m; sourceTree = "<group>"; };
 		D0A3F5701BDE91EA00112CE7 /* BuiltinUserCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuiltinUserCache.h; sourceTree = "<group>"; };
 		D0A3F5711BDE91EA00112CE7 /* BuiltinUserCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BuiltinUserCache.m; sourceTree = "<group>"; };
 		D0A3F57B1BE0047500112CE7 /* Metadata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Metadata.h; sourceTree = "<group>"; };
@@ -251,6 +254,8 @@
 		D0A74D871AAA2C1B005BE6B2 /* Location */ = {
 			isa = PBXGroup;
 			children = (
+				D08B83AE1C0FCB1900669D63 /* GeofenceActions.h */,
+				D08B83AF1C0FCB1900669D63 /* GeofenceActions.m */,
 				D06DDA811AAC1F7E00E6CF9B /* TripDiaryDelegate.h */,
 				D06DDA821AAC1F7E00E6CF9B /* TripDiaryDelegate.m */,
 				D0EC6B711A7D57D300E8841B /* TripDiaryStateMachine.h */,
@@ -479,6 +484,7 @@
 				D06DDAA51AB516B900E6CF9B /* Constants.m in Sources */,
 				D0EC6B541A7CBEBB00E8841B /* ViewController.m in Sources */,
 				D072E1DD1BE69ACB000932E1 /* DbLogging.m in Sources */,
+				D08B83B01C0FCB1900669D63 /* GeofenceActions.m in Sources */,
 				D0EC6B511A7CBEBB00E8841B /* AppDelegate.m in Sources */,
 				D06DDA871AAE44CB00E6CF9B /* DataUtils.m in Sources */,
 				D0A3F5831BE0368500112CE7 /* SimpleLocation.m in Sources */,
