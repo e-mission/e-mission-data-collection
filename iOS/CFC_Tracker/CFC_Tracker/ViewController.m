@@ -13,9 +13,11 @@
 #import "SignInViewController.h"
 #import "AuthCompletionHandler.h"
 #import "AppDelegate.h"
+#import "GeofenceActions.h"
 
 @interface ViewController () {
     NSArray* _transitionMessages;
+    GeofenceActions* _geofenceLocator;
 }
 @property(strong, nonatomic) SignInViewController *signInViewController;
 @property(strong, nonatomic) UINavigationController *navigationController;
@@ -65,8 +67,10 @@
 }
 
 - (IBAction)checkInGeofence {
-    [[self getTDSM] checkGeofenceState:^(NSString *geofenceStatus) {
-        self.geofenceCheckResult.text = geofenceStatus;
+    CLLocationManager* newLoc = [CLLocationManager new];
+    _geofenceLocator = [GeofenceActions new];
+    [_geofenceLocator getLocationForGeofence:newLoc withCallback:^(CLLocation *locationToUse) {
+        NSLog(@"Got location %@ to use", locationToUse);
     }];
 }
 
