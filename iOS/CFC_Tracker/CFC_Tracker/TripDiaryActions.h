@@ -10,6 +10,7 @@
 #import <CoreMotion/CoreMotion.h>
 #import <CoreLocation/CoreLocation.h>
 #import "TripDiaryStateMachine.h"
+#import "GeofenceActions.h"
 
 #define kCurrGeofenceID @"STATIONARY_GEOFENCE_LOCATION"
 
@@ -20,10 +21,14 @@
 + (void) oneTimeInitTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
 
 + (void) startTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
++ (void)startTrackingLocation:(CLLocationManager*) manager;
 
 + (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
++ (void) stopTrackingLocation:(CLLocationManager*) manager;
 
-+ (void)createGeofenceHere:(CLLocationManager *)manager inState:(TripDiaryStates)currState;
++ (void)createGeofenceHere:(CLLocationManager *)manager withGeofenceLocator:(GeofenceActions *)locator
+                   inState:(TripDiaryStates)currState;
++ (void)createGeofenceAtLocation:(CLLocationManager *)manager atLocation:(CLLocation*)currLoc;
 
 + (void)deleteGeofence:(CLLocationManager*)manager;
 

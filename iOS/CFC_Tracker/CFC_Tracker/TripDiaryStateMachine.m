@@ -21,6 +21,7 @@
 
 @interface TripDiaryStateMachine() {
     TripDiaryDelegate* _locDelegate;
+    GeofenceActions* _geofenceLocator;
 }
 @end
 
@@ -45,14 +46,6 @@ static NSString * const kCurrState = @"CURR_STATE";
 -(id)initRelaunchLocationManager:(BOOL)restart {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    // Register for notifications related to the state machine
-    if ([LocationTrackingConfig instance].isDutyCycling) {
-        // Only if we are using geofencing
-        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil         usingBlock:^(NSNotification* note) {
-        [self handleTransition:(NSString*)note.object];
-        }];
-    }
-    
     /*
      * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager first
      * if required. Note that we actually recreate the locManager in both cases, so we might as well do it outside
@@ -64,6 +57,8 @@ static NSString * const kCurrState = @"CURR_STATE";
     _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
     self.locMgr.delegate = _locDelegate;
     self.currState = [defaults integerForKey:kCurrState];
+    
+    _geofenceLocator = [GeofenceActions new];
     
     // The operations in the one time init tracking are idempotent, so let's start them anyway
     [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
@@ -126,6 +121,16 @@ static NSString * const kCurrState = @"CURR_STATE";
      */
     // [self deleteGeofence:locMgr];
     return [super init];
+}
+
+-(void) registerForNotifications {
+    // Register for notifications related to the state machine
+    if ([LocationTrackingConfig instance].isDutyCycling) {
+        // Only if we are using geofencing
+        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil         usingBlock:^(NSNotification* note) {
+            [self handleTransition:(NSString*)note.object];
+        }];
+    }
 }
 
 +(void) showAlert:(NSString*)message withTitle:(NSString*)title {
@@ -203,10 +208,13 @@ static NSString * const kCurrState = @"CURR_STATE";
     
         // Start location services so that we can get the current location
         // We will receive the first location asynchronously
-        [TripDiaryActions createGeofenceHere:self.locMgr inState:self.currState];
+        [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
-        // Nothing to do at this time
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionNOP];
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
+        // Geofence has been successfully created and we are inside it so we are about to move to
+        // the WAITING_FOR_TRIP_START state.
         [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
@@ -238,7 +246,10 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
-        // NOP at this time
+        // Let's push any pending changes since we know that the trip has ended
+        [TripDiaryActions pushTripToServer];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionNOP];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
@@ -271,17 +282,23 @@ static NSString * const kCurrState = @"CURR_STATE";
             // because they both have the same identifier
         } else {
             NSLog(@"Trip has not yet ended, continuing tracking");
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionNOP];
         }
     } else if ([transition isEqualToString:CFCTransitionTripEndDetected]) {
-        [TripDiaryActions createGeofenceHere:self.locMgr inState:self.currState];
+        [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
         NSLog(@"Restarted trip, continuing tracking");
     } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
-        [TripDiaryActions pushTripToServer];
-        [TripDiaryActions stopTracking:transition withLocationMgr:self.locMgr];
+        // [TripDiaryActions pushTripToServer];
+        [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+        // stopTracking automatically generates TripEnded so we don't need this here.
+        // TODO: Refactor to remove side effect
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
+        // Geofence has been successfully created and we are inside it so we are about to move to
+        // the WAITING_FOR_TRIP_START state.
         // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {

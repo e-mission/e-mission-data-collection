@@ -40,6 +40,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"tripDiaryStateMachine = %@, relaunchLocationManager = %@, recreating the state machine",
               _tripDiaryStateMachine, @(relaunchLocationMgr)]];
         _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] initRelaunchLocationManager:relaunchLocationMgr];
+        [_tripDiaryStateMachine registerForNotifications];
     }
     
     [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
@@ -74,21 +75,28 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Received notification %@ while processing silent push notification", note.object]];
         // we only care about notifications when we are processing a silent remote push notification
-        if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
-            // if we got a trip end detected, we want to wait until the geofence is created
+        if ([note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
+            // We are in the silent push handler, so we ignore the silent push
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Ignoring SILENT_PUSH in the silent push handler"]];
+            // Note: Do NOT call the handler here since the state machine may not have quiesced.
+            // We want to wait until we know that the state machine has finished handling it.
+            // _silentPushHandler(UIBackgroundFetchResultNewData);
+        } else if ([note.object isEqualToString:CFCTransitionNOP]) {
+            // Next, we think of what the possible responses to the silent push are
+            // One option is that the state machine wants to ignore it, possibly because it is not in ONGOING STATE
+            // Let us assume that we will return NOP in that case
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Trip diary state machine ignored the silent push"]];
+            _silentPushHandler(UIBackgroundFetchResultNewData);
+        } else if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
+            // Otherwise, if it is in OngoingTrip, it will try to see whether the trip has ended. If it hasn't,
+            // let us assume that we will return a NOP, which is already handled.
+            // If it has, then it will return a TripEndDetected and start creating the geofence.
+            // Once the geofence is created, we will get a TripEnded, and we want to
+            // wait until that point, so we DON'T return here.
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Detected trip end, waiting until geofence is created to return from silent push"]];
-        } else {
-            // for everything else, we don't need to wait for processing
-            // But let's push any data that is pending
-            // TODO: Understand this properly and refactor into a better function
-            // Also understand and deal with the crash better
-            // It should also be possible to unit test this by calling the silent push manually
-            // with a custom fetchCompletionHandler, and some judicious sending of notifications.
-            // in particular, it should be possible to test the crash, although it does not appear
-            // to be happening right now.
-            // Let's just deploy this on the phone tonight and go to sleep!
-
+        } else if ([note.object isEqualToString:CFCTransitionTripEnded]) {
+            // Trip has now ended, so we can push and clear data
             [DataUtils pushAndClearData:^(BOOL status) {
                 // We only ever call this with true right now
                 if (status == true) {
@@ -97,32 +105,24 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                                                        showUI:TRUE];
                     _silentPushHandler(UIBackgroundFetchResultNewData);
                 } else {
+                    /*
+                     * We always return "new data", even if there was no data, because there is some evidence
+                     * that returning "no data" may cause the app to be killed while returning "new data" might not.
+                     * https://github.com/e-mission/e-mission-data-collection/issues/70
+                     */
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                               @"Returning with fetch result = no data"]
+                                                               @"Sent no data, but Returning with fetch result = new data"]
                                                        showUI:TRUE];
                     _silentPushHandler(UIBackgroundFetchResultNoData);
                 }
             }];
-            /*
-            NSArray* tripsToPush = [DataUtils getTripsToPush];
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"pushing %ld trips to the server",
-                                                       (unsigned long)tripsToPush.count]];
-            if (tripsToPush.count > 0) {
-            [CommunicationHelper storeTripsForUser:tripsToPush
-                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                                                @"successfully pushed %ld trips to the server",
-                                                                                (unsigned long)tripsToPush.count]];
-                                     // Only delete trips after they have been successfully pushed
-                                     if (error == nil) {
-                                         [DataUtils deletePushedTrips:tripsToPush];
-                                     }
-                                     NSLog(@"Returning from silent push");
-                                     _silentPushHandler(UIBackgroundFetchResultNewData);
-                                 }];
-            }
-             */
+        } else if ([note.object isEqualToString:CFCTransitionTripRestarted]) {
+            // The other option from TripEndDetected is that the trip is restarted instead of ended.
+            // In that case, we still want to finish the handler
+            _silentPushHandler(UIBackgroundFetchResultNewData);
+        } else {
+            // Some random transition. Might as well call the handler and return
+            _silentPushHandler(UIBackgroundFetchResultNewData);
         }
         // TODO: Figure out whether we should set it to NULL here or whether parts of
         // the system will still try to access the handler.
