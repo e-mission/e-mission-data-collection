@@ -7,11 +7,6 @@
 //
 
 #import "GeofenceActions.h"
-<<<<<<< HEAD
-
-@implementation GeofenceActions
-
-=======
 #import "TripDiaryActions.h"
 #import "LocalNotificationManager.h"
 
@@ -104,5 +99,4 @@
                                                @"While creating geofence, location tracking failed with error %@", error]];
 }
 
->>>>>>> 58dfe2d64698b633c698c1d7fc001c972f483086
 @end

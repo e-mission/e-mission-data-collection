@@ -7,11 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-<<<<<<< HEAD
-
-@interface GeofenceActions : NSObject
-
-=======
 @import CoreLocation;
 
 typedef void(^ValidLocationCallback)(CLLocation* locationToUse);
@@ -26,5 +21,4 @@ typedef void(^ValidLocationCallback)(CLLocation* locationToUse);
 
 - (void)locationManager:(CLLocationManager *)manager
        didFailWithError:(NSError *)error;
->>>>>>> 58dfe2d64698b633c698c1d7fc001c972f483086
 @end
