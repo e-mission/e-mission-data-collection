@@ -16,7 +16,7 @@ public class SimpleLocation {
         return longitude;
     }
 
-    public long getTs() {
+    public float getTs() {
         return ts;
     }
 
@@ -24,7 +24,7 @@ public class SimpleLocation {
     private double longitude;
     private double altitude;
 
-    private long ts;
+    private float ts;
     private String fmt_time;
     private long elapsedRealtimeNanos;
 
@@ -33,6 +33,7 @@ public class SimpleLocation {
     private float bearing;
 
     private String provider;
+    private final String filter = "time";
 
     /*
      * No-arg constructor to use with gson.
@@ -45,7 +46,10 @@ public class SimpleLocation {
         longitude = loc.getLongitude();
         altitude = loc.getAltitude();
 
-        ts = loc.getTime();
+        ts = ((float)loc.getTime())/1000;
+        // NOTE: There is no ISO format datetime shortcut on java.
+        // This will probably return values that are not in the ISO format.
+        // but that's OK because we will fix it on the server
         fmt_time = SimpleDateFormat.getDateTimeInstance().format(ts);
         elapsedRealtimeNanos = loc.getElapsedRealtimeNanos();
 

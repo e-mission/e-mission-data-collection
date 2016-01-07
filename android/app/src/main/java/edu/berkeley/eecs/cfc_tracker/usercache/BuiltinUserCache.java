@@ -102,7 +102,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues newValues = new ContentValues();
-        newValues.put(KEY_WRITE_TS, System.currentTimeMillis());
+        newValues.put(KEY_WRITE_TS, ((float)System.currentTimeMillis()/1000));
         newValues.put(KEY_TIMEZONE, TimeZone.getDefault().getID());
         newValues.put(KEY_TYPE, type);
         newValues.put(KEY_KEY, getKey(keyRes));
@@ -227,7 +227,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     private void updateReadTimestamp(int keyRes) {
         SQLiteDatabase writeDb = this.getWritableDatabase();
         ContentValues updateValues = new ContentValues();
-        updateValues.put(KEY_READ_TS, System.currentTimeMillis());
+        updateValues.put(KEY_READ_TS, ((float)System.currentTimeMillis())/1000);
         updateValues.put(KEY_KEY, getKey(keyRes));
         writeDb.update(TABLE_USER_CACHE, updateValues, null, null);
         writeDb.close();

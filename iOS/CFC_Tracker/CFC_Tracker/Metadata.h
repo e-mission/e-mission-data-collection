@@ -16,5 +16,4 @@
 @property NSString* key;
 @property NSString* plugin;
 @property NSString* platform;
-@property NSString* filter;
 @end

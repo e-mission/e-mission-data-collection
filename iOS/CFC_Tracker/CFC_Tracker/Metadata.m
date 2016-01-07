@@ -13,7 +13,6 @@
 - (id)init {
     self = [super init];
     self.platform = @"ios";
-    self.filter = @"distance";
     return self;
 }
 
