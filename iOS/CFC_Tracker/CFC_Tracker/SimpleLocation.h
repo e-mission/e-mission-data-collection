@@ -26,6 +26,7 @@
 @property double bearing;
 
 @property NSInteger floor;
+@property NSString* filter;
 
 - (CLLocationDistance) distanceFromLocation:(SimpleLocation*)otherLoc;
 

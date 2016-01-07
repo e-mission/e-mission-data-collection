@@ -24,6 +24,7 @@
     self.vaccuracy = loc.verticalAccuracy;
     self.floor = loc.floor.level;
     self.bearing = loc.course;
+    self.filter = @"distance";
     
     return self;
 }

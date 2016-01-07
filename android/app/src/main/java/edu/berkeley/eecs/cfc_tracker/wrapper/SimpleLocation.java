@@ -33,6 +33,7 @@ public class SimpleLocation {
     private float bearing;
 
     private String provider;
+    private final String filter = "time";
 
     /*
      * No-arg constructor to use with gson.
