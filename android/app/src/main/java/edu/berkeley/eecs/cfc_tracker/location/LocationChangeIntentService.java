@@ -23,7 +23,7 @@ import com.google.android.gms.location.FusedLocationProviderApi;
 public class LocationChangeIntentService extends IntentService {
 	private static final String TAG = "LocationChangeIntentService";
 	private static final int TRIP_END_RADIUS = Constants.TRIP_EDGE_THRESHOLD;
-    private static final int FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
+    private static final int FIVE_MINUTES_IN_SEC = 5 * 60;
 	
 	public LocationChangeIntentService() {
 		super("LocationChangeIntentService");
@@ -102,11 +102,11 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 
         SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location,
-				FIVE_MINUTES_IN_MS / LocationTrackingConfig.getConfig(this).getDetectionInterval(), SimpleLocation.class);
+				FIVE_MINUTES_IN_SEC / LocationTrackingConfig.getConfig(this).getDetectionInterval(), SimpleLocation.class);
 
         double nowSecs = ((double)System.currentTimeMillis())/1000;
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
-                nowSecs - FIVE_MINUTES_IN_MS - 10, nowSecs);
+                nowSecs - FIVE_MINUTES_IN_SEC - 10, nowSecs);
 
         Log.d(this, TAG, "Finding points in the range "+tq);
         SimpleLocation[] points5MinsAgo = uc.getSensorDataForInterval(R.string.key_usercache_filtered_location,
