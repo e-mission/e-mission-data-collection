@@ -50,7 +50,7 @@ public class SimpleLocation {
         // NOTE: There is no ISO format datetime shortcut on java.
         // This will probably return values that are not in the ISO format.
         // but that's OK because we will fix it on the server
-        fmt_time = SimpleDateFormat.getDateTimeInstance().format(ts);
+        fmt_time = SimpleDateFormat.getDateTimeInstance().format(loc.getTime());
         elapsedRealtimeNanos = loc.getElapsedRealtimeNanos();
 
         sensed_speed = loc.getSpeed();
