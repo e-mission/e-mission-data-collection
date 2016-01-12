@@ -71,7 +71,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String CREATE_USER_CACHE_TABLE = "CREATE TABLE " + TABLE_USER_CACHE +" (" +
-                KEY_WRITE_TS + " INTEGER, "+ KEY_READ_TS +" INTEGER, " +
+                KEY_WRITE_TS + " REAL, "+ KEY_READ_TS +" REAL, " +
                 KEY_TIMEZONE + " TEXT, " +
                 KEY_TYPE + " TEXT, " + KEY_KEY + " TEXT, "+
                 KEY_PLUGIN + " TEXT, " + KEY_DATA + " TEXT)";
@@ -102,16 +102,16 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues newValues = new ContentValues();
-        newValues.put(KEY_WRITE_TS, ((float)System.currentTimeMillis()/1000));
+        newValues.put(KEY_WRITE_TS, ((double)System.currentTimeMillis()/1000));
         newValues.put(KEY_TIMEZONE, TimeZone.getDefault().getID());
         newValues.put(KEY_TYPE, type);
         newValues.put(KEY_KEY, getKey(keyRes));
         newValues.put(KEY_DATA, new Gson().toJson(value));
         db.insert(TABLE_USER_CACHE, null, newValues);
         System.out.println("Added value for key "+ cachedCtx.getString(keyRes) +
-                " at time "+newValues.getAsLong(KEY_WRITE_TS));
+                " at time "+newValues.getAsDouble(KEY_WRITE_TS));
         db.close();
-    }
+        }
 
     @Override
     public <T> T getDocument(int keyRes, Class<T> classOfT) {
@@ -227,7 +227,7 @@ public class BuiltinUserCache extends SQLiteOpenHelper implements UserCache {
     private void updateReadTimestamp(int keyRes) {
         SQLiteDatabase writeDb = this.getWritableDatabase();
         ContentValues updateValues = new ContentValues();
-        updateValues.put(KEY_READ_TS, ((float)System.currentTimeMillis())/1000);
+        updateValues.put(KEY_READ_TS, ((double)System.currentTimeMillis())/1000);
         updateValues.put(KEY_KEY, getKey(keyRes));
         writeDb.update(TABLE_USER_CACHE, updateValues, null, null);
         writeDb.close();

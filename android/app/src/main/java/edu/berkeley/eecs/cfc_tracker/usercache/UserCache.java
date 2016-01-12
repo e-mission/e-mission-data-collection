@@ -7,10 +7,10 @@ public interface UserCache {
 
     class TimeQuery {
         int keyRes;
-        float startTs;
-        float endTs;
+        double startTs;
+        double endTs;
 
-        public TimeQuery(int keyRes, float startTs, float endTs) {
+        public TimeQuery(int keyRes, double startTs, double endTs) {
             this.keyRes = keyRes;
             this.startTs = startTs;
             this.endTs = endTs;

@@ -5,19 +5,19 @@ package edu.berkeley.eecs.cfc_tracker.wrapper;
  */
 
 public class Metadata {
-    public float getWrite_ts() {
+    public double getWrite_ts() {
         return write_ts;
     }
 
-    public void setWrite_ts(float write_ts) {
+    public void setWrite_ts(double write_ts) {
         this.write_ts = write_ts;
     }
 
-    public float getRead_ts() {
+    public double getRead_ts() {
         return read_ts;
     }
 
-    public void setRead_ts(float read_ts) {
+    public void setRead_ts(double read_ts) {
         this.read_ts = read_ts;
     }
 
@@ -50,8 +50,8 @@ public class Metadata {
     public String getTimeZone() { return time_zone; }
 
 
-    private float write_ts;
-    private float read_ts;
+    private double write_ts;
+    private double read_ts;
     private String time_zone;
     private String type;
     private String key;

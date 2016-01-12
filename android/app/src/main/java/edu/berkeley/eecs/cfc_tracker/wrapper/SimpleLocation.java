@@ -16,7 +16,7 @@ public class SimpleLocation {
         return longitude;
     }
 
-    public float getTs() {
+    public double getTs() {
         return ts;
     }
 
@@ -24,7 +24,7 @@ public class SimpleLocation {
     private double longitude;
     private double altitude;
 
-    private float ts;
+    private double ts;
     private String fmt_time;
     private long elapsedRealtimeNanos;
 
@@ -46,11 +46,11 @@ public class SimpleLocation {
         longitude = loc.getLongitude();
         altitude = loc.getAltitude();
 
-        ts = ((float)loc.getTime())/1000;
+        ts = ((double)loc.getTime())/1000;
         // NOTE: There is no ISO format datetime shortcut on java.
         // This will probably return values that are not in the ISO format.
         // but that's OK because we will fix it on the server
-        fmt_time = SimpleDateFormat.getDateTimeInstance().format(ts);
+        fmt_time = SimpleDateFormat.getDateTimeInstance().format(loc.getTime());
         elapsedRealtimeNanos = loc.getElapsedRealtimeNanos();
 
         sensed_speed = loc.getSpeed();
