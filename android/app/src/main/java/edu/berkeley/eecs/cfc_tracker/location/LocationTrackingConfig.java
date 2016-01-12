@@ -39,6 +39,8 @@ public class LocationTrackingConfig {
         return Constants.TRIP_EDGE_THRESHOLD;
     }
 
+    public int getAccuracyThreshold() { return 200; }
+
     public int getResponsiveness() {
         return 5 * Constants.MILLISECONDS;
     }
