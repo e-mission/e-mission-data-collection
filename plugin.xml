@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+        id="edu.berkeley.eecs.emission.cordova.comm"
+        version="0.0.1">
+
+  <name>DataCollection</name>
+  <description>Background data collection FTW! This is the part that I really
+    spent time on. </description>
+  <author>K. Shankari (shankari@eecs.berkeley.edu)</author>
+  <license>Modified BSD license</license>
+
+  <engines>
+    <engine name="cordova" version=">=3.6.0"/>
+  </engines>
+
+  <asset src="www/datacollection.js" target="js/datacollection.js"/>
+
+  <js-module src="www/datacollection.js" name="datacollection">
+    <clobbers target="cordova.plugins.BEMDataCollection" />
+  </js-module>
+
+  <dependency id="edu.berkeley.eecs.emission.cordova.unifiedlogger"
+                url="https://github.com/e-mission/cordova-unified-logger.git"/>
+  <dependency id="edu.berkeley.eecs.emission.cordova.settings"
+                url="https://github.com/e-mission/cordova-connection-settings.git"/>
+
+  <platform name="android">
+
+    <config-file target="res/xml/config.xml" parent="/*">
+      <feature name="DataCollection">
+        <param name="android-package" value="edu.berkeley.eecs.emission.cordova.tracker.DataCollectionPlugin"/>
+      </feature>
+    </config-file>
+
+    <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+  </platform>
+
+  <platform name="ios">
+    
+    <config-file target="config.xml" parent="/*">
+      <feature name="DataCollection">
+        <param name="ios-package" value="BEMDataCollection" />
+      </feature>
+    </config-file>
+
+    <header-file src="src/ios/BEMDataCollection.h"/>
+    <source-file src="src/ios/BEMDataCollection.m"/>
+  </platform>
+</plugin>

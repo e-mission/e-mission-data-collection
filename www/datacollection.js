@@ -1,0 +1,39 @@
+/*global cordova, module*/
+
+var exec = require("cordova/exec")
+
+/*
+ * Format of the returned value:
+ * {
+ *    "isDutyCycling": true/false,
+ *    "accuracy": "high/balanced/hundredmeters/..",
+ *    "geofenceRadius": 1234,
+ *    "accuracyThreshold": 1234,
+ *    "filter": "time/distance",
+ *    "filterValue": 1234,
+ *    "tripEndStationaryMins": 1234
+ * }
+ */
+
+var DataCollection = {
+    /*
+     * One time init: registers all the callbacks necessary, at least on
+     * android.
+     */
+    startupInit: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "startupInit", []);
+    },
+    /*
+     * Launch init: registers all the callbacks necessary on launch, mainly for
+     * iOS, where we have to re-register the listeners for fine location
+     * tracking every time the app is launched.
+     */
+    launchInit: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "launchInit", []);
+    },
+    getConfig: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "getConfig", []);
+    }
+}
+
+module.exports = DataCollection;
