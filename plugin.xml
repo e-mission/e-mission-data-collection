@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-        id="edu.berkeley.eecs.emission.cordova.comm"
+        id="edu.berkeley.eecs.emission.cordova.datacollection"
         version="0.0.1">
 
   <name>DataCollection</name>
@@ -23,6 +23,8 @@
                 url="https://github.com/e-mission/cordova-unified-logger.git"/>
   <dependency id="edu.berkeley.eecs.emission.cordova.settings"
                 url="https://github.com/e-mission/cordova-connection-settings.git"/>
+  <dependency id="edu.berkeley.eecs.emission.cordova.serversync"
+                url="https://github.com/e-mission/cordova-server-sync.git"/>
 
   <platform name="android">
 
@@ -32,7 +34,70 @@
       </feature>
     </config-file>
 
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+        <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+        <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
+        <!-- COARSE_LOCATION obfuscates the location to a city block, change to FINE_LOCATION for accuracy -->
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <receiver
+            android:name="edu.berkeley.eecs.emission.cordova.tracker.BootReceiver"
+            android:enabled="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" >
+                </action>
+            </intent-filter>
+        </receiver>
+        <service
+		    android:name="edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentService"
+		    android:enabled="true" 
+		    android:exported="false">
+		</service>
+        <service
+            android:name="edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineService"
+            android:enabled="true"
+            android:exported="false">
+        </service>
+        <service
+            android:name="edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineServiceOngoing"
+            android:enabled="true"
+            android:exported="false">
+        </service>
+        <service
+		    android:name="edu.berkeley.eecs.cfc_tracker.location.GeofenceExitIntentService"
+		    android:enabled="true" 
+		    android:exported="false">
+		</service>
+		<service 
+		    android:name="edu.berkeley.eecs.cfc_tracker.location.LocationChangeIntentService"
+		    android:enabled="true" 
+		    android:exported="false">
+		</service>
+    </config-file>
+
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/Constants.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/GooglePlayChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/location/ActivityRecognitionChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/GeofenceExitIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/LocationChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/LocationTrackingConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/TripDiaryStateMachineReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/TripDiaryStateMachineService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/TripDiaryStateMachineServiceOngoing.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/actions/ActivityRecognitionActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
+    <source-file src="src/android/location/actions/GeofenceActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
+    <source-file src="src/android/location/actions/LocationTrackingActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
+    <source-file src="src/android/sensors/BatteryPollSensor.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
+    <source-file src="src/android/sensors/BatteryUtils.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
+    <source-file src="src/android/sensors/PollSensor.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
+    <source-file src="src/android/sensors/PollSensorManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
+    <source-file src="src/android/wrapper/Metadata.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/SimpleLocation.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/Transition.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
   </platform>
 
   <platform name="ios">
@@ -43,7 +108,36 @@
       </feature>
     </config-file>
 
+    <framework src="src/ios/frameworks/Parse.framework" custom="true" />
+    <framework src="src/ios/frameworks/Bolts.framework" custom="true" />
+
     <header-file src="src/ios/BEMDataCollection.h"/>
+    <header-file src="src/ios/BEMAppDelegate.h"/>
+    <header-file src="src/ios/Location/Constants.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/DataUtils.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/GeofenceActions.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/LocationTrackingConfig.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/TripDiaryActions.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/TripDiaryDelegate.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/TripDiaryStateMachine.h" target-dir="Location"/>
+    <header-file src="src/ios/Wrapper/Metadata.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/MotionActivity.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/SimpleLocation.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/TimeQuery.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/Transition.h" target-dir="Wrapper"/>
     <source-file src="src/ios/BEMDataCollection.m"/>
+    <source-file src="src/ios/BEMAppDelegate.m"/>
+    <source-file src="src/ios/Location/Constants.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/DataUtils.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/GeofenceActions.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/LocationTrackingConfig.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/TripDiaryActions.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/TripDiaryDelegate.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/TripDiaryStateMachine.m" target-dir="Location"/>
+    <source-file src="src/ios/Wrapper/Metadata.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/MotionActivity.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/SimpleLocation.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/TimeQuery.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/Transition.m" target-dir="Wrapper"/>
   </platform>
 </plugin>
