@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-@import CoreMotion;
+#import <CoreMotion/CoreMotion.h>
 
 @interface MotionActivity : NSObject
 

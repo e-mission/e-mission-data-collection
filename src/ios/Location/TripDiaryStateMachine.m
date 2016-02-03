@@ -12,7 +12,7 @@
 
 #import "LocalNotificationManager.h"
 
-#import "BuiltinUserCache.h"
+#import "BEMBuiltinUserCache.h"
 #import "Transition.h"
 
 #import "LocationTrackingConfig.h"

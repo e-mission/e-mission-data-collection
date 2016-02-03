@@ -10,7 +10,6 @@
 #import "TripDiaryStateMachine.h"
 #import "LocalNotificationManager.h"
 #import "DataUtils.h"
-#import "CommunicationHelper.h"
 #import "LocationTrackingConfig.h"
 #import "GeofenceActions.h"
 

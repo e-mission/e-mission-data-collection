@@ -11,11 +11,11 @@
 #import <objc/runtime.h>
 #import "DataUtils.h"
 #import "LocalNotificationManager.h"
-#import "BuiltinUserCache.h"
+#import "BEMBuiltinUserCache.h"
 #import "SimpleLocation.h"
 #import "TimeQuery.h"
 #import "MotionActivity.h"
-#import "CommunicationHelper.h"
+#import "BEMCommunicationHelper.h"
 #import "LocationTrackingConfig.h"
 
 @implementation DataUtils

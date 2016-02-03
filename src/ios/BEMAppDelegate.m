@@ -6,22 +6,34 @@
 //  Copyright (c) 2015 Kalyanaraman Shankari. All rights reserved.
 //
 
-#import "AppDelegate.h"
+#import "BEMAppDelegate.h"
 #import "LocalNotificationManager.h"
-#import "ConnectionSettings.h"
-#import "CommunicationHelper.h"
+#import "BEMConnectionSettings.h"
+#import "BEMServerSyncCommunicationHelper.h"
 #import "AuthCompletionHandler.h"
 #import "DataUtils.h"
 #import <Parse/Parse.h>
 
 typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 
-@interface AppDelegate () {
+@interface BEMAppDelegate () {
     SilentPushCompletionHandler _silentPushHandler;
 }
 @end
 
-@implementation AppDelegate
+@implementation BEMAppDelegate
+
+/*
+ * Note that it is possible that some of this can happen on startup init
+ * instead of every time the application is launched. But I am not sure which
+ * ones, and so far, we have always done everything when the application is
+ * launched. I am apprehensive that moving to startup init will break things in
+ * unexpected ways, specially while we are making a bunch of other changes
+ * anyway. So the current plan is that the code will be retained in here, this
+ * will be called from the delegate's didFinishLaunchingWithOptions method, and
+ * once we know that everything works, I can slowly move changes to
+ * startupInit, one by one.
+ */
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {

@@ -7,9 +7,8 @@
 //
 
 #import "TripDiaryDelegate.h"
-#import "ConnectionSettings.h"
 #import <Parse/Parse.h>
-#import "BuiltinUserCache.h"
+#import "BEMBuiltinUserCache.h"
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
 #import "LocalNotificationManager.h"

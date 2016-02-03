@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "TripDiaryStateMachine.h"
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface BEMAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 @property (strong, nonatomic) TripDiaryStateMachine *tripDiaryStateMachine;

@@ -7,7 +7,7 @@
 //
 
 #import "LocationTrackingConfig.h"
-@import CoreLocation;
+#import <CoreLocation/CoreLocation.h>
 
 #define kFiveMeters 5 // in meters
 #define kFifty_Meters 50 // in meters
