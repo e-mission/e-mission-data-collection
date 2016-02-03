@@ -19,12 +19,17 @@
     <clobbers target="cordova.plugins.BEMDataCollection" />
   </js-module>
 
+  <!--
+    Dependency checking on iOS does not work well - if the same dependency
+    exists in multiple files, it inserts them over and over and finally fails
+
   <dependency id="edu.berkeley.eecs.emission.cordova.unifiedlogger"
                 url="https://github.com/e-mission/cordova-unified-logger.git"/>
   <dependency id="edu.berkeley.eecs.emission.cordova.settings"
                 url="https://github.com/e-mission/cordova-connection-settings.git"/>
   <dependency id="edu.berkeley.eecs.emission.cordova.serversync"
                 url="https://github.com/e-mission/cordova-server-sync.git"/>
+  -->
 
   <platform name="android">
 
