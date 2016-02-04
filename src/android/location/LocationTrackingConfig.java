@@ -1,11 +1,11 @@
-package edu.berkeley.eecs.cfc_tracker.location;
+package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import android.content.Context;
 import android.location.Location;
 
 import com.google.android.gms.location.LocationRequest;
 
-import edu.berkeley.eecs.cfc_tracker.Constants;
+import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 
 /**
  * Created by shankari on 10/20/15.

@@ -1,10 +1,9 @@
-package edu.berkeley.eecs.cfc_tracker.sensors;
+package edu.berkeley.eecs.emission.cordova.tracker.sensors;
 
 import android.content.Context;
 
-import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 /**
  * Created by shankari on 7/8/15.

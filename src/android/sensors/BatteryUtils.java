@@ -1,4 +1,4 @@
-package edu.berkeley.eecs.cfc_tracker.sensors;
+package edu.berkeley.eecs.emission.cordova.tracker.sensors;
 
 import android.content.Context;
 import android.content.Intent;

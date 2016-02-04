@@ -1,22 +1,22 @@
-package edu.berkeley.eecs.cfc_tracker.location;
+package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 // import com.google.android.gms.location.LocationClient;
 
-import edu.berkeley.eecs.cfc_tracker.Constants;
-import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.sensors.PollSensorManager;
+import edu.berkeley.eecs.emission.cordova.tracker.Constants;
+import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.tracker.sensors.PollSensorManager;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
 
-import edu.berkeley.eecs.cfc_tracker.log.Log;
-import edu.berkeley.eecs.cfc_tracker.usercache.BuiltinUserCache;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
-import edu.berkeley.eecs.cfc_tracker.wrapper.SimpleLocation;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
 

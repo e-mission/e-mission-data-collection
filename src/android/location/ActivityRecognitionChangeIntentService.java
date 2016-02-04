@@ -1,19 +1,19 @@
-package edu.berkeley.eecs.cfc_tracker.location;
+package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import java.util.Arrays;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
-import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
-import edu.berkeley.eecs.cfc_tracker.R;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.R;
 
 import android.app.IntentService;
 import android.content.Intent;
 
-import edu.berkeley.eecs.cfc_tracker.log.Log;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCache;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 
 public class ActivityRecognitionChangeIntentService extends IntentService {

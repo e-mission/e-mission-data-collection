@@ -1,4 +1,4 @@
-package edu.berkeley.eecs.cfc_tracker;
+package edu.berkeley.eecs.emission.cordova.tracker;
 
 public final class Constants {
 	public static String LONGITUDE = "longitude";

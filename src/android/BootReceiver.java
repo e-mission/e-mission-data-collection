@@ -1,12 +1,13 @@
-package edu.berkeley.eecs.cfc_tracker;
+package edu.berkeley.eecs.emission.cordova.tracker;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import edu.berkeley.eecs.cfc_tracker.log.Log;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
-import edu.berkeley.eecs.cfc_tracker.wrapper.Transition;
+import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
 
 /*
  * Class that allows us to re-register the alarms when the phone is rebooted.

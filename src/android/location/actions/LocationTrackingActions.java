@@ -1,11 +1,11 @@
-package edu.berkeley.eecs.cfc_tracker.location.actions;
+package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-import edu.berkeley.eecs.cfc_tracker.location.LocationTrackingConfig;
-import edu.berkeley.eecs.cfc_tracker.log.Log;
+import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -14,8 +14,8 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import edu.berkeley.eecs.cfc_tracker.Constants;
-import edu.berkeley.eecs.cfc_tracker.location.LocationChangeIntentService;
+import edu.berkeley.eecs.emission.cordova.tracker.Constants;
+import edu.berkeley.eecs.emission.cordova.tracker.location.LocationChangeIntentService;
 
 /**
  * Created by shankari on 12/30/14.

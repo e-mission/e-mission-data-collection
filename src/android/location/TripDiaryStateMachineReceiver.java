@@ -1,4 +1,4 @@
-package edu.berkeley.eecs.cfc_tracker.location;
+package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.log.Log;
+import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 /*
  * The BroadcastReceiver is really lightweight because it is considered to be inactive once it

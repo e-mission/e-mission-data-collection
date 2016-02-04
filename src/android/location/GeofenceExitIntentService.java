@@ -1,13 +1,13 @@
-package edu.berkeley.eecs.cfc_tracker.location;
+package edu.berkeley.eecs.emission.cordova.tracker.location;
 
-import edu.berkeley.eecs.cfc_tracker.R;
+import edu.berkeley.eecs.emission.R;
 
 import android.app.IntentService;
 import android.content.Intent;
 
-import edu.berkeley.eecs.cfc_tracker.log.Log;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
-import edu.berkeley.eecs.cfc_tracker.wrapper.SimpleLocation;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;

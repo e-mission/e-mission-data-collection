@@ -1,4 +1,4 @@
-package edu.berkeley.eecs.cfc_tracker.location;
+package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import android.app.Service;
 import android.content.Context;
@@ -18,18 +18,17 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.LocationServices;
 
-import java.security.Provider;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.berkeley.eecs.cfc_tracker.NotificationHelper;
-import edu.berkeley.eecs.cfc_tracker.R;
-import edu.berkeley.eecs.cfc_tracker.location.actions.ActivityRecognitionActions;
-import edu.berkeley.eecs.cfc_tracker.location.actions.GeofenceActions;
-import edu.berkeley.eecs.cfc_tracker.location.actions.LocationTrackingActions;
-import edu.berkeley.eecs.cfc_tracker.log.Log;
-import edu.berkeley.eecs.cfc_tracker.usercache.UserCacheFactory;
-import edu.berkeley.eecs.cfc_tracker.wrapper.Transition;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
+import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
+import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
 
 /**
  * Created by shankari on 9/12/15.

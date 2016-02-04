@@ -1,4 +1,4 @@
-package edu.berkeley.eecs.cfc_tracker.wrapper;
+package edu.berkeley.eecs.emission.cordova.tracker.wrapper;
 
 import android.location.Location;
 
