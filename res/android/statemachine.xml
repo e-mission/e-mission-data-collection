@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--  Trip tracking machine states and transitions -->
+    <string name="state_start">local.state.start</string>
+    <string name="state_waiting_for_trip_start">local.state.waiting_for_trip_start</string>
+    <string name="state_ongoing_trip">local.state.ongoing_trip</string>
+
+    <string name="transition_initialize">local.transition.initialize</string>
+    <string name="transition_exited_geofence">local.transition.exited_geofence</string>
+    <string name="transition_stopped_moving">local.transition.stopped_moving</string>
+    <string name="transition_stop_tracking">local.transition.stop_tracking</string>
+<!--    <string name="transition_actions_started">local.transition.actions_started</string>
+    <string name="transition_actions_complete">local.transition.actions_complete</string> -->
+
+    <string name="broadcast_extra_key_old_state">broadcast.extra.key.old_state</string>
+    <string name="broadcast_extra_key_new_state">broadcast.extra.key.new_state</string>
+</resources>
