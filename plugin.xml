@@ -55,28 +55,38 @@
                 </action>
             </intent-filter>
         </receiver>
+        <receiver
+            android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="local.transition.initialize"></action>
+                <action android:name="local.transition.exited_geofence"></action>
+                <action android:name="local.transition.stopped_moving"></action>
+                <action android:name="local.transition.stop_tracking"></action>
+            </intent-filter>
+        </receiver>
         <service
-		    android:name="edu.berkeley.eecs.cfc_tracker.location.ActivityRecognitionChangeIntentService"
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService"
 		    android:enabled="true" 
 		    android:exported="false">
 		</service>
         <service
-            android:name="edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineService"
+            android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService"
             android:enabled="true"
             android:exported="false">
         </service>
         <service
-            android:name="edu.berkeley.eecs.cfc_tracker.location.TripDiaryStateMachineServiceOngoing"
+            android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineServiceOngoing"
             android:enabled="true"
             android:exported="false">
         </service>
         <service
-		    android:name="edu.berkeley.eecs.cfc_tracker.location.GeofenceExitIntentService"
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService"
 		    android:enabled="true" 
 		    android:exported="false">
 		</service>
 		<service 
-		    android:name="edu.berkeley.eecs.cfc_tracker.location.LocationChangeIntentService"
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.LocationChangeIntentService"
 		    android:enabled="true" 
 		    android:exported="false">
 		</service>
