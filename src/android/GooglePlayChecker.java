@@ -1,9 +1,15 @@
 package edu.berkeley.eecs.emission.cordova.tracker;
 
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.DialogFragment;
+import android.content.Intent;
+import android.os.Bundle;
+
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.ConnectionResult;
 
-import edu.berkeley.eecs.cfc_tracker.log.Log;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 /*
  * This code is supposed to ensure that google play services is enabled, and to
@@ -17,16 +23,18 @@ import edu.berkeley.eecs.cfc_tracker.log.Log;
 public class GooglePlayChecker {
   private static final String TAG = "GooglePlayChecker";
   private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+  private Activity myActivity;
 
   public boolean servicesConnected(Activity activity) {
+      myActivity = activity;
       // Check that Google Play services is available
       int resultCode =
               GooglePlayServicesUtil.
-                      isGooglePlayServicesAvailable(this);
+                      isGooglePlayServicesAvailable(activity);
       // If Google Play services is available
       if (ConnectionResult.SUCCESS == resultCode) {
           // In debug mode, log the status
-          Log.d(this,
+          Log.d(activity,
                   TAG, "Google Play services is available.");
           // Continue
           return true;
@@ -49,7 +57,7 @@ public class GooglePlayChecker {
               // Set the dialog in the DialogFragment
               errorFragment.setDialog(errorDialog);
               // Show the error dialog in the DialogFragment
-              errorFragment.show(getFragmentManager(),
+              errorFragment.show(activity.getFragmentManager(),
                       "Location Updates");
               return false;
           }
@@ -76,16 +84,15 @@ public class GooglePlayChecker {
       }
   }
 
-    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.d(cordova.getActivity(), "TAG, requestCode = "+requestCode+" resultCode = "+resultCode);
+        Log.d(myActivity, "TAG", "requestCode = "+requestCode+" resultCode = "+resultCode);
         if (requestCode == CONNECTION_FAILURE_RESOLUTION_REQUEST) {
           /*
            * If the result code is Activity.RESULT_OK, try
            * to connect again
            */
             if (resultCode == Activity.RESULT_OK) {
-                servicesConnected();
+                servicesConnected(myActivity);
             }
         }
     }
