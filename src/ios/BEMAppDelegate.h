@@ -8,11 +8,20 @@
 
 #import <UIKit/UIKit.h>
 #import "TripDiaryStateMachine.h"
+#import "AppDelegate.h"
 
-@interface BEMAppDelegate : UIResponder <UIApplicationDelegate>
+typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 
-@property (strong, nonatomic) UIWindow *window;
-@property (strong, nonatomic) TripDiaryStateMachine *tripDiaryStateMachine;
+@interface AppDelegate (notification)
+
+@property (retain, nonatomic) TripDiaryStateMachine *tripDiaryStateMachine;
+@property (retain, nonatomic) SilentPushCompletionHandler silentPushHandler;
+
+- (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:( void (^)(UIBackgroundFetchResult))completionHandler;
+- (void)applicationDidBecomeActive:(UIApplication *)application;
 
 @end
 

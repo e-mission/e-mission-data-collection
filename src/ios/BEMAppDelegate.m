@@ -13,15 +13,44 @@
 #import "AuthCompletionHandler.h"
 #import "DataUtils.h"
 #import <Parse/Parse.h>
+#import <objc/runtime.h>
 
-typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
+static char tripDiaryKey;
+static char silentPushNotificationHandlerKey;
 
-@interface BEMAppDelegate () {
-    SilentPushCompletionHandler _silentPushHandler;
+@implementation AppDelegate (notification)
+
+// its dangerous to override a method from within a category.
+// Instead we will use method swizzling. we set this up in the load call.
++ (void)load
+{
+    Method original, swizzled;
+
+    original = class_getInstanceMethod(self, @selector(init));
+    swizzled = class_getInstanceMethod(self, @selector(swizzled_init));
+    method_exchangeImplementations(original, swizzled);
 }
-@end
 
-@implementation BEMAppDelegate
+- (AppDelegate *)swizzled_init
+{
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(createNotificationChecker:)
+                                                 name:@"UIApplicationDidFinishLaunchingNotification" object:nil];
+
+    // This actually calls the original init method over in AppDelegate. Equivilent to calling super
+    // on an overrided method, this is not recursive, although it appears that way. neat huh?
+    return [self swizzled_init];
+}
+
+// This code will be called immediately after application:didFinishLaunchingWithOptions:. We need
+// to process notifications in cold-start situations
+- (void)createNotificationChecker:(NSNotification *)notification
+{
+    if (notification)
+    {
+        NSDictionary *launchOptions = [notification userInfo];
+            [self didFinishLaunchingWithOptions:launchOptions];
+        }
+    }
 
 /*
  * Note that it is possible that some of this can happen on startup init
@@ -35,8 +64,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
  * startupInit, one by one.
  */
 
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+- (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL relaunchLocationMgr = NO;
     if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -48,11 +76,11 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
         
     }
     
-    if (_tripDiaryStateMachine == NULL || relaunchLocationMgr) {
+    if (self.tripDiaryStateMachine == NULL || relaunchLocationMgr) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"tripDiaryStateMachine = %@, relaunchLocationManager = %@, recreating the state machine",
-              _tripDiaryStateMachine, @(relaunchLocationMgr)]];
-        _tripDiaryStateMachine = [[TripDiaryStateMachine alloc] initRelaunchLocationManager:relaunchLocationMgr];
-        [_tripDiaryStateMachine registerForNotifications];
+              self.tripDiaryStateMachine, @(relaunchLocationMgr)]];
+        self.tripDiaryStateMachine = [[TripDiaryStateMachine alloc] initRelaunchLocationManager:relaunchLocationMgr];
+        [self.tripDiaryStateMachine registerForNotifications];
     }
     
     [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
@@ -83,7 +111,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 }
 
 - (void)handleNotifications:(NSNotification*)note {
-    if (_silentPushHandler != nil) {
+    if (self.silentPushHandler != nil) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Received notification %@ while processing silent push notification", note.object]];
         // we only care about notifications when we are processing a silent remote push notification
@@ -98,7 +126,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
             // One option is that the state machine wants to ignore it, possibly because it is not in ONGOING STATE
             // Let us assume that we will return NOP in that case
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Trip diary state machine ignored the silent push"]];
-            _silentPushHandler(UIBackgroundFetchResultNewData);
+            self.silentPushHandler(UIBackgroundFetchResultNewData);
         } else if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
             // Otherwise, if it is in OngoingTrip, it will try to see whether the trip has ended. If it hasn't,
             // let us assume that we will return a NOP, which is already handled.
@@ -115,7 +143,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                                @"Returning with fetch result = new data"]
                                                        showUI:TRUE];
-                    _silentPushHandler(UIBackgroundFetchResultNewData);
+                    self.silentPushHandler(UIBackgroundFetchResultNewData);
                 } else {
                     /*
                      * We always return "new data", even if there was no data, because there is some evidence
@@ -125,16 +153,16 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                                @"Sent no data, but Returning with fetch result = new data"]
                                                        showUI:TRUE];
-                    _silentPushHandler(UIBackgroundFetchResultNoData);
+                    self.silentPushHandler(UIBackgroundFetchResultNoData);
                 }
             }];
         } else if ([note.object isEqualToString:CFCTransitionTripRestarted]) {
             // The other option from TripEndDetected is that the trip is restarted instead of ended.
             // In that case, we still want to finish the handler
-            _silentPushHandler(UIBackgroundFetchResultNewData);
+            self.silentPushHandler(UIBackgroundFetchResultNewData);
         } else {
             // Some random transition. Might as well call the handler and return
-            _silentPushHandler(UIBackgroundFetchResultNewData);
+            self.silentPushHandler(UIBackgroundFetchResultNewData);
         }
         // TODO: Figure out whether we should set it to NULL here or whether parts of
         // the system will still try to access the handler.
@@ -167,7 +195,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                                        showUI:TRUE];
     NSLog(@"About to check whether a trip has ended");
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush];
-    _silentPushHandler = completionHandler;
+    self.silentPushHandler = completionHandler;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
@@ -207,5 +235,35 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
                                            showUI:TRUE];
     }];
 }
+
+// The accessors use an Associative Reference since you can't define a iVar in a category
+// http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/Chapters/ocAssociativeReferences.html
+- (TripDiaryStateMachine *)tripDiaryStateMachine
+{
+    return objc_getAssociatedObject(self, &tripDiaryKey);
+}
+
+- (void)setTripDiaryStateMachine:(TripDiaryStateMachine *)tripDiaryStateMachine
+{
+    objc_setAssociatedObject(self, &tripDiaryKey, tripDiaryStateMachine, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (SilentPushCompletionHandler) silentPushHandler
+{
+    return objc_getAssociatedObject(self, &silentPushNotificationHandlerKey);
+}
+
+- (void)setSilentPushHandler:(SilentPushCompletionHandler)silentPushHandler
+{
+    objc_setAssociatedObject(self, &tripDiaryKey, silentPushHandler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+
+- (void)dealloc
+{
+    self.tripDiaryStateMachine = nil; // clear the association and release the object
+    self.silentPushHandler = nil;
+}
+
 
 @end
