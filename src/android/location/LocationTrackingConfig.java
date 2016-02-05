@@ -24,7 +24,7 @@ public class LocationTrackingConfig {
     }
 
     public boolean isDutyCycling() {
-        return false;
+        return true;
     }
 
     public int getDetectionInterval() {
