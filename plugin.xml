@@ -126,6 +126,14 @@
       </feature>
     </config-file>
 
+    <config-file target="*-Info.plist" parent="UIBackgroundModes">
+        <array>
+           <string>remote-notification</string>
+           <string>location</string>
+           <string>fetch</string>
+        </array>
+    </config-file>
+
     <framework src="src/ios/frameworks/Parse.framework" custom="true" />
     <framework src="src/ios/frameworks/Bolts.framework" custom="true" />
 
