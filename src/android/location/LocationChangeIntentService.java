@@ -100,9 +100,10 @@ public class LocationChangeIntentService extends IntentService {
 		 * sure that the algorithm is correct. So we store both the raw location and the filtered
 		 * location and use the filtered location for our calculations.
 		 */
+        int pointsToQuery = FIVE_MINUTES_IN_SEC * 1000 / LocationTrackingConfig.getConfig(this).getDetectionInterval();
+        Log.d(this, TAG, "Finding the last "+pointsToQuery+" points");
 
-        SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location,
-				FIVE_MINUTES_IN_SEC / LocationTrackingConfig.getConfig(this).getDetectionInterval(), SimpleLocation.class);
+        SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location, pointsToQuery , SimpleLocation.class);
 
         double nowSecs = ((double)System.currentTimeMillis())/1000;
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
