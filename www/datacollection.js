@@ -33,6 +33,15 @@ var DataCollection = {
     },
     getConfig: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "getConfig", []);
+    },
+    forceTripStart: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "forceTripStart", []);
+    },
+    forceTripEnd: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "forceTripEnd", []);
+    },
+    forceRemotePush: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "forceRemotePush", []);
     }
 }
 
