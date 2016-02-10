@@ -34,6 +34,9 @@ var DataCollection = {
     getConfig: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "getConfig", []);
     },
+    getState: function (successCallback, errorCallback) {
+        exec(successCallback, errorCallback, "DataCollection", "getState", []);
+    },
     forceTripStart: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "forceTripStart", []);
     },

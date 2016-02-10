@@ -73,6 +73,28 @@
     }
 }
 
+- (void)getState:(CDVInvokedUrlCommand *)command
+{
+    NSString* callbackId = [command callbackId];
+    
+    @try {
+        LocationTrackingConfig* cfg = [LocationTrackingConfig instance];
+        NSString* stateName = [TripDiaryStateMachine getStateName:tdsm.currState];
+        TripDiaryStateMachine* tdsm = [UIApplication sharedApplication].delegate.tripDiaryStateMachine;
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK
+                                   messageAsString:stateName];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
 - (void)forceTripStart:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = [command callbackId];
