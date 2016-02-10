@@ -194,8 +194,9 @@ static char silentPushNotificationHandlerKey;
                                                @"Received remote push, about to check whether a trip has ended"]
                                        showUI:TRUE];
     NSLog(@"About to check whether a trip has ended");
-    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush];
     self.silentPushHandler = completionHandler;
+    NSLog(@"After setting the silent push handler, we have %@", self.silentPushHandler);
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
@@ -255,7 +256,7 @@ static char silentPushNotificationHandlerKey;
 
 - (void)setSilentPushHandler:(SilentPushCompletionHandler)silentPushHandler
 {
-    objc_setAssociatedObject(self, &tripDiaryKey, silentPushHandler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, &silentPushNotificationHandlerKey, silentPushHandler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 

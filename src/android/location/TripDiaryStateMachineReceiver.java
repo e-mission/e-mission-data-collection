@@ -29,9 +29,6 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 	public static Set<String> validTransitions = null;
 	private static String TAG = "TripDiaryStateMachineReceiver";
 
-    // Can remove this if we can remove the constructor with the Context argument.
-    private static String CURR_STATE_KEY = "TripDiaryCurrState";
-
     public TripDiaryStateMachineReceiver() {
         // The automatically created receiver needs a default constructor
         android.util.Log.i(TAG, "noarg constructor called");
@@ -44,7 +41,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         // Oh wait, is this the call from the activity?
         // Need to investigate and unify
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-        editor.putString(CURR_STATE_KEY, null);
+        editor.putString(context.getString(R.string.curr_state_key), null);
         editor.apply();
     }
 

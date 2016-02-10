@@ -15,7 +15,7 @@ typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
 @interface AppDelegate (notification)
 
 @property (retain, nonatomic) TripDiaryStateMachine *tripDiaryStateMachine;
-@property (retain, nonatomic) SilentPushCompletionHandler silentPushHandler;
+@property (copy, nonatomic) SilentPushCompletionHandler silentPushHandler;
 
 - (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;

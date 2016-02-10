@@ -14,4 +14,5 @@
 
     <string name="broadcast_extra_key_old_state">broadcast.extra.key.old_state</string>
     <string name="broadcast_extra_key_new_state">broadcast.extra.key.new_state</string>
+    <string name="curr_state_key">TripDiaryCurrState</string>
 </resources>
