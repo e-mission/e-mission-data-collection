@@ -78,9 +78,11 @@
     NSString* callbackId = [command callbackId];
     
     @try {
-        LocationTrackingConfig* cfg = [LocationTrackingConfig instance];
-        NSString* stateName = [TripDiaryStateMachine getStateName:tdsm.currState];
+        /*
         TripDiaryStateMachine* tdsm = [UIApplication sharedApplication].delegate.tripDiaryStateMachine;
+        NSString* stateName = [TripDiaryStateMachine getStateName:tdsm.currState];
+         */
+        NSString* stateName = @"NOT IMPLEMENTED YET";
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK
                                    messageAsString:stateName];
