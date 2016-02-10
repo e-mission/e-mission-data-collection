@@ -38,8 +38,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     public static String TAG = "TripDiaryStateMachineService";
 
-    private static String CURR_STATE_KEY = "TripDiaryCurrState";
-
     private static int STATE_IN_NUMBERS = 78283;
 
     /*
@@ -81,7 +79,8 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         }
         mTransition = intent.getAction();
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        mCurrState = mPrefs.getString(CURR_STATE_KEY, this.getString(R.string.state_start));
+        mCurrState = mPrefs.getString(this.getString(R.string.state_curr_state_key),
+            this.getString(R.string.state_start));
         Log.d(this, TAG, "after reading from the prefs, the current state is "+mCurrState);
         UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_transition,
                 new Transition(mCurrState, mTransition));
