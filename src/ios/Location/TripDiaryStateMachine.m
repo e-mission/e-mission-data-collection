@@ -127,8 +127,9 @@ static NSString * const kCurrState = @"CURR_STATE";
     // Register for notifications related to the state machine
     if ([LocationTrackingConfig instance].isDutyCycling) {
         // Only if we are using geofencing
-        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil         usingBlock:^(NSNotification* note) {
-            [self handleTransition:(NSString*)note.object];
+        [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil
+                                                      usingBlock:^(NSNotification* note) {
+            [self handleTransition:(NSString*)note.object withUserInfo:note.userInfo];
         }];
     }
 }
@@ -152,7 +153,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
--(void)handleTransition:(NSString*) transition {
+-(void)handleTransition:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     self.currState = [defaults integerForKey:kCurrState];
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -165,11 +166,11 @@ static NSString * const kCurrState = @"CURR_STATE";
     [[BuiltinUserCache database] putMessage:@"key.usercache.transition" value:transitionWrapper];
     
     if (self.currState == kStartState) {
-        [self handleStart:transition];
+        [self handleStart:transition withUserInfo:userInfo];
     } else if (self.currState == kWaitingForTripStartState) {
-        [self handleWaitingForTripStart:transition];
+        [self handleWaitingForTripStart:transition withUserInfo:userInfo];
     } else if (self.currState == kOngoingTripState) {
-        [self handleOngoingTrip:transition];
+        [self handleOngoingTrip:transition withUserInfo:userInfo];
     } else {
         NSLog(@"Ignoring invalid transition %@ in state %@", transition,
               [TripDiaryStateMachine getStateName:self.currState]);
@@ -197,7 +198,7 @@ static NSString * const kCurrState = @"CURR_STATE";
  * In that callback, we set up the geofence.
  
  */
--(void) handleStart:(NSString*) transition {
+-(void) handleStart:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
     // If we are already in the start state, there's nothing much that we need
     // to do, except if we are initialized
     if ([transition isEqualToString:CFCTransitionInitialize]) {
@@ -230,7 +231,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
-- (void) handleWaitingForTripStart:(NSString*) transition {
+- (void) handleWaitingForTripStart:(NSString*) transition  withUserInfo:(NSDictionary*) userInfo {
     /* If we delete the geofence, and we are using the more fine grained location detection mode, then we won't be relaunched if the app is terminated. "The standard location service ... does not relaunch iOS apps that have been terminated. And it looks like apps need not be terminated on reboot, they can also be terminated as part of normal OS operation. The system may still terminate the app at any time to reclaim its memory or other resources."
      
         However, it turns out that keeping the geofence around is not good enough because iOS does not assume that we start within the geofence. So it won't restart until it detects an actual in -> out transition, which will only happen again when we visit the start of the trip. So let's delete the geofence and start both types of location services.
@@ -247,7 +248,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         [self setState:kOngoingTripState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         // Let's push any pending changes since we know that the trip has ended
-        [TripDiaryActions pushTripToServer];
+        SilentPushCompletionHandler handler = [userInfo objectForKey:@"handler"];
+        [TripDiaryActions pushTripToServer:handler];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionNOP];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
@@ -261,7 +263,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
-- (void) handleOngoingTrip:(NSString*) transition {
+- (void) handleOngoingTrip:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
     if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         if ([TripDiaryActions hasTripEnded]) {
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName

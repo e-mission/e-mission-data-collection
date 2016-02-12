@@ -11,6 +11,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import "TripDiaryStateMachine.h"
 #import "GeofenceActions.h"
+#import "BEMServerSyncCommunicationHelper.h"
 
 #define kCurrGeofenceID @"STATIONARY_GEOFENCE_LOCATION"
 
@@ -36,6 +37,6 @@
 
 + (BOOL)hasTripEnded;
 
-+ (void) pushTripToServer;
++ (void) pushTripToServer:(SilentPushCompletionHandler)completionHandler;
 
 @end
