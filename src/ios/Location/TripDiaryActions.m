@@ -9,9 +9,9 @@
 #import "TripDiaryActions.h"
 #import "TripDiaryStateMachine.h"
 #import "LocalNotificationManager.h"
-#import "DataUtils.h"
 #import "LocationTrackingConfig.h"
 #import "GeofenceActions.h"
+#import "DataUtils.h"
 
 
 @implementation TripDiaryActions
@@ -206,16 +206,17 @@
     return [DataUtils hasTripEnded:[LocationTrackingConfig instance].tripEndStationaryMins];
 }
 
-+ (void) pushTripToServer {
-    [DataUtils pushAndClearData:^(BOOL status) {
-        NSLog(@"pushAndClearData was successful in pushTripToServer");
++ (void) pushTripToServer:(SilentPushCompletionHandler)completionHandler {
+    if (completionHandler == NULL) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"no completion handler provided, using a dummy one"]];
+        [BEMServerSyncCommunicationHelper backgroundSync:^(UIBackgroundFetchResult fetchResult) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"dummy completion handler invoked with %lu, this will NOT invoke the OS handler", fetchResult]];
     }];
-    /*
-    UIApplication *theApp = [UIApplication sharedApplication];
-    [theApp.delegate application:theApp performFetchWithCompletionHandler:^(UIBackgroundFetchResult result) {
-        NSLog(@"Completion handler result = %u", result);
-    }];
-     */
+    } else {
+        [BEMServerSyncCommunicationHelper backgroundSync:completionHandler];
+    }
 }
 
 

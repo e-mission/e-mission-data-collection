@@ -27,6 +27,6 @@
 
 + (NSArray*) getLastPoints:(int) nPoints;
 + (BOOL)hasTripEnded:(int)tripEndThresholdMins;
-+ (void) pushAndClearData:(void (^)(BOOL))completionHandler;
+// + (void) pushAndClearData:(void (^)(BOOL))completionHandler;
 
 @end

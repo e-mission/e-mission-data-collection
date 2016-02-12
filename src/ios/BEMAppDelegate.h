@@ -9,8 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "TripDiaryStateMachine.h"
 #import "AppDelegate.h"
-
-typedef void (^SilentPushCompletionHandler)(UIBackgroundFetchResult);
+#import "BEMServerSyncCommunicationHelper.h"
 
 @interface AppDelegate (notification)
 

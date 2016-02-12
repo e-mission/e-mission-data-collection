@@ -246,6 +246,8 @@
     return strToSend;
 }
 
+#if FALSE
+
 + (void) pushAndClearData:(void (^)(BOOL))completionHandler {
     /*
      * In iOS, we can only sign up for activity updates when the app is in the foreground
@@ -361,5 +363,6 @@
 + (void) deleteAllEntries {
     [[BuiltinUserCache database] clear];
 }
+#endif
 
 @end

@@ -9,7 +9,6 @@
 #import "BEMAppDelegate.h"
 #import "LocalNotificationManager.h"
 #import "BEMConnectionSettings.h"
-#import "BEMServerSyncCommunicationHelper.h"
 #import "AuthCompletionHandler.h"
 #import "DataUtils.h"
 #import <Parse/Parse.h>
@@ -137,7 +136,7 @@ static char silentPushNotificationHandlerKey;
                                                        @"Detected trip end, waiting until geofence is created to return from silent push"]];
         } else if ([note.object isEqualToString:CFCTransitionTripEnded]) {
             // Trip has now ended, so we can push and clear data
-            [DataUtils pushAndClearData:^(BOOL status) {
+            [BEMServerSyncCommunicationHelper pushAndClearUserCache:^(BOOL status) {
                 // We only ever call this with true right now
                 if (status == true) {
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -179,12 +178,21 @@ static char silentPushNotificationHandlerKey;
     // Store the deviceToken in the current installation and save it to Parse.
     PFInstallation *currentInstallation = [PFInstallation currentInstallation];
     [currentInstallation setDeviceTokenFromData:deviceToken];
-    [currentInstallation saveInBackground];
+    [currentInstallation saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
+        if (succeeded) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Successfully registered remote push notifications with parse"]];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Error %@ while registering for remote push notifications with parse", error.description] showUI:TRUE];
+        }
+    }];
 }
 
 - (void)application:(UIApplication *)application
                     didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    NSLog(@"Failed to register for remote notifications with error %@", error);
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Failed to register for remote push notifications with APN %@", error.description] showUI:TRUE];
 }
 
 - (void)application:(UIApplication *)application
@@ -196,7 +204,8 @@ static char silentPushNotificationHandlerKey;
     NSLog(@"About to check whether a trip has ended");
     self.silentPushHandler = completionHandler;
     NSLog(@"After setting the silent push handler, we have %@", self.silentPushHandler);
-    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush];
+    NSDictionary* localUserInfo = @{@"handler": completionHandler};
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
@@ -230,10 +239,11 @@ static char silentPushNotificationHandlerKey;
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     NSLog(@"performFetchWithCompletionHandler called at %@", [NSDate date]);
-    [DataUtils pushAndClearData:^(BOOL status) {
+    [BEMServerSyncCommunicationHelper backgroundSync:^(UIBackgroundFetchResult fetchResult) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"in background fetch, finished pushing entries to the server"]
                                            showUI:TRUE];
+        completionHandler(fetchResult);
     }];
 }
 
