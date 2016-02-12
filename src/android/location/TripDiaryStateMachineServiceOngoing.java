@@ -79,7 +79,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         }
         mTransition = intent.getAction();
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        mCurrState = mPrefs.getString(this.getString(R.string.state_curr_state_key),
+        mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
             this.getString(R.string.state_start));
         Log.d(this, TAG, "after reading from the prefs, the current state is "+mCurrState);
         UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_transition,
@@ -133,18 +133,18 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
 
     public static String getState(Context ctxt) {
         SharedPreferences sPrefs = PreferenceManager.getDefaultSharedPreferences(ctxt);
-        return sPrefs.getString(CURR_STATE_KEY, ctxt.getString(R.string.state_start));
+        return sPrefs.getString(ctxt.getString(R.string.curr_state_key), ctxt.getString(R.string.state_start));
     }
 
     public void setNewState(String newState) {
         Log.d(this, TAG, "newState after handling action is "+newState);
         SharedPreferences.Editor prefsEditor =
                 PreferenceManager.getDefaultSharedPreferences(this).edit();
-        prefsEditor.putString(CURR_STATE_KEY, newState);
+        prefsEditor.putString(this.getString(R.string.curr_state_key), newState);
         prefsEditor.commit();
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
-                        CURR_STATE_KEY, "not found"));
+                        this.getString(R.string.curr_state_key), "not found"));
         stopSelf();
     }
 
