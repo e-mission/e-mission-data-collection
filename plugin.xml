@@ -36,6 +36,7 @@
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="DataCollection">
         <param name="android-package" value="edu.berkeley.eecs.emission.cordova.tracker.DataCollectionPlugin"/>
+        <param name="onload" value="true"/>
       </feature>
     </config-file>
 
@@ -123,6 +124,7 @@
     <config-file target="config.xml" parent="/*">
       <feature name="DataCollection">
         <param name="ios-package" value="BEMDataCollection" />
+        <param name="onload" value="true"/>
       </feature>
     </config-file>
 
