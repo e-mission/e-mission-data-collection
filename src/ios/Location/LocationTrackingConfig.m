@@ -34,11 +34,11 @@ static LocationTrackingConfig *_instance;
 }
 
 - (double)accuracy {
-    return kCLLocationAccuracyHundredMeters;
+    return kCLLocationAccuracyBest;
 }
 
 - (int)filterDistance {
-    return kHundred_Meters;
+    return kFifty_Meters;
 }
 
 - (int)geofenceRadius {
