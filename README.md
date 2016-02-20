@@ -10,7 +10,7 @@ location, and the built-in activity recognition for segmentation.
 
 ## Instructions ##
 This is currently a cordova plugin. This means that although the change is made
-here, in the plugin, you need to test using the e-mission-phone code, which
+here, in the plugin, you need to test using the [e-mission-phone](https://github.com/e-mission/e-mission-phone) code, which
 uses the plugin.
 
 ### Cross-platform development, principled ###
@@ -38,6 +38,6 @@ the IDE for the appropriate platform.
 * This project is intended to be built with [Android Studio](https://developer.android.com/sdk/index.html) 
 * Open `~/e-mission/e-mission-phone/platforms/android/build.gradle` to start working on the project
 
-### iOS ###
+#### iOS ###
 * This project is intended to be built with XCode
-* Open the `platforms/ios/emission.xcodeproj` to start working on the project
+* Open the `~/e-mission/e-mission-phone/platforms/ios/emission.xcodeproj` to start working on the project
