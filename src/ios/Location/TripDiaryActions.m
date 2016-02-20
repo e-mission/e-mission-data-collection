@@ -206,17 +206,8 @@
     return [DataUtils hasTripEnded:[LocationTrackingConfig instance].tripEndStationaryMins];
 }
 
-+ (void) pushTripToServer:(SilentPushCompletionHandler)completionHandler {
-    if (completionHandler == NULL) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"no completion handler provided, using a dummy one"]];
-        [BEMServerSyncCommunicationHelper backgroundSync:^(UIBackgroundFetchResult fetchResult) {
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"dummy completion handler invoked with %lu, this will NOT invoke the OS handler", fetchResult]];
-    }];
-    } else {
-        [BEMServerSyncCommunicationHelper backgroundSync:completionHandler];
-    }
++ (BFTask*) pushTripToServer {
+    return [BEMServerSyncCommunicationHelper backgroundSync];
 }
 
 

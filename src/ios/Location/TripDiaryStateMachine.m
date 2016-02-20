@@ -248,10 +248,18 @@ static NSString * const kCurrState = @"CURR_STATE";
         [self setState:kOngoingTripState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         // Let's push any pending changes since we know that the trip has ended
-        SilentPushCompletionHandler handler = [userInfo objectForKey:@"handler"];
-        [TripDiaryActions pushTripToServer:handler];
+        // SilentPushCompletionHandler handler = [userInfo objectForKey:@"handler"];
+        [[TripDiaryActions pushTripToServer] continueWithBlock:^id(BFTask *task) {
+            // When we send the NOP, the AppDelegate listener will mark the sync as complete
+            // if we mark it as complete here and there, then iOS crashes because of
+            // but we can't stop marking it as complete there because we need to handle the other NOP cases
+            // for e.g. silent push during an ongoing trip. We could send a different notification here, but
+            // that will make the state machine even more complex than it currently instead.
+            // So instead, we send the NOP after the push is complete. Two birds with one stone!
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionNOP];
+            return nil;
+        }];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {

@@ -136,24 +136,12 @@ static char silentPushNotificationHandlerKey;
                                                        @"Detected trip end, waiting until geofence is created to return from silent push"]];
         } else if ([note.object isEqualToString:CFCTransitionTripEnded]) {
             // Trip has now ended, so we can push and clear data
-            [BEMServerSyncCommunicationHelper pushAndClearUserCache:^(BOOL status) {
-                // We only ever call this with true right now
-                if (status == true) {
+            [[BEMServerSyncCommunicationHelper pushAndClearUserCache] continueWithBlock:^id(BFTask *task) {
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                                @"Returning with fetch result = new data"]
                                                        showUI:TRUE];
                     self.silentPushHandler(UIBackgroundFetchResultNewData);
-                } else {
-                    /*
-                     * We always return "new data", even if there was no data, because there is some evidence
-                     * that returning "no data" may cause the app to be killed while returning "new data" might not.
-                     * https://github.com/e-mission/e-mission-data-collection/issues/70
-                     */
-                    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                               @"Sent no data, but Returning with fetch result = new data"]
-                                                       showUI:TRUE];
-                    self.silentPushHandler(UIBackgroundFetchResultNoData);
-                }
+                return nil;
             }];
         } else if ([note.object isEqualToString:CFCTransitionTripRestarted]) {
             // The other option from TripEndDetected is that the trip is restarted instead of ended.
@@ -239,11 +227,12 @@ static char silentPushNotificationHandlerKey;
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     NSLog(@"performFetchWithCompletionHandler called at %@", [NSDate date]);
-    [BEMServerSyncCommunicationHelper backgroundSync:^(UIBackgroundFetchResult fetchResult) {
+    [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"in background fetch, finished pushing entries to the server"]
                                            showUI:TRUE];
-        completionHandler(fetchResult);
+        completionHandler(UIBackgroundFetchResultNewData);
+        return nil;
     }];
 }
 

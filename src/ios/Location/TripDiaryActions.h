@@ -37,6 +37,6 @@
 
 + (BOOL)hasTripEnded;
 
-+ (void) pushTripToServer:(SilentPushCompletionHandler)completionHandler;
++ (BFTask*) pushTripToServer;
 
 @end
