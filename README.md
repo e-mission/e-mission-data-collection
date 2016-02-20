@@ -10,7 +10,7 @@ location, and the built-in activity recognition for segmentation.
 
 ## Instructions ##
 This is currently a cordova plugin. This means that although the change is made
-here, in the plugin, you need to test using the e-mission-phone code, which
+here, in the plugin, you need to test using the [e-mission-phone](https://github.com/e-mission/e-mission-phone) code, which
 uses the plugin.
 
 ### Cross-platform development, principled ###
@@ -29,15 +29,9 @@ While the above way is principled, it is very slow. A faster approach is to use
 the IDE for the appropriate platform.
 
 1. Run the e-mission-phone code once so that it generates all the project files
-1. Open the project in the IDE for the appropriate native code (see below)
+1. Open the project in the IDE for the appropriate native platform
+  2. <b>Android</b>: Open `~/e-mission/e-mission-phone/platforms/android/build.gradle` using [Android Studio](https://developer.android.com/sdk/index.html)
+  3. <b>iOS</b>: Open `~/e-mission/e-mission-phone/platforms/ios/emission.xcodeproj` using XCode
 1. make all the change to native code in the IDE and test them, and 
 1. copy all the changes from `~/e-mission/e-mission/phone/platforms/android/src/edu/berkeley/eecs/emission/cordova/tracker` -> `~/e-mission/e-mission-data-collection/src/android`, and
 1. finally check in the changes back into this repo from the `~/e-mission/e-mission-data-collection` directory.
-
-#### Android ####
-* This project is intended to be built with [Android Studio](https://developer.android.com/sdk/index.html) 
-* Open `~/e-mission/e-mission-phone/platforms/android/build.gradle` to start working on the project
-
-### iOS ###
-* This project is intended to be built with XCode
-* Open the `platforms/ios/emission.xcodeproj` to start working on the project
