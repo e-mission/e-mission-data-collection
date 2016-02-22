@@ -15,7 +15,8 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationRequest;
 
-import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.*;
+import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
@@ -31,7 +32,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
             Log.d(myActivity, TAG, "google play services available, initializing state machine");
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(myActivity);
             System.out.println("All preferences are "+sp.getAll());
-            if(!sp.getBoolean(SETUP_COMPLETE_KEY, false)) {
+            int currentCompleteVersion = sp.getInt(SETUP_COMPLETE_KEY, 0);
+            if(currentCompleteVersion != BuildConfig.VERSION_CODE) {
                 Log.d(myActivity, TAG, "Setup not complete, sending initialize");
                 myActivity.sendBroadcast(new Intent(myActivity.getString(R.string.transition_initialize)));
                 SharedPreferences.Editor prefsEditor = sp.edit();
@@ -39,7 +41,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 // However, it looks like it doesn't actually work - it looks like the app preferences plugin
                 // saves to local storage by default. Need to debug the app preferences plugin and maybe ask
                 // some questions of the maintainer. For now, setting it here for the first time should be fine.
-                prefsEditor.putBoolean(SETUP_COMPLETE_KEY, true);
+                prefsEditor.putInt(SETUP_COMPLETE_KEY, BuildConfig.VERSION_CODE);
                 prefsEditor.commit();
             } else {
                 Log.d(myActivity, TAG, "Setup complete, skipping initialize");
