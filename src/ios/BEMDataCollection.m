@@ -6,26 +6,6 @@
 
 @implementation BEMDataCollection
 
-- (void)startupInit:(CDVInvokedUrlCommand*)command
-{
-    NSString* callbackId = [command callbackId];
-    
-    @try {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-            @"startupInit called, is NOP on iOS"] showUI:FALSE];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_ERROR
-                                   messageAsString:msg];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-}
-
 - (void)launchInit:(CDVInvokedUrlCommand*)command
 {
     NSString* callbackId = [command callbackId];
