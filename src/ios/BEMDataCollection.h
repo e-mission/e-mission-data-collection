@@ -2,7 +2,6 @@
 
 @interface BEMDataCollection: CDVPlugin
 
-- (void) startupInit:(CDVInvokedUrlCommand*)command;
 - (void) launchInit:(CDVInvokedUrlCommand*)command;
 - (void) getConfig:(CDVInvokedUrlCommand*)command;
 - (void) getState:(CDVInvokedUrlCommand*)command;

@@ -24,23 +24,23 @@ public class DataCollectionPlugin extends CordovaPlugin {
     private static final String SETUP_COMPLETE_KEY = "setup_complete";
 
     @Override
-    public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
-        if (action.equals("startupInit")) {
-            Activity myActivity = cordova.getActivity();
-            int connectionResult = GooglePlayServicesUtil.isGooglePlayServicesAvailable(myActivity);
-            if (connectionResult == ConnectionResult.SUCCESS) {
-                Log.d(myActivity, TAG, "google play services available, initializing state machine");
-                SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(myActivity);
-                if(!sp.getBoolean(SETUP_COMPLETE_KEY, false)) {
-                    myActivity.sendBroadcast(new Intent(myActivity.getString(R.string.transition_initialize)));
-                }
-                callbackContext.success();
-            } else {
-                Log.e(myActivity, TAG, "unable to connect to google play services");
-                callbackContext.error(connectionResult);
+    public boolean pluginInitialize() {
+        Activity myActivity = cordova.getActivity();
+        int connectionResult = GooglePlayServicesUtil.isGooglePlayServicesAvailable(myActivity);
+        if (connectionResult == ConnectionResult.SUCCESS) {
+            Log.d(myActivity, TAG, "google play services available, initializing state machine");
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(myActivity);
+            if(!sp.getBoolean(SETUP_COMPLETE_KEY, false)) {
+                myActivity.sendBroadcast(new Intent(myActivity.getString(R.string.transition_initialize)));
             }
-            return true;
-        } else if (action.equals("launchInit")) {
+        } else {
+            Log.e(myActivity, TAG, "unable to connect to google play services");
+        }
+    }
+
+    @Override
+    public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
+        if (action.equals("launchInit")) {
             Log.d(cordova.getActivity(), TAG, "application launched, init is nop on android");
             callbackContext.success();
             return true;

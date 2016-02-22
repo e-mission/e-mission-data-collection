@@ -17,13 +17,6 @@ var exec = require("cordova/exec")
 
 var DataCollection = {
     /*
-     * One time init: registers all the callbacks necessary, at least on
-     * android.
-     */
-    startupInit: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "startupInit", []);
-    },
-    /*
      * Launch init: registers all the callbacks necessary on launch, mainly for
      * iOS, where we have to re-register the listeners for fine location
      * tracking every time the app is launched.
