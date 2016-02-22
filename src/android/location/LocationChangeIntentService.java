@@ -174,8 +174,8 @@ public class LocationChangeIntentService extends IntentService {
 		 *
 		 * TODO: Switching to all updates in the past 5 minutes may be a better choice
 		 */
-		Log.d(this, TAG, "last10Points = "+ Arrays.toString(last10Points));
-        Log.d(this, TAG, "points5MinsAgo = "+Arrays.toString(points5MinsAgo));
+		Log.d(this, TAG, "last10Points.length = "+ last10Points.length);
+        Log.d(this, TAG, "points5MinsAgo.length = "+ points5MinsAgo.length);
 
 		if (last10Points.length < 10 || points5MinsAgo.length == 0) {
 			Log.i(this, TAG, "last10Points.length = "+last10Points.length+
@@ -186,8 +186,8 @@ public class LocationChangeIntentService extends IntentService {
 		double[] last9Distances = getDistances(last10Points);
         double[] last5MinsDistances = getDistances(points5MinsAgo);
 
-		Log.d(this, TAG, "last9Distances.length = "+ last9Distances.length);
-        Log.d(this, TAG, "last5MinsDistances.length = "+ last5MinsDistances.length);
+		Log.d(this, TAG, "last9Distances = "+ Arrays.toString(last9Distances));
+        Log.d(this, TAG, "last5MinsDistances = "+ Arrays.toString(last5MinsDistances));
 
 		if (stoppedMoving(last9Distances) && stoppedMoving(last5MinsDistances)) {
 			Log.i(this, TAG, "stoppedMoving = true");
