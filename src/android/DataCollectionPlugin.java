@@ -24,14 +24,25 @@ public class DataCollectionPlugin extends CordovaPlugin {
     private static final String SETUP_COMPLETE_KEY = "setup_complete";
 
     @Override
-    public boolean pluginInitialize() {
+    public void pluginInitialize() {
         Activity myActivity = cordova.getActivity();
         int connectionResult = GooglePlayServicesUtil.isGooglePlayServicesAvailable(myActivity);
         if (connectionResult == ConnectionResult.SUCCESS) {
             Log.d(myActivity, TAG, "google play services available, initializing state machine");
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(myActivity);
+            System.out.println("All preferences are "+sp.getAll());
             if(!sp.getBoolean(SETUP_COMPLETE_KEY, false)) {
+                Log.d(myActivity, TAG, "Setup not complete, sending initialize");
                 myActivity.sendBroadcast(new Intent(myActivity.getString(R.string.transition_initialize)));
+                SharedPreferences.Editor prefsEditor = sp.edit();
+                // TODO: This is supposed to be set from the javascript as part of the onboarding process.
+                // However, it looks like it doesn't actually work - it looks like the app preferences plugin
+                // saves to local storage by default. Need to debug the app preferences plugin and maybe ask
+                // some questions of the maintainer. For now, setting it here for the first time should be fine.
+                prefsEditor.putBoolean(SETUP_COMPLETE_KEY, true);
+                prefsEditor.commit();
+            } else {
+                Log.d(myActivity, TAG, "Setup complete, skipping initialize");
             }
         } else {
             Log.e(myActivity, TAG, "unable to connect to google play services");
