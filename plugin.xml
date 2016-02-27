@@ -152,6 +152,7 @@
 
     <header-file src="src/ios/BEMDataCollection.h"/>
     <header-file src="src/ios/BEMAppDelegate.h"/>
+    <header-file src="src/ios/BEMRemotePushNotificationHandler.h"/>
     <header-file src="src/ios/Location/DataUtils.h" target-dir="Location"/>
     <header-file src="src/ios/Location/GeofenceActions.h" target-dir="Location"/>
     <header-file src="src/ios/Location/LocationTrackingConfig.h" target-dir="Location"/>
@@ -165,6 +166,7 @@
     <header-file src="src/ios/Wrapper/Transition.h" target-dir="Wrapper"/>
     <source-file src="src/ios/BEMDataCollection.m"/>
     <source-file src="src/ios/BEMAppDelegate.m"/>
+    <source-file src="src/ios/BEMRemotePushNotificationHandler.m"/>
     <source-file src="src/ios/Location/DataUtils.m" target-dir="Location"/>
     <source-file src="src/ios/Location/GeofenceActions.m" target-dir="Location"/>
     <source-file src="src/ios/Location/LocationTrackingConfig.m" target-dir="Location"/>
