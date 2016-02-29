@@ -13,10 +13,7 @@
 
 @interface AppDelegate (notification)
 
-@property (retain, nonatomic) TripDiaryStateMachine *tripDiaryStateMachine;
-@property (copy, nonatomic) SilentPushCompletionHandler silentPushHandler;
-
-- (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
++ (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:( void (^)(UIBackgroundFetchResult))completionHandler;

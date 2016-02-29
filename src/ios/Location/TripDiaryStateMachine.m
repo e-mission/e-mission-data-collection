@@ -43,7 +43,20 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
--(id)initRelaunchLocationManager:(BOOL)restart {
++ (TripDiaryStateMachine*) instance {
+    static dispatch_once_t once;
+    static id sharedInstance;
+    dispatch_once(&once, ^{
+        sharedInstance = [[self alloc] init];
+        // when we create a new instance, we use it to register for notifications
+        // this should mean that we register only once for notifications, which should mean
+        // that we should stop getting duplicate notifications
+        [sharedInstance registerForNotifications];
+    });
+    return sharedInstance;
+}
+
+- (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
     /*
@@ -64,8 +77,8 @@ static NSString * const kCurrState = @"CURR_STATE";
     [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Restart = %@, initializing TripDiaryStateMachine with state = %@",
-                                               @(restart), [TripDiaryStateMachine getStateName:self.currState]]];
+                                               @"initializing TripDiaryStateMachine with state = %@",
+                                               [TripDiaryStateMachine getStateName:self.currState]]];
     
     if (self.currState == kOngoingTripState) {
         // If we restarted, we recreate the location manager, but then it won't have
@@ -115,11 +128,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr];
     }
 
-    /*
-     * Make sure that we start with a clean state, at least while debugging.
-     * TODO: Check how often this is initialized, and whether we should do this even when we are out of debugging.
-     */
-    // [self deleteGeofence:locMgr];
     return [super init];
 }
 
@@ -132,16 +140,6 @@ static NSString * const kCurrState = @"CURR_STATE";
             [self handleTransition:(NSString*)note.object withUserInfo:note.userInfo];
         }];
     }
-}
-
-+(void) showAlert:(NSString*)message withTitle:(NSString*)title {
-    UIAlertView* alert = [[UIAlertView alloc]
-                          initWithTitle:title
-                          message:message
-                          delegate: NULL
-                          cancelButtonTitle:@"OK"
-                          otherButtonTitles:nil];
-    [alert show];
 }
 
 -(void) checkGeofenceState:(GeofenceStatusCallback) callback {
@@ -157,7 +155,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     self.currState = [defaults integerForKey:kCurrState];
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Received transition %@ in state %@",
+                                               @"In TripDiaryStateMachine, received transition %@ in state %@",
                                                transition,
                                                [TripDiaryStateMachine getStateName:self.currState]] showUI:TRUE];
     Transition* transitionWrapper = [Transition new];

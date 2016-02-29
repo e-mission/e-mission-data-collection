@@ -1,10 +1,22 @@
 #import "BEMDataCollection.h"
 #import "LocalNotificationManager.h"
 #import "Location/LocationTrackingConfig.h"
-#import "TripDiaryStateMachine.h"
+#import "BEMAppDelegate.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
+
+- (void)pluginInitialize
+{
+    // TODO: We should consider adding a create statement to the init, similar
+    // to android - then it doesn't matter if the pre-populated database is not
+    // copied over.
+    NSLog(@"BEMDataCollection:pluginInitialize singleton -> initialize statemachine and delegate");
+    // TODO: Should we do this as part of a separate thread? Will the permission popups work then?
+    self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+    NSDictionary* emptyOptions = @{};
+    [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
+}
 
 - (void)launchInit:(CDVInvokedUrlCommand*)command
 {
@@ -58,11 +70,7 @@
     NSString* callbackId = [command callbackId];
     
     @try {
-        /*
-        TripDiaryStateMachine* tdsm = [UIApplication sharedApplication].delegate.tripDiaryStateMachine;
-        NSString* stateName = [TripDiaryStateMachine getStateName:tdsm.currState];
-         */
-        NSString* stateName = @"NOT IMPLEMENTED YET";
+        NSString* stateName = [TripDiaryStateMachine getStateName:self.tripDiaryStateMachine.currState];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK
                                    messageAsString:stateName];

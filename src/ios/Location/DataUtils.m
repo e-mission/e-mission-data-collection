@@ -217,7 +217,7 @@
                                                                     options:NSJSONReadingMutableContainers
                                                                       error: &error];
     if (jsonDict == nil) {
-        NSLog(@"error %@ while parsing json object %@", error, jsonData);
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"error %@ while parsing json object %@", error, jsonData] showUI:FALSE];
     }
     return jsonDict;
 }

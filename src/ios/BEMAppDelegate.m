@@ -10,78 +10,14 @@
 #import "LocalNotificationManager.h"
 #import "BEMConnectionSettings.h"
 #import "AuthCompletionHandler.h"
+#import "BEMRemotePushNotificationHandler.h"
 #import "DataUtils.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
 
-static char tripDiaryKey;
-static char silentPushNotificationHandlerKey;
-
 @implementation AppDelegate (notification)
 
-// its dangerous to override a method from within a category.
-// Instead we will use method swizzling. we set this up in the load call.
-+ (void)load
-{
-    Method original, swizzled;
-
-    original = class_getInstanceMethod(self, @selector(init));
-    swizzled = class_getInstanceMethod(self, @selector(swizzled_init));
-    method_exchangeImplementations(original, swizzled);
-}
-
-- (AppDelegate *)swizzled_init
-{
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(createNotificationChecker:)
-                                                 name:@"UIApplicationDidFinishLaunchingNotification" object:nil];
-
-    // This actually calls the original init method over in AppDelegate. Equivilent to calling super
-    // on an overrided method, this is not recursive, although it appears that way. neat huh?
-    return [self swizzled_init];
-}
-
-// This code will be called immediately after application:didFinishLaunchingWithOptions:. We need
-// to process notifications in cold-start situations
-- (void)createNotificationChecker:(NSNotification *)notification
-{
-    if (notification)
-    {
-        NSDictionary *launchOptions = [notification userInfo];
-            [self didFinishLaunchingWithOptions:launchOptions];
-        }
-    }
-
-/*
- * Note that it is possible that some of this can happen on startup init
- * instead of every time the application is launched. But I am not sure which
- * ones, and so far, we have always done everything when the application is
- * launched. I am apprehensive that moving to startup init will break things in
- * unexpected ways, specially while we are making a bunch of other changes
- * anyway. So the current plan is that the code will be retained in here, this
- * will be called from the delegate's didFinishLaunchingWithOptions method, and
- * once we know that everything works, I can slowly move changes to
- * startupInit, one by one.
- */
-
-- (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    BOOL relaunchLocationMgr = NO;
-    if ([launchOptions.allKeys containsObject:UIApplicationLaunchOptionsLocationKey]) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Application launched with LaunchOptionsLocationKey = YES"]];
-        relaunchLocationMgr = YES;
-    } else {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Application launched with LaunchOptionsLocationKey = NO"]];
-        
-    }
-    
-    if (self.tripDiaryStateMachine == NULL || relaunchLocationMgr) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"tripDiaryStateMachine = %@, relaunchLocationManager = %@, recreating the state machine",
-              self.tripDiaryStateMachine, @(relaunchLocationMgr)]];
-        self.tripDiaryStateMachine = [[TripDiaryStateMachine alloc] initRelaunchLocationManager:relaunchLocationMgr];
-        [self.tripDiaryStateMachine registerForNotifications];
-    }
-    
++ (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
                   clientKey:[[ConnectionSettings sharedInstance] getParseClientID]];
     
@@ -98,67 +34,18 @@ static char silentPushNotificationHandlerKey;
     } else {
         NSLog(@"registering for remote notifications not supported");
     }
-    [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil
-                                                  usingBlock:^(NSNotification *note) {
-                                                      [self handleNotifications:note];
-                                                  }];
-    
+
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Initialized remote push notification handler %@, finished registering for notifications ",
+                                                [BEMRemotePushNotificationHandler instance]]
+                                       showUI:TRUE];
+
     // Handle google+ sign on
     [AuthCompletionHandler sharedInstance].clientId = [[ConnectionSettings sharedInstance] getGoogleiOSClientID];
     [AuthCompletionHandler sharedInstance].clientSecret = [[ConnectionSettings sharedInstance] getGoogleiOSClientSecret];
     return YES;
 }
 
-- (void)handleNotifications:(NSNotification*)note {
-    if (self.silentPushHandler != nil) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Received notification %@ while processing silent push notification", note.object]];
-        // we only care about notifications when we are processing a silent remote push notification
-        if ([note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
-            // We are in the silent push handler, so we ignore the silent push
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Ignoring SILENT_PUSH in the silent push handler"]];
-            // Note: Do NOT call the handler here since the state machine may not have quiesced.
-            // We want to wait until we know that the state machine has finished handling it.
-            // _silentPushHandler(UIBackgroundFetchResultNewData);
-        } else if ([note.object isEqualToString:CFCTransitionNOP]) {
-            // Next, we think of what the possible responses to the silent push are
-            // One option is that the state machine wants to ignore it, possibly because it is not in ONGOING STATE
-            // Let us assume that we will return NOP in that case
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Trip diary state machine ignored the silent push"]];
-            self.silentPushHandler(UIBackgroundFetchResultNewData);
-        } else if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
-            // Otherwise, if it is in OngoingTrip, it will try to see whether the trip has ended. If it hasn't,
-            // let us assume that we will return a NOP, which is already handled.
-            // If it has, then it will return a TripEndDetected and start creating the geofence.
-            // Once the geofence is created, we will get a TripEnded, and we want to
-            // wait until that point, so we DON'T return here.
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Detected trip end, waiting until geofence is created to return from silent push"]];
-        } else if ([note.object isEqualToString:CFCTransitionTripEnded]) {
-            // Trip has now ended, so we can push and clear data
-            [[BEMServerSyncCommunicationHelper pushAndClearUserCache] continueWithBlock:^id(BFTask *task) {
-                    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                               @"Returning with fetch result = new data"]
-                                                       showUI:TRUE];
-                    self.silentPushHandler(UIBackgroundFetchResultNewData);
-                return nil;
-            }];
-        } else if ([note.object isEqualToString:CFCTransitionTripRestarted]) {
-            // The other option from TripEndDetected is that the trip is restarted instead of ended.
-            // In that case, we still want to finish the handler
-            self.silentPushHandler(UIBackgroundFetchResultNewData);
-        } else {
-            // Some random transition. Might as well call the handler and return
-            self.silentPushHandler(UIBackgroundFetchResultNewData);
-        }
-        // TODO: Figure out whether we should set it to NULL here or whether parts of
-        // the system will still try to access the handler.
-        // _silentPushHandler = nil;
-    } else {
-        // Not processing a silent remote push notification
-        NSLog(@"Ignoring silent push notification");
-    }
-}
 
 - (void)application:(UIApplication *)application
                     didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
@@ -190,8 +77,6 @@ static char silentPushNotificationHandlerKey;
                                                @"Received remote push, about to check whether a trip has ended"]
                                        showUI:TRUE];
     NSLog(@"About to check whether a trip has ended");
-    self.silentPushHandler = completionHandler;
-    NSLog(@"After setting the silent push handler, we have %@", self.silentPushHandler);
     NSDictionary* localUserInfo = @{@"handler": completionHandler};
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
 }
@@ -235,35 +120,5 @@ static char silentPushNotificationHandlerKey;
         return nil;
     }];
 }
-
-// The accessors use an Associative Reference since you can't define a iVar in a category
-// http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/Chapters/ocAssociativeReferences.html
-- (TripDiaryStateMachine *)tripDiaryStateMachine
-{
-    return objc_getAssociatedObject(self, &tripDiaryKey);
-}
-
-- (void)setTripDiaryStateMachine:(TripDiaryStateMachine *)tripDiaryStateMachine
-{
-    objc_setAssociatedObject(self, &tripDiaryKey, tripDiaryStateMachine, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-- (SilentPushCompletionHandler) silentPushHandler
-{
-    return objc_getAssociatedObject(self, &silentPushNotificationHandlerKey);
-}
-
-- (void)setSilentPushHandler:(SilentPushCompletionHandler)silentPushHandler
-{
-    objc_setAssociatedObject(self, &silentPushNotificationHandlerKey, silentPushHandler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-
-- (void)dealloc
-{
-    self.tripDiaryStateMachine = nil; // clear the association and release the object
-    self.silentPushHandler = nil;
-}
-
 
 @end

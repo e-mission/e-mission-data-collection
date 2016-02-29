@@ -144,7 +144,11 @@
 - (void)locationManager:(CLLocationManager *)manager
           didExitRegion:(CLRegion *)region {
     if([region.identifier compare:kCurrGeofenceID] != NSOrderedSame) {
-        NSLog(@"exited region %@ that does not match current geofence %@", region.identifier, kCurrGeofenceID);
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"exited region %@ that does not match current geofence %@",
+                                        region.identifier, kCurrGeofenceID]
+                            showUI:TRUE];
+
     }
     // Since we are going to keep the geofence around during ongoing tracking to ensure that
     // we are re-initalized, we will keep getting exit messages. We need to ignore if we are not
@@ -153,8 +157,11 @@
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionExitedGeofence];
     } else {
-        NSLog(@"Received geofence exit in state %@, ignoring",
-              [TripDiaryStateMachine getStateName:_tdsm.currState]);
+        [LocalNotificationManager addNotification:
+         [NSString stringWithFormat:@"Received geofence exit in state %@, ignoring",
+                [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                           showUI:TRUE];
+
     }
 }
 
@@ -227,7 +234,8 @@
 
 - (void)locationManager:(CLLocationManager *)manager
             didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
-    NSLog(@"New authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways);
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"New authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways]];
+
     if (_tdsm.currState == kStartState) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionInitialize];
