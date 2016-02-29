@@ -28,8 +28,8 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Log.d(this, TAG, "FINALLY! Got activity update, intent is "+intent);
-		Log.d(this, TAG, "Intent extras are "+intent.getExtras().describeContents());
-		Log.d(this, TAG, "Intent extra key list is "+Arrays.toString(intent.getExtras().keySet().toArray()));
+//		Log.d(this, TAG, "Intent extras are "+intent.getExtras().describeContents());
+//		Log.d(this, TAG, "Intent extra key list is "+Arrays.toString(intent.getExtras().keySet().toArray()));
 		if (ActivityRecognitionResult.hasResult(intent)) {
 			ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();

@@ -35,7 +35,7 @@
     }
     if (self.silentPushHandler != NULL) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Received notification %@ while processing silent push notification", note.object]];
+                                                   @"Received notification %@ while processing silent push notification", note.object] showUI:TRUE];
         // we only care about notifications when we are processing a silent remote push notification
         if ([note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
             // We are the silent push handler, so we store the handler block, but don't do anything else.
@@ -47,7 +47,7 @@
             // Next, we think of what the possible responses to the silent push are
             // One option is that the state machine wants to ignore it, possibly because it is not in ONGOING STATE
             // Let us assume that we will return NOP in that case
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Trip diary state machine ignored the silent push"]];
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Remote push state machine ignored the silent push, fetch result = new data"] showUI:TRUE];
             self.silentPushHandler(UIBackgroundFetchResultNewData);
         } else if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
             // Otherwise, if it is in OngoingTrip, it will try to see whether the trip has ended. If it hasn't,
