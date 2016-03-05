@@ -49,17 +49,19 @@
 
 - (void)application:(UIApplication *)application
                     didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    NSLog(@"Finished registering for remote notifications with token %@", deviceToken);
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Finished registering for remote notifications with token %@", deviceToken]];
+
     // Store the deviceToken in the current installation and save it to Parse.
     PFInstallation *currentInstallation = [PFInstallation currentInstallation];
     [currentInstallation setDeviceTokenFromData:deviceToken];
     [currentInstallation saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
         if (succeeded) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Successfully registered remote push notifications with parse"]];
+                                                       @"Successfully registered remote push notifications for token %@ with parse", deviceToken]];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Error %@ while registering for remote push notifications with parse", error.description] showUI:TRUE];
+                                                       @"Error %@ while registering remote push notifications for token %@ with parse", error.description, deviceToken] showUI:TRUE];
         }
     }];
 }
@@ -78,6 +80,23 @@
                                        showUI:TRUE];
     NSLog(@"About to check whether a trip has ended");
     NSDictionary* localUserInfo = @{@"handler": completionHandler};
+    [[AuthCompletionHandler sharedInstance] getValidAuth:^(GTMOAuth2Authentication *auth, NSError *error) {
+        /*
+         * Note that we do not condition any further tasks on this refresh. That is because, in general, we expect that
+         * the token refreshed at this time will be used to push the next set of values. This is just pre-emptive refreshing,
+         * to increase the chance that we will finish pushing our data within the 30 sec interval.
+         */
+        if (error == NULL) {
+            GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
+                                               showUI:TRUE];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Error %@ while refreshing token in background", error]
+                                               showUI:TRUE];
+        }
+    } forceRefresh:TRUE];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
 }
 
