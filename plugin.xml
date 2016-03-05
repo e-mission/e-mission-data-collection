@@ -91,6 +91,11 @@
 		    android:enabled="true" 
 		    android:exported="false">
 		</service>
+		<service 
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceLocationIntentService"
+		    android:enabled="true" 
+		    android:exported="false">
+		</service>
     </config-file>
 
     <framework src="com.google.code.gson:gson:+"/>
@@ -108,6 +113,7 @@
     <source-file src="src/android/location/TripDiaryStateMachineServiceOngoing.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/actions/ActivityRecognitionActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/GeofenceActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
+    <source-file src="src/android/location/actions/GeofenceLocationIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/LocationTrackingActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/sensors/BatteryPollSensor.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
     <source-file src="src/android/sensors/BatteryUtils.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>

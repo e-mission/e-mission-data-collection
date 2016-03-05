@@ -75,6 +75,7 @@
 
     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In createGeofenceHere"]];
     CLLocation* currLoc = manager.location;
+    // If there is no current location, or it's accuracy is too low, or it is the start state, and the location is too old
     if (currLoc == nil || (currLoc.horizontalAccuracy > 200) ||
             (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [LocationTrackingConfig instance].tripEndStationaryMins * 60)) {
         [LocalNotificationManager addNotification:[NSString

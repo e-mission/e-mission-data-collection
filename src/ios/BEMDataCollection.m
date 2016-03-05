@@ -163,4 +163,9 @@
     }
 }
 
+- (void) onAppTerminate {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"onAppTerminate called"] showUI:FALSE];    
+}
+
 @end
