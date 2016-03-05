@@ -13,6 +13,7 @@ import com.google.android.gms.common.api.Batch;
 import com.google.android.gms.common.api.BatchResult;
 import com.google.android.gms.common.api.BatchResultToken;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
@@ -199,11 +200,25 @@ public class TripDiaryStateMachineService extends Service implements
         }
     }
 
-    private void handleStart(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void handleStart(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleStarted(" + actionString + ") called");
         // Get current location
+
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("Running in new thread!!");
             final Context fCtxt = ctxt;
+                    // TODO: Ideally, new GeofenceActions would return a chained pending result.
+                    // Then, we would just wait for the combined result callback and all would be well
+                    // But it looks like the pending result chaining is not supported in the current
+                    // version of the google play services API. We could chain callbacks here, but then
+                    // we won't be able to deal with the common case (last location present) and the
+                    // uncommon case (last location not present) in a unified fashion. We would need
+                    // one callback for the first and two for the second.
+                    // So for now, we punt and simply start the geofence creation in a separate
+                    // (non-UI thread). Revisit this later once chaining is supported.
             com.google.android.gms.common.api.PendingResult<Status> createGeofenceResult =
                     new GeofenceActions(ctxt, apiClient).create();
             if (createGeofenceResult != null) {
@@ -223,6 +238,8 @@ public class TripDiaryStateMachineService extends Service implements
                     }
                 });
             }
+        }
+            }).start();
         }
     }
 
@@ -282,26 +299,39 @@ public class TripDiaryStateMachineService extends Service implements
         }
     }
 
-    public void handleTripEnd(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    public void handleTripEnd(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripEnd(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_stopped_moving))) {
             // Stopping location tracking
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("Running in new thread!!");
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
             Batch.Builder resultBarrier = new Batch.Builder(apiClient);
             tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
             tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).stop()));
-            // TODO: This action can return null, and is the only one that can.
-            // Should we refactor to simplify the code? Throw an exception instead?
-            com.google.android.gms.common.api.PendingResult<Status> createGeofenceResult =
+                    // TODO: change once we move to chained promises
+                    PendingResult<Status> createGeofenceResult =
                     new GeofenceActions(ctxt, apiClient).create();
             if (createGeofenceResult != null) {
                 tokenList.add(resultBarrier.add(createGeofenceResult));
             }
+                    final boolean geofenceCreationPossible = createGeofenceResult != null;
             final Context fCtxt = ctxt;
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
+                            String newState;
+                            if (geofenceCreationPossible) {
+                                newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
+                            } else {
+                                // If we are not going to be able to create a geofence, then we don't
+                                // want to go to waiting_for_trip_state, because then we will never exit
+                                // from it. Instead, we go to state_start so that we will try to get
+                                // out of it at every sync.
+                                newState = fCtxt.getString(R.string.state_start);
+                            }
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -313,6 +343,8 @@ public class TripDiaryStateMachineService extends Service implements
                     mApiClient.disconnect();
                 }
             });
+        }
+            }).start();
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {

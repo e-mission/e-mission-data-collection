@@ -1,23 +1,29 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
+import android.support.v4.content.LocalBroadcastManager;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
+import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService;
 
@@ -39,6 +45,9 @@ public class GeofenceActions {
 
     private Context mCtxt;
     private GoogleApiClient mGoogleApiClient;
+    // Used only when the last location from the manager is null, or invalid and so we have
+    // to read a new one. This is a private variable for synchronization
+    private Location newLastLocation;
 
     public GeofenceActions(Context ctxt, GoogleApiClient googleApiClient) {
         this.mCtxt = ctxt;
@@ -55,20 +64,99 @@ public class GeofenceActions {
     public PendingResult<Status> create() {
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
-        if (mLastLocation != null) {
-            Log.d(mCtxt, TAG, "mLastLocation has elapsed time = "+mLastLocation.getElapsedRealtimeNanos());
-            Log.d(mCtxt, TAG, "Last location is " + mLastLocation + " creating geofence");
+        Log.d(mCtxt, TAG, "Last location would have been " + mLastLocation +" if we hadn't reset it");
+        if (isValidLocation(mCtxt, mLastLocation)) {
+            Log.d(mCtxt, TAG, "Last location is " + mLastLocation + " using it");
+            return createGeofenceAtLocation(mLastLocation);
+        } else {
+            Log.w(mCtxt, TAG, "mLastLocationTime = null, launching callback to read it and then" +
+                    "create the geofence");
+            Location newLoc = readAndReturnCurrentLocation();
+            if (newLoc != null) {
+                Log.d(mCtxt, TAG, "New last location is " + newLoc + " using it");
+                return createGeofenceAtLocation(newLoc);
+            } else {
+                Log.d(mCtxt, TAG, "Was not able to read new location, skipping geofence creation");
+                return null;
+            }
+        }
+    }
+
+    private PendingResult<Status> createGeofenceAtLocation(Location currLoc) {
+        Log.d(mCtxt, TAG, "creating geofence at location " + currLoc);
             // This is also an asynchronous call. We can either wait for the result,
             // or we can provide a callback. Let's provide a callback to keep the async
             // logic in place
             return LocationServices.GeofencingApi.addGeofences(mGoogleApiClient,
-                        createGeofenceRequest(mLastLocation.getLatitude(), mLastLocation.getLongitude()),
+                createGeofenceRequest(currLoc.getLatitude(), currLoc.getLongitude()),
                         getGeofenceExitPendingIntent(mCtxt));
+    }
+
+    private Location readAndReturnCurrentLocation() {
+        Intent geofenceLocIntent = new Intent(mCtxt, GeofenceLocationIntentService.class);
+        final PendingIntent geofenceLocationIntent = PendingIntent.getService(mCtxt, 0,
+                geofenceLocIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        LocalBroadcastManager.getInstance(mCtxt).registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                synchronized(GeofenceActions.this) {
+                    GeofenceActions.this.newLastLocation = intent.getParcelableExtra(GeofenceLocationIntentService.INTENT_RESULT_KEY);
+                    GeofenceActions.this.notify();
+                }
+            }
+        }, new IntentFilter(GeofenceLocationIntentService.INTENT_NAME));
+
+        PendingResult<Status> locationReadingResult =
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                getHighAccuracyHighFrequencyRequest(), geofenceLocationIntent);
+        Status result = locationReadingResult.await(1L, TimeUnit.MINUTES);
+        if (result.getStatusCode() == CommonStatusCodes.SUCCESS) {
+            Log.d(mCtxt, TAG, "Successfully started tracking location, about to start waiting for location update");
         } else {
-            Log.w(mCtxt, TAG, "mLastLocationTime = null, launching callback to read it and then" +
-                    "create the geofence");
+            Log.w(mCtxt, TAG, "Error "+result+"while getting location, returning null ");
             return null;
         }
+        synchronized (this) {
+            try {
+                Log.d(mCtxt, TAG, "About to start waiting for location");
+                this.wait(10 * 60 * 1000); // 10 minutes * 60 secs * 1000 milliseconds
+                // If we stop the location tracking in the broadcast listener, before the notify, we can run into races
+                // in which the notify has happened before we start waiting, which means that we wait forever.
+                // Putting the stop in here means that we will continue to notify until the message is received
+                // which should be safe.
+                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, geofenceLocationIntent);
+                Log.d(mCtxt, TAG, "After waiting for location reading result, location is " + this.newLastLocation);
+                return this.newLastLocation;
+            } catch (InterruptedException e) {
+                Log.w(mCtxt, TAG, "Timed out waiting for location result, returning null ");
+                return null;
+            }
+        }
+    }
+
+    // Consistent with iOS, we say that the location is invalid if it is null, its accuracy is too low,
+    // or it is too old
+    static boolean isValidLocation(Context mCtxt, Location testLoc) {
+        if (testLoc == null) {
+            return false; // Duh!
+        }
+        LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(mCtxt);
+        if (testLoc.getAccuracy() > cfg.getAccuracyThreshold()) {
+            return false; // too inaccurate. Note that a high accuracy number means a larger radius
+            // of validity which effectively means a low accuracy
+        }
+        int fiveMins = 5 * 60 * 1000;
+        if ((testLoc.getTime() - System.currentTimeMillis()) > fiveMins * 60) {
+            return false; // too old
+        }
+        return true;
+    }
+
+    private static LocationRequest getHighAccuracyHighFrequencyRequest() {
+        LocationRequest defaultRequest = LocationRequest.create();
+        return defaultRequest.setInterval(1)
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
     ResultCallback<Status> locationCallback = new ResultCallback<Status>() {
@@ -133,4 +221,5 @@ public class GeofenceActions {
 		 */
         return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
+
 }

@@ -64,7 +64,6 @@ public class LocationTrackingActions {
     ResultCallback<Status> stopCallback = new ResultCallback<Status>() {
         @Override
         public void onResult(Status status) {
-
         }
     };
 
@@ -77,15 +76,4 @@ public class LocationTrackingActions {
         return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    /*
-     * The specified callback is invoked once the location has been obtained.
-     * At that point, the caller can obtain the location using
-     * LocationServices.FusedLocationApi.getLastLocation.
-     */
-    public void getCurrentLocation(ResultCallback<Status> doneCallback) {
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
-                getLocationRequest(),
-                getLocationTrackingPendingIntent(mCtxt))
-        .setResultCallback(doneCallback);
-    }
 }
