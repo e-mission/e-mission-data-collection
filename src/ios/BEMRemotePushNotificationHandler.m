@@ -59,13 +59,12 @@
                                                        @"Detected trip end, waiting until geofence is created to return from silent push"]];
         } else if ([note.object isEqualToString:CFCTransitionTripEnded]) {
             // Trip has now ended, so we can push and clear data
-            [[BEMServerSyncCommunicationHelper pushAndClearUserCache] continueWithBlock:^id(BFTask *task) {
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                               @"Returning with fetch result = new data"]
-                                                       showUI:TRUE];
+                                                       @"Trip ended, waiting until data is pushed to return from the silent push"]];
+        } else if ([note.object isEqualToString:CFCTransitionDataPushed]) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Data pushed, fetch result = new data"] showUI:TRUE];
                     self.silentPushHandler(UIBackgroundFetchResultNewData);
-                return nil;
-            }];
         } else if ([note.object isEqualToString:CFCTransitionTripRestarted]) {
             // The other option from TripEndDetected is that the trip is restarted instead of ended.
             // In that case, we still want to finish the handler
