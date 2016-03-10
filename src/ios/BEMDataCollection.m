@@ -13,11 +13,9 @@
     // copied over.
     NSLog(@"BEMDataCollection:pluginInitialize singleton -> initialize statemachine and delegate");
     // TODO: Should we do this as part of a separate thread? Will the permission popups work then?
-    [self.commandDelegate runInBackground:^{
     self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
     NSDictionary* emptyOptions = @{};
     [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
-    }];
 }
 
 - (void)launchInit:(CDVInvokedUrlCommand*)command
