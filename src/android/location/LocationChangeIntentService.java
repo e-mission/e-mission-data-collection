@@ -137,7 +137,7 @@ public class LocationChangeIntentService extends IntentService {
             uc.putSensorData(R.string.key_usercache_filtered_location, simpleLoc);
         }
 
-		long lastTransitionTs = ((BuiltinUserCache)uc).getTsOfLastTransition();
+		double lastTransitionTs = ((BuiltinUserCache)uc).getTsOfLastTransition();
 		last10Points = filterAfterTransition(last10Points, lastTransitionTs);
 		points5MinsAgo = filterAfterTransition(points5MinsAgo, lastTransitionTs);
 
@@ -154,7 +154,7 @@ public class LocationChangeIntentService extends IntentService {
 		}
 	}
 
-	public SimpleLocation[] filterAfterTransition(SimpleLocation[] orig, long lastTransitionTs) {
+	public SimpleLocation[] filterAfterTransition(SimpleLocation[] orig, double lastTransitionTs) {
 		ArrayList<SimpleLocation> tempArray = new ArrayList<SimpleLocation>();
 		for (SimpleLocation loc: orig) {
 			if (loc.getTs() > lastTransitionTs) {
