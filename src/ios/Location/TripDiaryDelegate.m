@@ -49,6 +49,11 @@
                                                        @"In state %@, Recieved location %@",
                                                        [TripDiaryStateMachine getStateName:_tdsm.currState], currLoc]
                                                showUI:TRUE];
+            // Let's just see what a geofence check returns. Note that the state check currently generates transitions
+            // based on the current state.
+            // TODO: Refactor for simplicity - the delegate should just generate INSIDE and OUTSIDE notifications, and
+            // the state machine should deal with the transitions
+            [manager requestStateForRegion:[TripDiaryActions getGeofence:manager]];
         }
     }
     
@@ -114,32 +119,6 @@
                                                @"Location tracking failed with error %@", error]];
 }
 
-- (void)logPastHourCollectionCount {
-    NSDate* dateNow = [NSDate date];
-    NSCalendar *gregorian = [[NSCalendar alloc]
-                             initWithCalendarIdentifier:NSGregorianCalendar];
-    NSDateComponents* dayHourMinuteComponents = [gregorian components:(NSDayCalendarUnit|NSHourCalendarUnit|NSMinuteCalendarUnit) fromDate:dateNow];
-    
-    if ([dayHourMinuteComponents minute] == 0) {
-        /*
-         * If this turns out to be a performance hassle, replace by
-         */
-        NSDate* hourAgo = [dateNow dateByAddingTimeInterval:-(60 * 60)];
-        TimeQuery* tq = [TimeQuery new];
-        tq.timeKey = @"metadata.usercache.write_ts";
-        tq.startDate = hourAgo;
-        tq.endDate = dateNow;
-
-        NSArray* pastHourTrips = [[BuiltinUserCache database]
-                                  getSensorDataForInterval:@"key.usercache.location" tq:tq wrapperClass:[SimpleLocation class]];
-
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Recived = %ld updates in the %ld hour of %ld day",
-                                                   (long)pastHourTrips.count, (long)[dayHourMinuteComponents hour],
-                                                   (long)[dayHourMinuteComponents day]]];
-        
-    }
-}
 
 - (void)locationManager:(CLLocationManager *)manager
           didExitRegion:(CLRegion *)region {
@@ -243,7 +222,6 @@
 }
 
 
-
 +(NSString*)geofenceStateToString:(CLRegionState)state {
     if (state == CLRegionStateInside) {
         return @"inside";
@@ -270,13 +248,14 @@
     // The methods of your delegate object are called from the thread in which you started the corresponding
     // location services. That thread must itself have an active run loop,
     // like the one found in your application’s main thread.
-    if (visit.departureDate == nil) {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"departure date is %@, isDistantDate? %@, after distantDate? %@ ", visit.departureDate, @([visit.departureDate isEqualToDate:[NSDate distantFuture]]),
+                                               @([visit.departureDate compare:[NSDate distantFuture]])] showUI:FALSE];
+    if (visit.departureDate == [NSDate distantFuture]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionVisitStarted];
     } else {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionVisitEnded];
-
     }
 }
 
