@@ -17,5 +17,8 @@
 @property (readonly) int filterDistance;
 @property (readonly) int geofenceRadius;
 @property (readonly) int tripEndStationaryMins;
+@property (readonly) BOOL useVisitNotificationsForGeofence;
+// If this is false, we will use background push for sync
+@property (readonly) BOOL useRemotePushForSync;
 
 @end

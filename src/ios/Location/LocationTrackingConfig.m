@@ -49,5 +49,13 @@ static LocationTrackingConfig *_instance;
     return kTripEndStationaryMins;
 }
 
+- (BOOL) useVisitNotificationsForGeofence {
+    return TRUE;
+}
+
+- (BOOL) useRemotePushForSync {
+    return FALSE;
+}
+
 
 @end

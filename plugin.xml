@@ -146,6 +146,10 @@
         <string>Our app would like to collect your location information in the background</string>
     </config-file>
 
+    <config-file target="*-Info.plist" parent="ITSAppUsesNonExemptEncryption">
+        <false/>
+    </config-file>
+
     <framework src="src/ios/frameworks/Parse.framework" custom="true" />
     <framework src="src/ios/frameworks/Bolts.framework" custom="true" />
 

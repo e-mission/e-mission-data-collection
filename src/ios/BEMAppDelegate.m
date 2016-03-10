@@ -12,8 +12,12 @@
 #import "AuthCompletionHandler.h"
 #import "BEMRemotePushNotificationHandler.h"
 #import "DataUtils.h"
+#import "LocationTrackingConfig.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
+
+// 3600 secs = 1 hour
+#define ONE_HOUR 60 * 60
 
 @implementation AppDelegate (notification)
 
@@ -27,12 +31,16 @@
                 categories:nil]];
     }
     
+    if ([LocationTrackingConfig instance].useRemotePushForSync) {
     if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
         [[UIApplication sharedApplication] registerForRemoteNotifications];
     } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
         [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert)];
     } else {
         NSLog(@"registering for remote notifications not supported");
+    }
+    } else {
+        [[UIApplication sharedApplication] setMinimumBackgroundFetchInterval:ONE_HOUR];
     }
 
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -75,29 +83,14 @@
 - (void)application:(UIApplication *)application
                     didReceiveRemoteNotification:(NSDictionary *)userInfo
                     fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Received remote push, about to check whether a trip has ended"]
-                                       showUI:TRUE];
-    NSLog(@"About to check whether a trip has ended");
-    NSDictionary* localUserInfo = @{@"handler": completionHandler};
-    [[AuthCompletionHandler sharedInstance] getValidAuth:^(GTMOAuth2Authentication *auth, NSError *error) {
-        /*
-         * Note that we do not condition any further tasks on this refresh. That is because, in general, we expect that
-         * the token refreshed at this time will be used to push the next set of values. This is just pre-emptive refreshing,
-         * to increase the chance that we will finish pushing our data within the 30 sec interval.
-         */
-        if (error == NULL) {
-            GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
-                                               showUI:TRUE];
+    if ([LocationTrackingConfig instance].useRemotePushForSync == YES) {
+        [self launchTripEndCheckAndRemoteSync:completionHandler];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Error %@ while refreshing token in background", error]
+                                                   @"Received remote push, ignoring"]
                                                showUI:TRUE];
+        completionHandler(UIBackgroundFetchResultNewData);
         }
-    } forceRefresh:TRUE];
-    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
@@ -130,14 +123,40 @@
 }
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    NSLog(@"performFetchWithCompletionHandler called at %@", [NSDate date]);
-    [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
+    if ([LocationTrackingConfig instance].useRemotePushForSync == NO) {
+        [self launchTripEndCheckAndRemoteSync:completionHandler];
+    } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"in background fetch, finished pushing entries to the server"]
+                                                   @"Received background fetch call, ignoring"]
                                            showUI:TRUE];
         completionHandler(UIBackgroundFetchResultNewData);
-        return nil;
-    }];
+    }
+}
+
+- (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([LocationTrackingConfig instance].useRemotePushForSync)]
+                                       showUI:TRUE];
+    NSLog(@"About to check whether a trip has ended");
+    NSDictionary* localUserInfo = @{@"handler": completionHandler};
+    [[AuthCompletionHandler sharedInstance] getValidAuth:^(GTMOAuth2Authentication *auth, NSError *error) {
+        /*
+         * Note that we do not condition any further tasks on this refresh. That is because, in general, we expect that
+         * the token refreshed at this time will be used to push the next set of values. This is just pre-emptive refreshing,
+         * to increase the chance that we will finish pushing our data within the 30 sec interval.
+         */
+        if (error == NULL) {
+            GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
+                                               showUI:TRUE];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Error %@ while refreshing token in background", error]
+                                               showUI:TRUE];
+        }
+    } forceRefresh:TRUE];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
 }
 
 @end
