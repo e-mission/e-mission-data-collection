@@ -12,7 +12,11 @@
     // to android - then it doesn't matter if the pre-populated database is not
     // copied over.
     NSLog(@"BEMDataCollection:pluginInitialize singleton -> initialize statemachine and delegate");
-    // TODO: Should we do this as part of a separate thread? Will the permission popups work then?
+    // NOTE: This CANNOT be part of a background thread because when the geofence creation, and more importantly,
+    // the visit notification, are run as part of a background thread, they don't work.
+    // I tried to move this into a background thread as part of a18f8f9385bdd9e37f7b412b386a911aee9a6ea0 and had
+    // to revert it because even visit notification, which had been the bedrock of my existence so far, stopped
+    // working although I made an explicit stop at the education library on the way to Soda.
     self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
     NSDictionary* emptyOptions = @{};
     [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
