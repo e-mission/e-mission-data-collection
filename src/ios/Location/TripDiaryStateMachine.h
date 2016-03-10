@@ -30,6 +30,7 @@
 #define CFCTransitionTripRestarted @"T_TRIP_RESTARTED"
 #define CFCTransitionEndTripTracking @"T_END_TRIP_TRACKING"
 #define CFCTransitionTripEnded @"T_TRIP_ENDED"
+#define CFCTransitionDataPushed @"T_DATA_PUSHED"
 #define CFCTransitionForceStopTracking @"T_FORCE_STOP_TRACKING"
 #define CFCTransitionTrackingStopped @"T_TRACKING_STOPPED"
 #define CFCTransitionVisitStarted @"T_VISIT_STARTED"

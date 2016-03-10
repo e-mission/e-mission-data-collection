@@ -16,6 +16,7 @@
 #import "Transition.h"
 
 #import "LocationTrackingConfig.h"
+#import "AuthCompletionHandler.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -242,6 +243,14 @@ static NSString * const kCurrState = @"CURR_STATE";
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
+    } else if ([transition isEqualToString:CFCTransitionVisitEnded]) {
+        if ([LocationTrackingConfig instance].useVisitNotificationsForGeofence) {
+            // We first start tracking and then delete the geofence to make sure that we are always tracking something
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+            [TripDiaryActions deleteGeofence:self.locMgr];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionTripStarted];
+        }
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
@@ -293,6 +302,12 @@ static NSString * const kCurrState = @"CURR_STATE";
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionNOP];
         }
+    } else if ([transition isEqualToString:CFCTransitionVisitStarted]) {
+        if ([LocationTrackingConfig instance].useVisitNotificationsForGeofence) {
+            [self forceRefreshToken];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionTripEndDetected];
+        }
     } else if ([transition isEqualToString:CFCTransitionTripEndDetected]) {
         [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
@@ -301,14 +316,19 @@ static NSString * const kCurrState = @"CURR_STATE";
         // [TripDiaryActions pushTripToServer];
         [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
         // stopTracking automatically generates TripEnded so we don't need this here.
-        // TODO: Refactor to remove side effect
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionTripEnded];
     } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
         // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];
+        [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Returning with fetch result = new data"]
+                                               showUI:TRUE];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionDataPushed];
+            return nil;
+        }];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
@@ -318,6 +338,27 @@ static NSString * const kCurrState = @"CURR_STATE";
               transition,
               [TripDiaryStateMachine getStateName:self.currState]);
     }
+}
+
+- (void) forceRefreshToken
+{
+    [[AuthCompletionHandler sharedInstance] getValidAuth:^(GTMOAuth2Authentication *auth, NSError *error) {
+        /*
+         * Note that we do not condition any further tasks on this refresh. That is because, in general, we expect that
+         * the token refreshed at this time will be used to push the next set of values. This is just pre-emptive refreshing,
+         * to increase the chance that we will finish pushing our data within the 30 sec interval.
+         */
+        if (error == NULL) {
+            GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
+                                               showUI:TRUE];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Error %@ while refreshing token in background", error]
+                                               showUI:TRUE];
+        }
+    } forceRefresh:TRUE];
 }
 
 /*
