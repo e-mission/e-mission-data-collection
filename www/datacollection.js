@@ -24,8 +24,16 @@ var DataCollection = {
     launchInit: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "launchInit", []);
     },
-    getConfig: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "getConfig", []);
+    // Switching both the get and set config to a promise to experiment with promises!!
+    getConfig: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "getConfig", []);
+        });
+    },
+    setConfig: function (newConfig) {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "setConfig", [newConfig]);
+        });
     },
     getState: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "getState", []);
