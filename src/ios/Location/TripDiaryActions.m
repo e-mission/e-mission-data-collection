@@ -10,6 +10,7 @@
 #import "TripDiaryStateMachine.h"
 #import "LocalNotificationManager.h"
 #import "LocationTrackingConfig.h"
+#import "ConfigManager.h"
 #import "GeofenceActions.h"
 #import "DataUtils.h"
 
@@ -77,7 +78,7 @@
     CLLocation* currLoc = manager.location;
     // If there is no current location, or it's accuracy is too low, or it is the start state, and the location is too old
     if (currLoc == nil || (currLoc.horizontalAccuracy > 200) ||
-            (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [LocationTrackingConfig instance].tripEndStationaryMins * 60)) {
+            (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [ConfigManager instance].trip_end_stationary_mins * 60)) {
         [LocalNotificationManager addNotification:[NSString
                                                    stringWithFormat:@"currLoc = %@, which is stale, need to read a new location", currLoc]];
         [locator getLocationForGeofence:manager withCallback:^(CLLocation *locationToUse) {
@@ -96,7 +97,7 @@
     // We shouldn't need to check the timestamp on the location here since we expect that a "fresh"
     // location will be passed in.
     CLCircularRegion *geofenceRegion = [[CLCircularRegion alloc] initWithCenter:currLoc.coordinate
-                                                                         radius:[LocationTrackingConfig instance].geofenceRadius
+                                                                         radius:[ConfigManager instance].geofence_radius
                                                                      identifier:kCurrGeofenceID];
     
     geofenceRegion.notifyOnEntry = YES;
@@ -158,12 +159,12 @@
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"started fine location tracking"]];
     // Switch to a more fine grained tracking during the trip
-    manager.desiredAccuracy = [LocationTrackingConfig instance].accuracy;
+    manager.desiredAccuracy = [ConfigManager instance].accuracy;
     /* If we use a distance filter, we can lower the power consumption because we will get updates less
      * frequently. HOWEVER, we won't be able to detect a trip end because of the above.
      * Going with the push notification route...
      */
-    manager.distanceFilter = [LocationTrackingConfig instance].filterDistance;
+    manager.distanceFilter = [ConfigManager instance].filter_distance;
     manager.allowsBackgroundLocationUpdates = YES;
     [manager startUpdatingLocation];
 }
@@ -204,7 +205,7 @@
  */
 
 + (BOOL) hasTripEnded {
-    return [DataUtils hasTripEnded:[LocationTrackingConfig instance].tripEndStationaryMins];
+    return [DataUtils hasTripEnded:[ConfigManager instance].trip_end_stationary_mins];
 }
 
 + (BFTask*) pushTripToServer {

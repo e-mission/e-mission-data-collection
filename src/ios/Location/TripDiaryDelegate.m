@@ -14,6 +14,7 @@
 #import "LocalNotificationManager.h"
 #import "SimpleLocation.h"
 #import "LocationTrackingConfig.h"
+#import "ConfigManager.h"
 
 #define ACCURACY_THRESHOLD 200
 
@@ -77,7 +78,7 @@
             SimpleLocation* currSimpleLoc = [[SimpleLocation alloc] initWithCLLocation:currLoc];
             [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:currSimpleLoc];
             
-            if (![LocationTrackingConfig instance].isDutyCycling) {
+            if (![ConfigManager instance].is_duty_cycling) {
                 // We are not going to do any special filtering on the client side, so let's just return here
                 return;
             }

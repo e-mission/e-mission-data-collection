@@ -4,7 +4,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -14,7 +15,6 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.location.LocationChangeIntentService;
 
 /**
@@ -40,11 +40,11 @@ public class LocationTrackingActions {
     }
 
     public LocationRequest getLocationRequest() {
-        LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(this.mCtxt);
+        LocationTrackingConfig cfg = ConfigManager.getConfig(this.mCtxt);
         LocationRequest defaultRequest = LocationRequest.create();
         Log.d(mCtxt, TAG, "default request is " + defaultRequest);
         return defaultRequest
-                .setInterval(cfg.getDetectionInterval())
+                .setInterval(cfg.getFilterTime())
                 .setPriority(cfg.getAccuracy());
     }
 

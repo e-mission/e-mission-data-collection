@@ -10,15 +10,15 @@
 
 @interface LocationTrackingConfig : NSObject
 
-+ (instancetype) instance;
-
-@property (readonly) BOOL isDutyCycling;
-@property (readonly) double accuracy;
-@property (readonly) int filterDistance;
-@property (readonly) int geofenceRadius;
-@property (readonly) int tripEndStationaryMins;
-@property (readonly) BOOL useVisitNotificationsForGeofence;
+@property BOOL is_duty_cycling;
+@property double accuracy;
+@property double filter_distance;
+@property double filter_time;  // unused
+@property int geofence_radius;
+@property int trip_end_stationary_mins;
+@property BOOL ios_use_visit_notifications_for_detection;
 // If this is false, we will use background push for sync
-@property (readonly) BOOL useRemotePushForSync;
+@property BOOL ios_use_remote_push_for_sync;
+@property int android_geofence_responsiveness; // unused
 
 @end

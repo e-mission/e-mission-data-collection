@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 // import com.google.android.gms.location.LocationClient;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.PollSensorManager;
@@ -12,6 +13,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
 
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
@@ -23,7 +25,6 @@ import com.google.android.gms.location.FusedLocationProviderApi;
 public class LocationChangeIntentService extends IntentService {
 	private static final String TAG = "LocationChangeIntentService";
 	private static final int TRIP_END_RADIUS = Constants.TRIP_EDGE_THRESHOLD;
-    private static final int FIVE_MINUTES_IN_SEC = 5 * 60;
 	
 	public LocationChangeIntentService() {
 		super("LocationChangeIntentService");
@@ -48,7 +49,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
 		Log.d(this, TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
-		int ACCURACY_THRESHOLD = LocationTrackingConfig.getConfig(this).getAccuracyThreshold();
+		int ACCURACY_THRESHOLD = ConfigManager.getConfig(this).getAccuracyThreshold();
 
         UserCache uc = UserCacheFactory.getUserCache(this);
 
@@ -82,7 +83,7 @@ public class LocationChangeIntentService extends IntentService {
 		 * points. We can deal with everything exclusively on the server side.
 		 */
 
-		if (!LocationTrackingConfig.getConfig(this).isDutyCycling()) {
+		if (!ConfigManager.getConfig(this).isDutyCycling()) {
 			// Server-side currently expects filtered location, but if we just put everything
 			// into filtered location, it won't be filtered any more.
 			// Let's just assume that we will have to generate filtered_location on the server side
@@ -100,14 +101,16 @@ public class LocationChangeIntentService extends IntentService {
 		 * sure that the algorithm is correct. So we store both the raw location and the filtered
 		 * location and use the filtered location for our calculations.
 		 */
-        int pointsToQuery = FIVE_MINUTES_IN_SEC * 1000 / LocationTrackingConfig.getConfig(this).getDetectionInterval();
+		int tripEndSecs = ConfigManager.getConfig(this).getTripEndStationaryMins() * 60;
+        int pointsToQuery = tripEndSecs * 1000 /
+				ConfigManager.getConfig(this).getFilterTime();
         Log.d(this, TAG, "Finding the last "+pointsToQuery+" points");
 
         SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location, pointsToQuery , SimpleLocation.class);
 
         double nowSecs = ((double)System.currentTimeMillis())/1000;
         UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
-                nowSecs - FIVE_MINUTES_IN_SEC - 10, nowSecs);
+                nowSecs - tripEndSecs - 10, nowSecs);
 
         Log.d(this, TAG, "Finding points in the range "+tq);
         SimpleLocation[] points5MinsAgo = uc.getSensorDataForInterval(R.string.key_usercache_filtered_location,
