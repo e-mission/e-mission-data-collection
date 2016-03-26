@@ -104,10 +104,10 @@
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/Constants.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/GooglePlayChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/ConfigManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/location/ActivityRecognitionChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/GeofenceExitIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/LocationChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
-    <source-file src="src/android/location/LocationTrackingConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/TripDiaryStateMachineReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/TripDiaryStateMachineService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/TripDiaryStateMachineServiceOngoing.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
@@ -122,6 +122,7 @@
     <source-file src="src/android/wrapper/Metadata.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/SimpleLocation.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Transition.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/LocationTrackingConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <resource-file src="res/android/statemachine.xml" target="res/values/statemachine.xml" />
   </platform>
 
@@ -163,9 +164,9 @@
     <header-file src="src/ios/BEMDataCollection.h"/>
     <header-file src="src/ios/BEMAppDelegate.h"/>
     <header-file src="src/ios/BEMRemotePushNotificationHandler.h"/>
+    <header-file src="src/ios/ConfigManager.h"/>
     <header-file src="src/ios/Location/DataUtils.h" target-dir="Location"/>
     <header-file src="src/ios/Location/GeofenceActions.h" target-dir="Location"/>
-    <header-file src="src/ios/Location/LocationTrackingConfig.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryActions.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryDelegate.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryStateMachine.h" target-dir="Location"/>
@@ -174,12 +175,13 @@
     <header-file src="src/ios/Wrapper/SimpleLocation.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/TimeQuery.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/Transition.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/LocationTrackingConfig.h" target-dir="Wrapper"/>
     <source-file src="src/ios/BEMDataCollection.m"/>
     <source-file src="src/ios/BEMAppDelegate.m"/>
+    <source-file src="src/ios/ConfigManager.m"/>
     <source-file src="src/ios/BEMRemotePushNotificationHandler.m"/>
     <source-file src="src/ios/Location/DataUtils.m" target-dir="Location"/>
     <source-file src="src/ios/Location/GeofenceActions.m" target-dir="Location"/>
-    <source-file src="src/ios/Location/LocationTrackingConfig.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryActions.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryDelegate.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryStateMachine.m" target-dir="Location"/>
@@ -188,5 +190,6 @@
     <source-file src="src/ios/Wrapper/SimpleLocation.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/TimeQuery.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Transition.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/LocationTrackingConfig.m" target-dir="Wrapper"/>
   </platform>
 </plugin>

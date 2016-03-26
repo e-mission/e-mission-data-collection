@@ -6,6 +6,7 @@
 - (void) pluginInitialize;
 - (void) launchInit:(CDVInvokedUrlCommand*)command;
 - (void) getConfig:(CDVInvokedUrlCommand*)command;
+- (void) updateConfig:(CDVInvokedUrlCommand*)command;
 - (void) getState:(CDVInvokedUrlCommand*)command;
 - (void) forceTripStart:(CDVInvokedUrlCommand *)command;
 - (void) forceTripEnd:(CDVInvokedUrlCommand *)command;

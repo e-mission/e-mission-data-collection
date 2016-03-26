@@ -9,7 +9,8 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 
-import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService;
 
@@ -28,7 +29,7 @@ public class ActivityRecognitionActions {
     public ActivityRecognitionActions(Context context, GoogleApiClient apiClient) {
         this.mCtxt = context;
         this.mGoogleApiClient = apiClient;
-        ACTIVITY_DETECTION_INTERVAL = LocationTrackingConfig.getConfig(context).getDetectionInterval();
+        ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
     }
 
     public PendingResult<Status> start() {

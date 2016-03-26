@@ -14,12 +14,13 @@ import android.preference.PreferenceManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationRequest;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import edu.berkeley.eecs.emission.*;
-import edu.berkeley.eecs.emission.BuildConfig;
-import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
-import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 public class DataCollectionPlugin extends CordovaPlugin {
@@ -53,17 +54,15 @@ public class DataCollectionPlugin extends CordovaPlugin {
             return true;
         } else if (action.equals("getConfig")) {
             Context ctxt = cordova.getActivity();
-            LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(ctxt);
-
-            JSONObject retObject = new JSONObject();
-            retObject.put("isDutyCycling", LocationTrackingConfig.getConfig(ctxt).isDutyCycling());
-            retObject.put("accuracy", getAccuracyAsString(cfg.getAccuracy()));
-            retObject.put("geofenceRadius", cfg.getRadius());
-            retObject.put("accuracyThreshold", cfg.getAccuracyThreshold());
-            retObject.put("filter", "time");
-            retObject.put("filterValue", cfg.getDetectionInterval());
-            retObject.put("tripEndStationaryMins", 5 * 60);
-            callbackContext.success(retObject);
+            LocationTrackingConfig cfg = ConfigManager.getConfig(ctxt);
+            callbackContext.success(new Gson().toJson(cfg));
+            return true;
+        } else if (action.equals("setConfig")) {
+            Context ctxt = cordova.getActivity();
+            JSONObject newConfig = data.getJSONObject(0);
+            LocationTrackingConfig cfg = new Gson().fromJson(newConfig.toString(), LocationTrackingConfig.class);
+            ConfigManager.updateConfig(ctxt, cfg);
+            callbackContext.success();
             return true;
         } else if (action.equals("getState")) {
             Context ctxt = cordova.getActivity();

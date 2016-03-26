@@ -8,8 +8,9 @@ import android.content.IntentFilter;
 import android.location.Location;
 import android.support.v4.content.LocalBroadcastManager;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
-import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 import com.google.android.gms.common.api.CommonStatusCodes;
@@ -141,7 +142,7 @@ public class GeofenceActions {
         if (testLoc == null) {
             return false; // Duh!
         }
-        LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(mCtxt);
+        LocationTrackingConfig cfg = ConfigManager.getConfig(mCtxt);
         if (testLoc.getAccuracy() > cfg.getAccuracyThreshold()) {
             return false; // too inaccurate. Note that a high accuracy number means a larger radius
             // of validity which effectively means a low accuracy
@@ -193,11 +194,11 @@ public class GeofenceActions {
      */
     public GeofencingRequest createGeofenceRequest(double lat, double lng) {
         Log.d(mCtxt, TAG, "creating geofence at location "+lat+", "+lng);
-        LocationTrackingConfig cfg = LocationTrackingConfig.getConfig(this.mCtxt);
+        LocationTrackingConfig cfg = ConfigManager.getConfig(this.mCtxt);
         Geofence currGeofence =
                 new Geofence.Builder().setRequestId(GEOFENCE_REQUEST_ID)
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setCircularRegion(lat, lng, cfg.getRadius())
+                        .setCircularRegion(lat, lng, cfg.getGeofenceRadius())
                         .setNotificationResponsiveness(cfg.getResponsiveness()) // 5 secs
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
                         .build();

@@ -17,6 +17,7 @@
 #import "MotionActivity.h"
 #import "BEMCommunicationHelper.h"
 #import "LocationTrackingConfig.h"
+#import "ConfigManager.h"
 
 @implementation DataUtils
 
@@ -201,7 +202,7 @@
         // to get to the geofence radius, assuming a straight line. With a filter distance = 5m and a
         // geofence radius = 100m, this would be 20 points. Then, we compare the distance between the first
         // and last points. But what if the points are not in a straight line (e.g. they could be in a curve).
-        if ([maxFrom doubleValue] < [LocationTrackingConfig instance].geofenceRadius) {
+        if ([maxFrom doubleValue] < [ConfigManager instance].geofence_radius) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"max distance in the past %d minutes is %@, returning YES", tripEndThresholdMins, maxFrom] showUI:TRUE];
             return YES;
         }

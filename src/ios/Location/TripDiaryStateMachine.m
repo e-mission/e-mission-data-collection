@@ -16,6 +16,7 @@
 #import "Transition.h"
 
 #import "LocationTrackingConfig.h"
+#import "ConfigManager.h"
 #import "AuthCompletionHandler.h"
 
 #import <CoreMotion/CoreMotion.h>
@@ -118,7 +119,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         }
     }
     
-    if (![LocationTrackingConfig instance].isDutyCycling) {
+    if (![ConfigManager instance].is_duty_cycling) {
         /* If we are not using geofencing, then we don't need to listen to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes it easier for us to ignore silent
             push as well as the transitions generated from here. Note that this means that we can't turn off
             tracking manually either, so if this is to be a viable alternative, we really need to do something
@@ -134,7 +135,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 
 -(void) registerForNotifications {
     // Register for notifications related to the state machine
-    if ([LocationTrackingConfig instance].isDutyCycling) {
+    if ([ConfigManager instance].is_duty_cycling) {
         // Only if we are using geofencing
         [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil
                                                       usingBlock:^(NSNotification* note) {
@@ -244,7 +245,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionVisitEnded]) {
-        if ([LocationTrackingConfig instance].useVisitNotificationsForGeofence) {
+        if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             // We first start tracking and then delete the geofence to make sure that we are always tracking something
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
             [TripDiaryActions deleteGeofence:self.locMgr];
@@ -303,7 +304,7 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                                 object:CFCTransitionNOP];
         }
     } else if ([transition isEqualToString:CFCTransitionVisitStarted]) {
-        if ([LocationTrackingConfig instance].useVisitNotificationsForGeofence) {
+        if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             [self forceRefreshToken];
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripEndDetected];

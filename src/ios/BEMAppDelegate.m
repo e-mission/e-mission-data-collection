@@ -13,6 +13,7 @@
 #import "BEMRemotePushNotificationHandler.h"
 #import "DataUtils.h"
 #import "LocationTrackingConfig.h"
+#import "ConfigManager.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
 
@@ -31,7 +32,7 @@
                 categories:nil]];
     }
     
-    if ([LocationTrackingConfig instance].useRemotePushForSync) {
+    if ([ConfigManager instance].ios_use_remote_push_for_sync) {
     if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
         [[UIApplication sharedApplication] registerForRemoteNotifications];
     } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
@@ -83,7 +84,7 @@
 - (void)application:(UIApplication *)application
                     didReceiveRemoteNotification:(NSDictionary *)userInfo
                     fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    if ([LocationTrackingConfig instance].useRemotePushForSync == YES) {
+    if ([ConfigManager instance].ios_use_remote_push_for_sync == YES) {
         [self launchTripEndCheckAndRemoteSync:completionHandler];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -108,7 +109,7 @@
 - (void)applicationWillEnterForeground:(UIApplication *)application {
     // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Application will enter the background"]];
+                                               @"Application will enter the foreground"]];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
@@ -123,7 +124,7 @@
 }
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    if ([LocationTrackingConfig instance].useRemotePushForSync == NO) {
+    if ([ConfigManager instance].ios_use_remote_push_for_sync == NO) {
         [self launchTripEndCheckAndRemoteSync:completionHandler];
     } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -135,7 +136,7 @@
 
 - (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([LocationTrackingConfig instance].useRemotePushForSync)]
+                                               @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([ConfigManager instance].ios_use_remote_push_for_sync)]
                                        showUI:TRUE];
     NSLog(@"About to check whether a trip has ended");
     NSDictionary* localUserInfo = @{@"handler": completionHandler};

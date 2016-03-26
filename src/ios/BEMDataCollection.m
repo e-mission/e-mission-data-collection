@@ -2,6 +2,8 @@
 #import "LocalNotificationManager.h"
 #import "Location/LocationTrackingConfig.h"
 #import "BEMAppDelegate.h"
+#import "ConfigManager.h"
+#import "DataUtils.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
@@ -47,14 +49,8 @@
     NSString* callbackId = [command callbackId];
     
     @try {
-        LocationTrackingConfig* cfg = [LocationTrackingConfig instance];
-        NSDictionary* retDict = @{@"isDutyCycling": @([cfg isDutyCycling]),
-                                         @"accuracy": [self getAccuracyAsString:[cfg accuracy]], // from TripDiaryDelegate.m
-                                         @"geofenceRadius": @([cfg geofenceRadius]),
-                                         @"accuracyThreshold": @(200),
-                                         @"filter": @"distance",
-                                         @"filterValue": @([cfg filterDistance]),
-                                         @"tripEndStationaryMins": @([cfg tripEndStationaryMins])};
+        LocationTrackingConfig* cfg = [ConfigManager instance];
+        NSDictionary* retDict = [DataUtils wrapperToDict:cfg];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK
                                    messageAsDictionary:retDict];
@@ -69,6 +65,28 @@
     }
 }
 
+- (void)updateConfig:(CDVInvokedUrlCommand *)command
+{
+    NSString* callbackId = [command callbackId];
+    @try {
+        NSDictionary* newDict = [[command arguments] objectAtIndex:0];
+        LocationTrackingConfig* newCfg = [LocationTrackingConfig new];
+        [DataUtils dictToWrapper:newDict wrapper:newCfg];
+        [ConfigManager updateConfig:newCfg];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While updating settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+
+}
+
 - (void)getState:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = [command callbackId];
@@ -81,7 +99,7 @@
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
     @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        NSString* msg = [NSString stringWithFormat: @"While getting state, error %@", exception];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_ERROR
                                    messageAsString:msg];

@@ -3,14 +3,14 @@ package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
-import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
 
 import java.util.Arrays;
 
-import edu.berkeley.eecs.emission.cordova.tracker.location.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.PollSensorManager;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
@@ -48,7 +48,7 @@ public class GeofenceLocationIntentService extends IntentService {
 		 */
         Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
         Log.d(this, TAG, "Extras keys are "+ Arrays.toString(intent.getExtras().keySet().toArray()));
-        int ACCURACY_THRESHOLD = LocationTrackingConfig.getConfig(this).getAccuracyThreshold();
+        int ACCURACY_THRESHOLD = ConfigManager.getConfig(this).getAccuracyThreshold();
 
         UserCache uc = UserCacheFactory.getUserCache(this);
 

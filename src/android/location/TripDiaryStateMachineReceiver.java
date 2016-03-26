@@ -12,6 +12,8 @@ import java.util.Set;
 
 import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 /*
@@ -110,7 +112,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 
 
     private Intent getStateMachineServiceIntent(Context context) {
-        if (LocationTrackingConfig.getConfig(context).isDutyCycling()) {
+        if (ConfigManager.getConfig(context).isDutyCycling()) {
             return new Intent(context, TripDiaryStateMachineService.class);
         } else {
             return new Intent(context, TripDiaryStateMachineServiceOngoing.class);
