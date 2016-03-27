@@ -11,6 +11,7 @@
 - (void) forceTripStart:(CDVInvokedUrlCommand *)command;
 - (void) forceTripEnd:(CDVInvokedUrlCommand *)command;
 - (void) forceRemotePush:(CDVInvokedUrlCommand *)command;
+- (void)getAccuracyOptions:(CDVInvokedUrlCommand *)command;
 
 @property (strong) TripDiaryStateMachine* tripDiaryStateMachine;
 

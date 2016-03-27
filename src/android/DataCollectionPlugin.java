@@ -15,8 +15,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationRequest;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
@@ -90,18 +88,16 @@ public class DataCollectionPlugin extends CordovaPlugin {
             Log.i(cordova.getActivity(), TAG, "on android, we don't handle remote pushes");
             callbackContext.success("NOP");
             return true;
+        } else if (action.equals("getAccuracyOptions")) {
+            JSONObject retVal = new JSONObject();
+            retVal.put("PRIORITY_HIGH_ACCURACY", LocationRequest.PRIORITY_HIGH_ACCURACY);
+            retVal.put("PRIORITY_BALANCED_POWER_ACCURACY", LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+            retVal.put("PRIORITY_LOW_POWER", LocationRequest.PRIORITY_LOW_POWER);
+            retVal.put("PRIORITY_NO_POWER", LocationRequest.PRIORITY_NO_POWER);
+            callbackContext.success(retVal);
+            return true;
         } else {
             return false;
-        }
-    }
-
-    public String getAccuracyAsString(int accuracyLevel) {
-        if (accuracyLevel == LocationRequest.PRIORITY_HIGH_ACCURACY) {
-            return "HIGH";
-        } else if (accuracyLevel == LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY) {
-            return "BALANCED";
-        } else {
-            return "UNKNOWN";
         }
     }
 }

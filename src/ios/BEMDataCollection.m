@@ -1,6 +1,6 @@
 #import "BEMDataCollection.h"
 #import "LocalNotificationManager.h"
-#import "Location/LocationTrackingConfig.h"
+#import "Wrapper/LocationTrackingConfig.h"
 #import "BEMAppDelegate.h"
 #import "ConfigManager.h"
 #import "DataUtils.h"
@@ -65,7 +65,7 @@
     }
 }
 
-- (void)updateConfig:(CDVInvokedUrlCommand *)command
+- (void)setConfig:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = [command callbackId];
     @try {
@@ -174,14 +174,29 @@
     }
 }
 
-- (NSString*)getAccuracyAsString:(double)accuracyLevel
+- (void)getAccuracyOptions:(CDVInvokedUrlCommand *)command
 {
-    if (accuracyLevel == kCLLocationAccuracyBest) {
-        return @"BEST";
-    } else if (accuracyLevel == kCLLocationAccuracyHundredMeters) {
-        return @"HUNDRED_METERS";
-    } else {
-        return @"UNKNOWN";
+    NSString* callbackId = [command callbackId];
+    
+    @try {
+        NSMutableDictionary* retVal = [NSMutableDictionary new];
+        retVal[@"kCLLocationAccuracyBestForNavigation"] = @(kCLLocationAccuracyBestForNavigation);
+        retVal[@"kCLLocationAccuracyBest"] = @(kCLLocationAccuracyBest);
+        retVal[@"kCLLocationAccuracyNearestTenMeters"] = @(kCLLocationAccuracyNearestTenMeters);
+        retVal[@"kCLLocationAccuracyHundredMeters"] = @(kCLLocationAccuracyHundredMeters);
+        retVal[@"kCLLocationAccuracyKilometer"] = @(kCLLocationAccuracyKilometer);
+        retVal[@"kCLLocationAccuracyThreeKilometers"] = @(kCLLocationAccuracyThreeKilometers);
+        CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsDictionary:retVal];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting accuracy options, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
 }
 
