@@ -12,6 +12,7 @@
 
 @property BOOL is_duty_cycling;
 @property double accuracy;
+@property double accuracy_threshold;
 @property double filter_distance;
 @property double filter_time;  // unused
 @property int geofence_radius;
