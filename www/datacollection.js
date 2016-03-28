@@ -43,14 +43,10 @@ var DataCollection = {
     getState: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "getState", []);
     },
-    forceTripStart: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "forceTripStart", []);
-    },
-    forceTripEnd: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "forceTripEnd", []);
-    },
-    forceRemotePush: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "forceRemotePush", []);
+    forceTransition: function (generalTransitionName) {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "forceTransition", [generalTransitionName]);
+        });
     }
 }
 

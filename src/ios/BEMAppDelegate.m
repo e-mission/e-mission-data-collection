@@ -16,8 +16,6 @@
 #import "ConfigManager.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
-#import "Battery.h"
-#import "BEMBuiltinUserCache.h"
 
 // 3600 secs = 1 hour
 #define ONE_HOUR 60 * 60
@@ -159,25 +157,7 @@
                                                showUI:TRUE];
         }
     } forceRefresh:TRUE];
-    [self saveBatteryAndSimulateUser];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
-}
-
-- (void) saveBatteryAndSimulateUser
-{
-// TODO: Figure out whether this should be here or in the server sync code or in the trip machine code
-    Battery* batteryInfo = [Battery new];
-    batteryInfo.battery_level_ratio = [UIDevice currentDevice].batteryLevel;
-    batteryInfo.battery_state = [UIDevice currentDevice].batteryState;
-    [[BuiltinUserCache database] putMessage:@"key.usercache.battery" value:batteryInfo];
-    if ([ConfigManager instance].simulate_user_interaction == YES) {
-        UILocalNotification *localNotif = [[UILocalNotification alloc] init];
-        if (localNotif) {
-            localNotif.alertBody = [NSString stringWithFormat:@"Battery level = %@", @(batteryInfo.battery_level_ratio * 100)];
-            localNotif.soundName = UILocalNotificationDefaultSoundName;
-            [[UIApplication sharedApplication] presentLocalNotificationNow:localNotif];
-        }
-    }
 }
 
 @end

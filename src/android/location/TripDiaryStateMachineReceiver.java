@@ -132,6 +132,29 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         }
     }
 
+    public static void restartCollection(Context ctxt) {
+        /*
+         Super hacky solution, but works for now. Steps are:
+         * Stop tracking
+         * Poll for state change
+         * Start tracking
+         * Ugh! My eyeballs hurt to even read that?!
+         */
+        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_stop_tracking)));
+        boolean stateChanged = false;
+        while(!stateChanged) {
+            try {
+                Thread.sleep(1000); // Wait for one second in the loop
+                stateChanged = (TripDiaryStateMachineService.getState(ctxt).equals(
+                        ctxt.getString(R.string.state_tracking_stopped)));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                // Sleep has been interrupted, might as well exit the while loop
+                stateChanged = true;
+            }
+        }
+        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_start_tracking)));
+    }
 
     private Intent getStateMachineServiceIntent(Context context) {
         if (ConfigManager.getConfig(context).isDutyCycling()) {

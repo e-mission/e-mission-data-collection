@@ -18,6 +18,7 @@
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
 #import "AuthCompletionHandler.h"
+#import "DataUtils.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -40,6 +41,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         return @"STATE_WAITING_FOR_TRIP_START";
     } else if (state == kOngoingTripState) {
         return @"STATE_ONGOING_TRIP";
+    } else if (state == kTrackingStoppedState) {
+        return @"STATE_TRACKING_STOPPED";
     } else {
         return @"UNKNOWN";
     }
@@ -119,11 +122,10 @@ static NSString * const kCurrState = @"CURR_STATE";
         }
     }
     
-    if (![ConfigManager instance].is_duty_cycling) {
-        /* If we are not using geofencing, then we don't need to listen to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes it easier for us to ignore silent
-            push as well as the transitions generated from here. Note that this means that we can't turn off
-            tracking manually either, so if this is to be a viable alternative, we really need to do something
-            more sophisticated in the state machine. But let's start with something simple for now.
+    if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState) {
+        /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
+         to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes
+         it easier for us to ignore silent push as well as the transitions generated from here.
          */
         [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
         [self setState:kOngoingTripState];
@@ -134,15 +136,15 @@ static NSString * const kCurrState = @"CURR_STATE";
 }
 
 -(void) registerForNotifications {
-    // Register for notifications related to the state machine
-    if ([ConfigManager instance].is_duty_cycling) {
-        // Only if we are using geofencing
+    // Register for notifications related to the state machine.
+    // Before this, we could get away with doing this only when we were using geofences, but right now,
+    // we push data using the remote push notification, so we need to receive the notification in all cases.
+    // But then we have to be careful to not detect a trip end when we are not geofencing
         [[NSNotificationCenter defaultCenter] addObserverForName:CFCTransitionNotificationName object:nil queue:nil
                                                       usingBlock:^(NSNotification* note) {
             [self handleTransition:(NSString*)note.object withUserInfo:note.userInfo];
         }];
     }
-}
 
 -(void) checkGeofenceState:(GeofenceStatusCallback) callback {
     if (self.locMgr.monitoredRegions.count > 0) {
@@ -164,6 +166,26 @@ static NSString * const kCurrState = @"CURR_STATE";
     transitionWrapper.currState = [TripDiaryStateMachine getStateName:self.currState];
     transitionWrapper.transition = transition;
     [[BuiltinUserCache database] putMessage:@"key.usercache.transition" value:transitionWrapper];
+    [DataUtils saveBatteryAndSimulateUser];
+    
+    // To make life simple, in the non-geofenced case, we will ignore all transitions other than
+    // 1) remote push -> to push data
+    // 2) force stop -> to stop tracking
+    // 3) force start -> to start tracking
+    // 4) visit started -> as backup for broken remote push
+    // this means that these transitions are the only ones for which we need to consider whether we are geofenced
+    // or not while handling them
+    if (![ConfigManager instance].is_duty_cycling &&
+        ![transition isEqualToString:CFCTransitionRecievedSilentPush] &&
+        ![transition isEqualToString:CFCTransitionForceStopTracking] &&
+        ![transition isEqualToString:CFCTransitionStartTracking] &&
+        ![transition isEqualToString:CFCTransitionVisitStarted]) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"In TripDiaryStateMachine with geofencing turned off, received ignored transition %@ in state %@, ignoring",
+                                                   transition,
+                                                   [TripDiaryStateMachine getStateName:self.currState]] showUI:FALSE];
+        return;
+    }
     
     if (self.currState == kStartState) {
         [self handleStart:transition withUserInfo:userInfo];
@@ -171,6 +193,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         [self handleWaitingForTripStart:transition withUserInfo:userInfo];
     } else if (self.currState == kOngoingTripState) {
         [self handleOngoingTrip:transition withUserInfo:userInfo];
+    } else if (self.currState == kTrackingStoppedState) {
+        [self handleTrackingStopped:transition withUserInfo:userInfo];
     } else {
         NSLog(@"Ignoring invalid transition %@ in state %@", transition,
               [TripDiaryStateMachine getStateName:self.currState]);
@@ -234,7 +258,8 @@ static NSString * const kCurrState = @"CURR_STATE";
 - (void) handleWaitingForTripStart:(NSString*) transition  withUserInfo:(NSDictionary*) userInfo {
     /* If we delete the geofence, and we are using the more fine grained location detection mode, then we won't be relaunched if the app is terminated. "The standard location service ... does not relaunch iOS apps that have been terminated. And it looks like apps need not be terminated on reboot, they can also be terminated as part of normal OS operation. The system may still terminate the app at any time to reclaim its memory or other resources."
      
-        However, it turns out that keeping the geofence around is not good enough because iOS does not assume that we start within the geofence. So it won't restart until it detects an actual in -> out transition, which will only happen again when we visit the start of the trip. So let's delete the geofence and start both types of location services.
+        However, it turns out that keeping the geofence around is not good enough because iOS does not assume that we
+        start within the geofence. So it won't restart until it detects an actual in -> out transition, which will only happen again when we visit the start of the trip. So let's delete the geofence and start both types of location services.
      */
     
     // TODO: Make removing the geofence conditional on the type of service
@@ -256,7 +281,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         [self setState:kOngoingTripState];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         // Let's push any pending changes since we know that the trip has ended
-        // SilentPushCompletionHandler handler = [userInfo objectForKey:@"handler"];
         [[TripDiaryActions pushTripToServer] continueWithBlock:^id(BFTask *task) {
             // When we send the NOP, the AppDelegate listener will mark the sync as complete
             // if we mark it as complete here and there, then iOS crashes because of
@@ -265,13 +289,13 @@ static NSString * const kCurrState = @"CURR_STATE";
             // that will make the state machine even more complex than it currently instead.
             // So instead, we send the NOP after the push is complete. Two birds with one stone!
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionNOP];
+                                                            object:CFCTransitionDataPushed];
             return nil;
         }];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
-        [self setState:kStartState];
+        [self setState:kTrackingStoppedState];
     } else  {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
@@ -281,6 +305,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 
 - (void) handleOngoingTrip:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
     if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
+        if([ConfigManager instance].is_duty_cycling) {
         if ([TripDiaryActions hasTripEnded]) {
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripEndDetected];
@@ -303,11 +328,23 @@ static NSString * const kCurrState = @"CURR_STATE";
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionNOP];
         }
+        } else {
+            // we are not using the geofence, so we are always in the ongoing state. We still
+            // want to push data periodically, though
+            [self syncAndNotify];
+        }
     } else if ([transition isEqualToString:CFCTransitionVisitStarted]) {
+        if ([ConfigManager instance].is_duty_cycling) {
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             [self forceRefreshToken];
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripEndDetected];
+        }
+        } else {
+            // we are not using the geofence, so we don't want to mark the trip as ended, but we do want to
+            // push data, in case the remote pushes don't work reliably
+            [self forceRefreshToken];
+            [self syncAndNotify];
         }
     } else if ([transition isEqualToString:CFCTransitionTripEndDetected]) {
         [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
@@ -333,12 +370,55 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
-        [self setState:kStartState];
+        [self setState:kTrackingStoppedState];
     } else {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
               [TripDiaryStateMachine getStateName:self.currState]);
     }
+}
+
+- (void) handleTrackingStopped:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
+    if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
+        // We are not actively tracking, but let's push any data that we had before we stopped,
+        // and any battery data collected since then
+        [self syncAndNotify];
+    } else if ([transition isEqualToString:CFCTransitionVisitStarted]) {
+        // If we are already in the tracking stopped state, we don't expect to
+        // get any other transitions. If we do, there's a bug. Let's alert and turn off
+        // again.
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+           @"Found unexpected VISIT_STARTED transition while tracking was stopped, stop everything again"]
+           showUI:TRUE];
+        [self setState:kTrackingStoppedState];
+        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
+    } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
+        [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
+    } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
+        [self setState:kTrackingStoppedState];
+    } else if ([transition isEqualToString:CFCTransitionStartTracking]) {
+        [self setState:kStartState];
+        // This will run the one time init tracking as well as try to create a geofence
+        // if we are moving, then we will be outside the geofence... the existing state machine will take over.
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionInitialize];
+    } else {
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring",
+              transition,
+              [TripDiaryStateMachine getStateName:self.currState]);
+    }
+}
+
+- (void) syncAndNotify
+{
+    [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Returning with fetch result = new data"]
+                                           showUI:FALSE];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionDataPushed];
+        return nil;
+    }];
 }
 
 - (void) forceRefreshToken

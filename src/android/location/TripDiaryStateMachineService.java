@@ -22,6 +22,7 @@ import com.google.android.gms.location.LocationServices;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
@@ -189,6 +190,8 @@ public class TripDiaryStateMachineService extends Service implements
         // - have a set state which allows the broadcast code and the test code to set the state to start
         // when restarting
         // - have initialize function as a reset, which stops any current stuff and starts the new one
+        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
+                BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
@@ -197,6 +200,8 @@ public class TripDiaryStateMachineService extends Service implements
             handleTripStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
             handleTripEnd(ctxt, apiClient, actionString);
+        } else if (currState.equals("local.state.tracking_stopped")) {
+            handleTrackingStopped(ctxt, apiClient, actionString);
         }
     }
 
@@ -241,6 +246,15 @@ public class TripDiaryStateMachineService extends Service implements
         }
             }).start();
         }
+        // One would think that we don't need to deal with anything other than starting from the start
+        // state, but we can be stuck in the start state for a while if it turns out that the geofence is
+        // not created correctly. If the user forces us to stop tracking then, we still need to do it.
+        if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
+            // Haven't started anything yet (that's why we are in the start state).
+            // just move to the stop tracking state
+            String newState = ctxt.getString(R.string.state_tracking_stopped);
+            setNewState(newState);
+        }
     }
 
     public void handleTripStart(Context ctxt, GoogleApiClient apiClient, String actionString) {
@@ -284,7 +298,7 @@ public class TripDiaryStateMachineService extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_start);
+                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -356,7 +370,39 @@ public class TripDiaryStateMachineService extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_start);
+                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
+                    if (batchResult.getStatus().isSuccess()) {
+                        setNewState(newState);
+                        NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                "Success moving to " + newState);
+                    } else {
+                        NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                "Failed moving to " + newState);
+                    }
+                    mApiClient.disconnect();
+                }
+            });
+        }
+    }
+
+    private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+        Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
+        if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
+            setNewState(ctxt.getString(R.string.state_start));
+            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+        } else {
+            // We don't really care about any other transitions, but if we are getting random transitions
+            // in this state, may be good to turn everything off
+            final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
+            Batch.Builder resultBarrier = new Batch.Builder(apiClient);
+            tokenList.add(resultBarrier.add(new GeofenceActions(ctxt, apiClient).remove()));
+            tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
+            tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).stop()));
+            final Context fCtxt = ctxt;
+            resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
+                @Override
+                public void onResult(BatchResult batchResult) {
+                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
