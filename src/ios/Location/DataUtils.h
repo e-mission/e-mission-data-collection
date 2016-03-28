@@ -27,6 +27,7 @@
 
 + (NSArray*) getLastPoints:(int) nPoints;
 + (BOOL)hasTripEnded:(int)tripEndThresholdMins;
++ (void) saveBatteryAndSimulateUser;
 // + (void) pushAndClearData:(void (^)(BOOL))completionHandler;
 
 @end

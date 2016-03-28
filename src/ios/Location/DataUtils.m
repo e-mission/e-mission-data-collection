@@ -18,6 +18,7 @@
 #import "BEMCommunicationHelper.h"
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
+#import "Battery.h"
 
 @implementation DataUtils
 
@@ -245,6 +246,23 @@
     
     NSLog(@"data has %lu bytes, str has size %lu", bytesToSend.length, (unsigned long)strToSend.length);
     return strToSend;
+}
+
++ (void) saveBatteryAndSimulateUser
+{
+    // TODO: Figure out whether this should be here or in the server sync code or in the trip machine code
+    Battery* batteryInfo = [Battery new];
+    batteryInfo.battery_level_ratio = [UIDevice currentDevice].batteryLevel;
+    batteryInfo.battery_state = [UIDevice currentDevice].batteryState;
+    [[BuiltinUserCache database] putMessage:@"key.usercache.battery" value:batteryInfo];
+    if ([ConfigManager instance].simulate_user_interaction == YES) {
+        UILocalNotification *localNotif = [[UILocalNotification alloc] init];
+        if (localNotif) {
+            localNotif.alertBody = [NSString stringWithFormat:@"Battery level = %@", @(batteryInfo.battery_level_ratio * 100)];
+            localNotif.soundName = UILocalNotificationDefaultSoundName;
+            [[UIApplication sharedApplication] presentLocalNotificationNow:localNotif];
+        }
+    }
 }
 
 #if FALSE

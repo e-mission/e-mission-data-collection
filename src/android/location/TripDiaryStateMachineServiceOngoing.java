@@ -192,6 +192,10 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
+        } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
+            handleOngoing(ctxt, apiClient, actionString);
+        } if (currState.equals(getString(R.string.state_tracking_stopped))) {
+            handleTrackingStopped(ctxt, apiClient, actionString);
         }
     }
 
@@ -227,6 +231,15 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             });
         }
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
+            // Haven't started anything yet (that's why we are in the start state).
+            // just move to the stop tracking state
+            String newState = ctxt.getString(R.string.state_tracking_stopped);
+            setNewState(newState);
+        }
+    }
+
+    private void handleOngoing(Context ctxt, GoogleApiClient apiClient, String actionString) {
+        if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
             Batch.Builder resultBarrier = new Batch.Builder(apiClient);
             tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
@@ -235,7 +248,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_start);
+                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -247,6 +260,14 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                     mApiClient.disconnect();
                 }
             });
+        }
+    }
+
+    private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+        Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
+        if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
+            setNewState(ctxt.getString(R.string.state_start));
+            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
         }
     }
 }

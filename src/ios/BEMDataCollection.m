@@ -107,64 +107,28 @@
     }
 }
 
-- (void)forceTripStart:(CDVInvokedUrlCommand *)command
+- (void)forceTransition:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = [command callbackId];
     
     @try {
+        NSString* standardNotification = [[command arguments] objectAtIndex:0];
+        NSString* iosNotification = [self getTransitionMap][standardNotification];
+        if (iosNotification != nil) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionExitedGeofence];
+                                                                object:iosNotification];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK
-                                   messageAsString:CFCTransitionExitedGeofence];
+                                       messageAsString:iosNotification];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        } else {
+            NSString* msg = [NSString stringWithFormat: @"Unknown transition %@, ignoring", standardNotification];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_ERROR
                                    messageAsString:msg];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
 }
-
-- (void)forceTripEnd:(CDVInvokedUrlCommand *)command
-{
-    NSString* callbackId = [command callbackId];
-    
-    @try {
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionTripEndDetected];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK
-                                   messageAsString:CFCTransitionTripEndDetected];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_ERROR
-                                   messageAsString:msg];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-}
-
-
-- (void)forceRemotePush:(CDVInvokedUrlCommand *)command
-{
-    NSString* callbackId = [command callbackId];
-    
-    @try {
-        UIApplication* appl = [UIApplication sharedApplication];
-        NSDictionary* dummyInfo = @{};
-        [appl.delegate application:appl didReceiveRemoteNotification:dummyInfo
-            fetchCompletionHandler:^(UIBackgroundFetchResult fetchResult) {
-            CDVPluginResult* result = [CDVPluginResult
-                                       resultWithStatus:CDVCommandStatus_OK
-                                       messageAsNSUInteger:fetchResult];
-            [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-        }];
-    }
     @catch (NSException *exception) {
         NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
         CDVPluginResult* result = [CDVPluginResult
@@ -198,6 +162,40 @@
                                    messageAsString:msg];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
+}
+
+- (NSDictionary*) getTransitionMap {
+    NSMutableDictionary* retVal = [NSMutableDictionary new];
+    retVal[@"INITIALIZE"] = CFCTransitionInitialize;
+    retVal[@"EXITED_GEOFENCE"] = CFCTransitionExitedGeofence;
+    retVal[@"STOPPED_MOVING"] = CFCTransitionTripEndDetected;
+    retVal[@"STOP_TRACKING"] = CFCTransitionForceStopTracking;
+    retVal[@"START_TRACKING"] = CFCTransitionStartTracking;
+    retVal[@"RECEIVED_SILENT_PUSH"] = CFCTransitionRecievedSilentPush;
+    retVal[@"VISIT_STARTED"] = CFCTransitionVisitStarted;
+    retVal[@"VISIT_ENDED"] = CFCTransitionVisitEnded;
+    return retVal;
+}
+
+- (void) restartCollection {
+    /*
+     Super hacky solution, but works for now. Steps are:
+     * Stop tracking
+     * [SKIPPED on iOS because stopping is synchronous] Poll for state change
+     * Start tracking
+     * Ugh! My eyeballs hurt to even read that?!
+     */
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                        object:CFCTransitionForceStopTracking];
+    
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"after stopping tracking, state is %@",
+                                               [TripDiaryStateMachine getStateName:self.tripDiaryStateMachine.currState]]];
+     
+    // This may take a while to complete, but we don't care
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                         object:CFCTransitionStartTracking];
 }
 
 - (void) onAppTerminate {

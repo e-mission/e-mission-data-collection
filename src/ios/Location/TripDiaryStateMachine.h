@@ -33,6 +33,7 @@
 #define CFCTransitionDataPushed @"T_DATA_PUSHED"
 #define CFCTransitionForceStopTracking @"T_FORCE_STOP_TRACKING"
 #define CFCTransitionTrackingStopped @"T_TRACKING_STOPPED"
+#define CFCTransitionStartTracking @"T_START_TRACKING"
 #define CFCTransitionVisitStarted @"T_VISIT_STARTED"
 #define CFCTransitionVisitEnded @"T_VISIT_ENDED"
 #define CFCTransitionNOP @"T_NOP"
@@ -50,7 +51,8 @@
 typedef enum : NSUInteger {
     kStartState,
     kWaitingForTripStartState,
-    kOngoingTripState
+    kOngoingTripState,
+    kTrackingStoppedState
 } TripDiaryStates;
 
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);

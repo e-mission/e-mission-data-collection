@@ -16,6 +16,9 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationRequest;
 import com.google.gson.Gson;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
@@ -60,6 +63,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             JSONObject newConfig = data.getJSONObject(0);
             LocationTrackingConfig cfg = new Gson().fromJson(newConfig.toString(), LocationTrackingConfig.class);
             ConfigManager.updateConfig(ctxt, cfg);
+            TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
         } else if (action.equals("getState")) {
@@ -68,25 +72,24 @@ public class DataCollectionPlugin extends CordovaPlugin {
             String state = prefs.getString(ctxt.getString(R.string.curr_state_key), ctxt.getString(R.string.state_start));
             callbackContext.success(state);
             return true;
-        } else if (action.equals("forceTripStart")) {
-            Context ctxt = cordova.getActivity();
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_exited_geofence)));
-            callbackContext.success(ctxt.getString(R.string.transition_exited_geofence));
-            return true;
-        } else if (action.equals("forceTripEnd")) {
-            // we want to run this in a background thread because it may wait to get the current location
+        } else if (action.equals("forceTransition")) {
+            // we want to run this in a background thread because it might sometimes wait to get
+            // the current location
+            final String generalTransition = data.getString(0);
             cordova.getThreadPool().execute(new Runnable() {
                 @Override
                 public void run() {
             Context ctxt = cordova.getActivity();
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_stopped_moving)));
-            callbackContext.success(ctxt.getString(R.string.transition_stopped_moving));
+                    Map<String, String> transitionMap = getTransitionMap(ctxt);
+                    if (transitionMap.containsKey(generalTransition)) {
+                        String androidTransition = transitionMap.get(generalTransition);
+                        ctxt.sendBroadcast(new Intent(androidTransition));
+                        callbackContext.success(androidTransition);
+                    } else {
+                        callbackContext.error(generalTransition + " not supported, ignoring");
+                    }
                 }
             });
-            return true;
-        } else if (action.equals("forceRemotePush")) {
-            Log.i(cordova.getActivity(), TAG, "on android, we don't handle remote pushes");
-            callbackContext.success("NOP");
             return true;
         } else if (action.equals("getAccuracyOptions")) {
             JSONObject retVal = new JSONObject();
@@ -99,5 +102,15 @@ public class DataCollectionPlugin extends CordovaPlugin {
         } else {
             return false;
         }
+    }
+
+    private static Map<String, String> getTransitionMap(Context ctxt) {
+        Map<String, String> retVal = new HashMap<String, String>();
+        retVal.put("INITIALIZE", ctxt.getString(R.string.transition_initialize));
+        retVal.put("EXITED_GEOFENCE", ctxt.getString(R.string.transition_exited_geofence));
+        retVal.put("STOPPED_MOVING", ctxt.getString(R.string.transition_stopped_moving));
+        retVal.put("STOP_TRACKING", ctxt.getString(R.string.transition_stop_tracking));
+        retVal.put("START_TRACKING", ctxt.getString(R.string.transition_start_tracking));
+        return retVal;
     }
 }

@@ -6,11 +6,9 @@
 - (void) pluginInitialize;
 - (void) launchInit:(CDVInvokedUrlCommand*)command;
 - (void) getConfig:(CDVInvokedUrlCommand*)command;
-- (void) updateConfig:(CDVInvokedUrlCommand*)command;
+- (void) setConfig:(CDVInvokedUrlCommand*)command;
 - (void) getState:(CDVInvokedUrlCommand*)command;
-- (void) forceTripStart:(CDVInvokedUrlCommand *)command;
-- (void) forceTripEnd:(CDVInvokedUrlCommand *)command;
-- (void) forceRemotePush:(CDVInvokedUrlCommand *)command;
+- (void) forceTransition:(CDVInvokedUrlCommand *)command;
 - (void)getAccuracyOptions:(CDVInvokedUrlCommand *)command;
 
 @property (strong) TripDiaryStateMachine* tripDiaryStateMachine;
