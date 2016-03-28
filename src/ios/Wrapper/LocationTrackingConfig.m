@@ -19,6 +19,7 @@
 
 -(id)init {
     self.is_duty_cycling = YES;
+    self.simulate_user_interaction = NO;
     self.accuracy = kCLLocationAccuracyBest;
     self.accuracy_threshold = 200;
     self.filter_distance = kFifty_Meters;
@@ -26,7 +27,7 @@
     self.geofence_radius = kHundred_Meters;
     self.trip_end_stationary_mins = kTripEndStationaryMins;
     self.ios_use_visit_notifications_for_detection = YES;
-    self.ios_use_remote_push_for_sync = NO;
+    self.ios_use_remote_push_for_sync = YES;
     self.android_geofence_responsiveness = -1; // unused
     return self;
 }

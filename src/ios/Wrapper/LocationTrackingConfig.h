@@ -11,6 +11,7 @@
 @interface LocationTrackingConfig : NSObject
 
 @property BOOL is_duty_cycling;
+@property BOOL simulate_user_interaction;
 @property double accuracy;
 @property double accuracy_threshold;
 @property double filter_distance;
