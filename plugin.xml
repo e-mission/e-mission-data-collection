@@ -123,6 +123,7 @@
     <source-file src="src/android/wrapper/SimpleLocation.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Transition.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/LocationTrackingConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/Battery.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <resource-file src="res/android/statemachine.xml" target="res/values/statemachine.xml" />
   </platform>
 
@@ -176,6 +177,7 @@
     <header-file src="src/ios/Wrapper/TimeQuery.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/Transition.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/LocationTrackingConfig.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/Battery.h" target-dir="Wrapper"/>
     <source-file src="src/ios/BEMDataCollection.m"/>
     <source-file src="src/ios/BEMAppDelegate.m"/>
     <source-file src="src/ios/ConfigManager.m"/>
@@ -191,5 +193,6 @@
     <source-file src="src/ios/Wrapper/TimeQuery.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Transition.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/LocationTrackingConfig.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/Battery.m" target-dir="Wrapper"/>
   </platform>
 </plugin>
