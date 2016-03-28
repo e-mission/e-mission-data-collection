@@ -16,6 +16,8 @@
 #import "ConfigManager.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
+#import "Battery.h"
+#import "BEMBuiltinUserCache.h"
 
 // 3600 secs = 1 hour
 #define ONE_HOUR 60 * 60
@@ -47,7 +49,7 @@
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Initialized remote push notification handler %@, finished registering for notifications ",
                                                 [BEMRemotePushNotificationHandler instance]]
-                                       showUI:TRUE];
+                                       showUI:FALSE];
 
     // Handle google+ sign on
     [AuthCompletionHandler sharedInstance].clientId = [[ConnectionSettings sharedInstance] getGoogleiOSClientID];
@@ -89,7 +91,7 @@
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Received remote push, ignoring"]
-                                               showUI:TRUE];
+                                               showUI:FALSE];
         completionHandler(UIBackgroundFetchResultNewData);
         }
 }
@@ -129,7 +131,7 @@
     } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Received background fetch call, ignoring"]
-                                           showUI:TRUE];
+                                           showUI:FALSE];
         completionHandler(UIBackgroundFetchResultNewData);
     }
 }
@@ -137,7 +139,7 @@
 - (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([ConfigManager instance].ios_use_remote_push_for_sync)]
-                                       showUI:TRUE];
+                                       showUI:FALSE];
     NSLog(@"About to check whether a trip has ended");
     NSDictionary* localUserInfo = @{@"handler": completionHandler};
     [[AuthCompletionHandler sharedInstance] getValidAuth:^(GTMOAuth2Authentication *auth, NSError *error) {
@@ -150,14 +152,32 @@
             GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
-                                               showUI:TRUE];
+                                               showUI:FALSE];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Error %@ while refreshing token in background", error]
                                                showUI:TRUE];
         }
     } forceRefresh:TRUE];
+    [self saveBatteryAndSimulateUser];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
+}
+
+- (void) saveBatteryAndSimulateUser
+{
+// TODO: Figure out whether this should be here or in the server sync code or in the trip machine code
+    Battery* batteryInfo = [Battery new];
+    batteryInfo.battery_level_ratio = [UIDevice currentDevice].batteryLevel;
+    batteryInfo.battery_state = [UIDevice currentDevice].batteryState;
+    [[BuiltinUserCache database] putMessage:@"key.usercache.battery" value:batteryInfo];
+    if ([ConfigManager instance].simulate_user_interaction == YES) {
+        UILocalNotification *localNotif = [[UILocalNotification alloc] init];
+        if (localNotif) {
+            localNotif.alertBody = [NSString stringWithFormat:@"Battery level = %@", @(batteryInfo.battery_level_ratio * 100)];
+            localNotif.soundName = UILocalNotificationDefaultSoundName;
+            [[UIApplication sharedApplication] presentLocalNotificationNow:localNotif];
+        }
+    }
 }
 
 @end

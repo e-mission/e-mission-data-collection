@@ -159,7 +159,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"In TripDiaryStateMachine, received transition %@ in state %@",
                                                transition,
-                                               [TripDiaryStateMachine getStateName:self.currState]] showUI:TRUE];
+                                               [TripDiaryStateMachine getStateName:self.currState]] showUI:FALSE];
     Transition* transitionWrapper = [Transition new];
     transitionWrapper.currState = [TripDiaryStateMachine getStateName:self.currState];
     transitionWrapper.transition = transition;
@@ -325,7 +325,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Returning with fetch result = new data"]
-                                               showUI:TRUE];
+                                               showUI:FALSE];
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionDataPushed];
             return nil;
@@ -353,7 +353,7 @@ static NSString * const kCurrState = @"CURR_STATE";
             GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
-                                               showUI:TRUE];
+                                               showUI:FALSE];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Error %@ while refreshing token in background", error]

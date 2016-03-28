@@ -1,5 +1,7 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,8 +15,11 @@ import java.util.Set;
 import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 /*
  * The BroadcastReceiver is really lightweight because it is considered to be inactive once it
@@ -88,6 +93,23 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             // even if we did have it. So this is not a check that we can do.
         }
         initOnUpgrade(ctxt);
+    }
+
+    public static void saveBatteryAndSimulateUser(Context ctxt) {
+        Battery currInfo = BatteryUtils.getBatteryInfo(ctxt);
+        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery, currInfo);
+        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
+            Notification notification = new Notification.Builder(ctxt)
+                    .setContentTitle("Interact with me!")
+                    .setContentText("Battery level is "+currInfo.getBatteryLevelPct())
+                    .setSmallIcon(R.drawable.icon)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setVibrate(new long[]{0, 5 * 1000}) // Don't wait, then vibrate for 5 seconds
+                    .build();
+            NotificationManager mgr = (NotificationManager) ctxt.getSystemService(Context.NOTIFICATION_SERVICE);
+            int notificationId = 1234;
+            mgr.notify(notificationId, notification);
+        }
     }
 
     public static void initOnUpgrade(Context ctxt) {
