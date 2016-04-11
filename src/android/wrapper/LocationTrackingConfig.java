@@ -13,7 +13,7 @@ public class LocationTrackingConfig {
 
     public LocationTrackingConfig() {
         this.is_duty_cycling = true;
-        this.is_simulate_user_interaction = false;
+        this.simulate_user_interaction = false;
         this.accuracy = LocationRequest.PRIORITY_HIGH_ACCURACY;
         this.accuracy_threshold = 200;
         this.filter_distance = -1; // unused
@@ -27,7 +27,7 @@ public class LocationTrackingConfig {
         return this.is_duty_cycling;
     }
 
-    public boolean isSimulateUserInteraction() { return this.is_simulate_user_interaction; }
+    public boolean isSimulateUserInteraction() { return this.simulate_user_interaction; }
 
     public int getAccuracy() {
         return this.accuracy;
@@ -60,7 +60,7 @@ public class LocationTrackingConfig {
     // We don't need any "set" fields because the entire document will be set as a whole
     // using the javascript interface
     private boolean is_duty_cycling;
-    private boolean is_simulate_user_interaction;
+    private boolean simulate_user_interaction;
     private int accuracy;
     private int accuracy_threshold;
     private int filter_distance;

@@ -73,6 +73,7 @@
         LocationTrackingConfig* newCfg = [LocationTrackingConfig new];
         [DataUtils dictToWrapper:newDict wrapper:newCfg];
         [ConfigManager updateConfig:newCfg];
+        [self restartCollection];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];

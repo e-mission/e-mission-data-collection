@@ -19,6 +19,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 /*
@@ -64,7 +65,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_initialize),
                 context.getString(R.string.transition_exited_geofence),
                 context.getString(R.string.transition_stopped_moving),
-                context.getString(R.string.transition_stop_tracking)
+                context.getString(R.string.transition_stop_tracking),
+                context.getString(R.string.transition_start_tracking)
         }));
 
         if (!validTransitions.contains(intent.getAction())) {
@@ -99,16 +101,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         Battery currInfo = BatteryUtils.getBatteryInfo(ctxt);
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery, currInfo);
         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
-            Notification notification = new Notification.Builder(ctxt)
-                    .setContentTitle("Interact with me!")
-                    .setContentText("Battery level is "+currInfo.getBatteryLevelPct())
-                    .setSmallIcon(R.drawable.icon)
-                    .setPriority(Notification.PRIORITY_HIGH)
-                    .setVibrate(new long[]{0, 5 * 1000}) // Don't wait, then vibrate for 5 seconds
-                    .build();
-            NotificationManager mgr = (NotificationManager) ctxt.getSystemService(Context.NOTIFICATION_SERVICE);
-            int notificationId = 1234;
-            mgr.notify(notificationId, notification);
+            NotificationHelper.createNotification(ctxt, 1234, "Interact with me! Battery level is "+
+                    currInfo.getBatteryLevelPct());
         }
     }
 
@@ -141,19 +135,25 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * Ugh! My eyeballs hurt to even read that?!
          */
         ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_stop_tracking)));
+        final Context fCtxt = ctxt;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
         boolean stateChanged = false;
         while(!stateChanged) {
             try {
                 Thread.sleep(1000); // Wait for one second in the loop
-                stateChanged = (TripDiaryStateMachineService.getState(ctxt).equals(
-                        ctxt.getString(R.string.state_tracking_stopped)));
+                        stateChanged = (TripDiaryStateMachineService.getState(fCtxt).equals(
+                                fCtxt.getString(R.string.state_tracking_stopped)));
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 // Sleep has been interrupted, might as well exit the while loop
                 stateChanged = true;
             }
         }
-        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_start_tracking)));
+                fCtxt.sendBroadcast(new Intent(fCtxt.getString(R.string.transition_start_tracking)));
+            }
+        }).start();
     }
 
     private Intent getStateMachineServiceIntent(Context context) {

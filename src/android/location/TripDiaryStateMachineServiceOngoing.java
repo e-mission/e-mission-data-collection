@@ -192,6 +192,8 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
+        } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
+            handleWaitingForTripStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
             handleOngoing(ctxt, apiClient, actionString);
         } if (currState.equals(getString(R.string.state_tracking_stopped))) {
@@ -203,38 +205,34 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleStarted(" + actionString + ") called");
         // Get current location
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
-            final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-            Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-            tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).start()));
-            tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).start()));
-            // TODO: How to pass in the token list?
-            // Also, the callback is currently the same for all of them, but could potentially be
-            // different in the future once we add in failure handling because we may want to do
-            // different things based on the different failure cases. If we don't do that, we should
-            // refactor the callback to a common class. and then we need to pass in the token list to it
-            // since it can't use the final variable
-            final Context fCtxt = ctxt;
-            resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-                @Override
-                public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_ongoing_trip);
-                    if (batchResult.getStatus().isSuccess()) {
-                        setNewState(newState);
-                        NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Success moving to " + newState);
-                    } else {
-                        NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Failed moving to " + newState + " failed");
+            startEverything(ctxt, apiClient, actionString);
                     }
-                    mApiClient.disconnect();
-                }
-            });
-        }
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Haven't started anything yet (that's why we are in the start state).
             // just move to the stop tracking state
             String newState = ctxt.getString(R.string.state_tracking_stopped);
             setNewState(newState);
+                }
+        }
+
+    // Originally, when the location tracking options were fixed at compile time, we didn't really
+    // have to worry about this case. If we were not geofencing, then we would directly go to the
+    // ongoing state on initialize, and we ALWAYS initialized when we changed the config.
+    // But now, we could be in waiting for trip state when the user reconfigures, and now we
+    // get into trouble because we don't handle the transition. But we can certainly make this simple.
+    // If we start tracking, we start everything
+    // If we stop tracking, we stop everything
+    // For everything else, go to the ongoing state :)
+    private void handleWaitingForTripStart(Context ctxt, GoogleApiClient apiClient, String actionString) {
+        if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
+            // Haven't started anything yet (that's why we are in the start state).
+            // just move to the stop tracking state
+            String newState = ctxt.getString(R.string.state_tracking_stopped);
+            setNewState(newState);
+        } else {
+            String newState = ctxt.getString(R.string.state_tracking_stopped);
+            setNewState(newState);
+            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
         }
     }
 
@@ -270,4 +268,34 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
         }
     }
+
+    private void startEverything(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+        final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
+        Batch.Builder resultBarrier = new Batch.Builder(apiClient);
+        tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).start()));
+        tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).start()));
+        // TODO: How to pass in the token list?
+        // Also, the callback is currently the same for all of them, but could potentially be
+        // different in the future once we add in failure handling because we may want to do
+        // different things based on the different failure cases. If we don't do that, we should
+        // refactor the callback to a common class. and then we need to pass in the token list to it
+        // since it can't use the final variable
+        final Context fCtxt = ctxt;
+        resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
+            @Override
+            public void onResult(BatchResult batchResult) {
+                String newState = fCtxt.getString(R.string.state_ongoing_trip);
+                if (batchResult.getStatus().isSuccess()) {
+                    setNewState(newState);
+                    NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                            "Success moving to " + newState);
+                } else {
+                    NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                            "Failed moving to " + newState + " failed");
+                }
+                mApiClient.disconnect();
+            }
+        });
+    }
+
 }

@@ -27,9 +27,11 @@ public class PollSensorManager {
      * any matches.
      */
     public static PollSensor[] getSensorList(Context ctxt) {
-        String[] sensorNameList =
+        String[] sensorNameList = null;
+                /*
                 UserCacheFactory.getUserCache(ctxt).getDocument(R.string.key_usercache_sensor_config,
                         String[].class);
+                */
         if (sensorNameList == null) {
             // We return null if the document does not exist.
             return new PollSensor[0];

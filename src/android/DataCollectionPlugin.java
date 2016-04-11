@@ -56,7 +56,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
         } else if (action.equals("getConfig")) {
             Context ctxt = cordova.getActivity();
             LocationTrackingConfig cfg = ConfigManager.getConfig(ctxt);
-            callbackContext.success(new Gson().toJson(cfg));
+            // Gson.toJson() represents a string and we are expecting an object in the interface
+            callbackContext.success(new JSONObject(new Gson().toJson(cfg)));
             return true;
         } else if (action.equals("setConfig")) {
             Context ctxt = cordova.getActivity();

@@ -64,6 +64,7 @@
                 <action android:name="local.transition.exited_geofence"></action>
                 <action android:name="local.transition.stopped_moving"></action>
                 <action android:name="local.transition.stop_tracking"></action>
+                <action android:name="local.transition.start_tracking"></action>
             </intent-filter>
         </receiver>
         <service

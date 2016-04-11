@@ -13,6 +13,6 @@
 // This returns a value between 0 and 1. Will be converted to a value between 0 and 100
 // on the server side.
 @property float battery_level_ratio;
-@property UIDeviceBatteryState battery_state;
+@property UIDeviceBatteryState battery_status;
 
 @end
