@@ -253,7 +253,7 @@
     // TODO: Figure out whether this should be here or in the server sync code or in the trip machine code
     Battery* batteryInfo = [Battery new];
     batteryInfo.battery_level_ratio = [UIDevice currentDevice].batteryLevel;
-    batteryInfo.battery_state = [UIDevice currentDevice].batteryState;
+    batteryInfo.battery_status = [UIDevice currentDevice].batteryState;
     [[BuiltinUserCache database] putMessage:@"key.usercache.battery" value:batteryInfo];
     if ([ConfigManager instance].simulate_user_interaction == YES) {
         UILocalNotification *localNotif = [[UILocalNotification alloc] init];
