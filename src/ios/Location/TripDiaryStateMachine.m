@@ -176,8 +176,10 @@ static NSString * const kCurrState = @"CURR_STATE";
     // this means that these transitions are the only ones for which we need to consider whether we are geofenced
     // or not while handling them
     if (![ConfigManager instance].is_duty_cycling &&
+        ![transition isEqualToString:CFCTransitionInitialize] &&
         ![transition isEqualToString:CFCTransitionRecievedSilentPush] &&
         ![transition isEqualToString:CFCTransitionForceStopTracking] &&
+        ![transition isEqualToString:CFCTransitionTrackingStopped] &&
         ![transition isEqualToString:CFCTransitionStartTracking] &&
         ![transition isEqualToString:CFCTransitionVisitStarted]) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -226,6 +228,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     // If we are already in the start state, there's nothing much that we need
     // to do, except if we are initialized
     if ([transition isEqualToString:CFCTransitionInitialize]) {
+        if([ConfigManager instance].is_duty_cycling) {
         // TODO: Stop all actions in order to cleanup
         
         // Start monitoring significant location changes at start and never stop
@@ -234,6 +237,14 @@ static NSString * const kCurrState = @"CURR_STATE";
         // Start location services so that we can get the current location
         // We will receive the first location asynchronously
         [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
+        } else {
+            // Technically, we don't need this since we move to the ongoing state in the init code.
+            // but if tracking is stopped, we can skip that, and then if we turn it on again, we
+            // need to turn everything on here as well
+            [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr];
+            [self setState:kOngoingTripState];
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+        }
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionNOP];
@@ -248,6 +259,18 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                             object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState];
+    } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
+        // One would think that we don't need to deal with anything other than starting from the start
+        // state, but we can be stuck in the start state for a while if it turns out that the geofence is
+        // not created correctly. If the user forces us to stop tracking then, we still need to do it.
+        [self setState:kTrackingStoppedState];
+    } else if ([transition isEqualToString:CFCTransitionStartTracking]) {
+        // One would think that we don't need to deal with anything other than starting from the start
+        // state, but we can be stuck in the start state for a while if it turns out that the geofence is
+        // not created correctly. If the user forces us to stop tracking then, we still need to do it.
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionInitialize];
+
     } else {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
