@@ -43,9 +43,11 @@ public class LocationTrackingActions {
         LocationTrackingConfig cfg = ConfigManager.getConfig(this.mCtxt);
         LocationRequest defaultRequest = LocationRequest.create();
         Log.d(mCtxt, TAG, "default request is " + defaultRequest);
-        return defaultRequest
+        LocationRequest modifiedRequest = defaultRequest
                 .setInterval(cfg.getFilterTime())
                 .setPriority(cfg.getAccuracy());
+        Log.d(mCtxt, TAG, "after applying config, value is "+modifiedRequest);
+        return modifiedRequest;
     }
 
     ResultCallback<Status> startCallback = new ResultCallback<Status>() {

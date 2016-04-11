@@ -156,15 +156,17 @@
  */
 
 + (void)startTrackingLocation:(CLLocationManager*) manager {
+    LocationTrackingConfig* cfg = [ConfigManager instance];
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"started fine location tracking"]];
+        @"started fine location tracking with accuracy = %@ and distanceFilter = %@ ",
+                                               @(cfg.accuracy), @(cfg.filter_distance)]];
     // Switch to a more fine grained tracking during the trip
-    manager.desiredAccuracy = [ConfigManager instance].accuracy;
+    manager.desiredAccuracy = cfg.accuracy;
     /* If we use a distance filter, we can lower the power consumption because we will get updates less
      * frequently. HOWEVER, we won't be able to detect a trip end because of the above.
      * Going with the push notification route...
      */
-    manager.distanceFilter = [ConfigManager instance].filter_distance;
+    manager.distanceFilter = cfg.filter_distance;
     manager.allowsBackgroundLocationUpdates = YES;
     [manager startUpdatingLocation];
 }
