@@ -146,14 +146,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         }];
     }
 
--(void) checkGeofenceState:(GeofenceStatusCallback) callback {
-    if (self.locMgr.monitoredRegions.count > 0) {
-        [self.locMgr requestStateForRegion:self.locMgr.monitoredRegions.allObjects[0]];
-        // _locDelegate.currCallback = callback;
-    } else {
-        callback(@"no fence");
-    }
-}
 
 -(void)handleTransition:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

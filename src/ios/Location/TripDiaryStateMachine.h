@@ -68,6 +68,4 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 + (NSString*)getStateName:(TripDiaryStates) state;
 
-- (void)checkGeofenceState:(GeofenceStatusCallback) resultField;
-
 @end
