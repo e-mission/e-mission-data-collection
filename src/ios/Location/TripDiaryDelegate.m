@@ -54,7 +54,11 @@
             // based on the current state.
             // TODO: Refactor for simplicity - the delegate should just generate INSIDE and OUTSIDE notifications, and
             // the state machine should deal with the transitions
-            [manager requestStateForRegion:[TripDiaryActions getGeofence:manager]];
+            CLRegion* currGeofence = [TripDiaryActions getGeofence:manager];
+            if (currGeofence != nil) {
+                // Can be null if we are in tracking_stopped state
+                [manager requestStateForRegion:currGeofence];
+            }
         }
     }
     
