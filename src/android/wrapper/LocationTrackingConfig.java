@@ -19,7 +19,7 @@ public class LocationTrackingConfig {
         this.filter_distance = -1; // unused
         this.filter_time = Constants.THIRTY_SECONDS;
         this.geofence_radius = Constants.TRIP_EDGE_THRESHOLD;
-        this.trip_end_stationary_mins = FIVE_MINUTES_IN_SEC;
+        this.trip_end_stationary_mins = 5;
         this.android_geofence_responsiveness = 5 * Constants.MILLISECONDS;
     }
 

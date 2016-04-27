@@ -8,6 +8,7 @@ import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 
 /*
  * Class that allows us to re-register the alarms when the phone is rebooted.
@@ -32,8 +33,11 @@ public class BootReceiver extends BroadcastReceiver {
              */
             // DataUtils.endTrip(ctx);
 
-            // Re-initialize the state machine
-            ctx.sendBroadcast(new Intent(ctx.getString(R.string.transition_initialize)));
+            // Re-initialize the state machine if we haven't stopped tracking
+            if (!TripDiaryStateMachineService.getState(ctxt).equals(
+                    ctxt.getString(R.string.state_tracking_stopped))) {
+                ctx.sendBroadcast(new Intent(ctx.getString(R.string.transition_initialize)));
+            }
         }
 	}
 }
