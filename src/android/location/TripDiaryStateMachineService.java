@@ -22,6 +22,7 @@ import com.google.android.gms.location.LocationServices;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
@@ -233,11 +234,15 @@ public class TripDiaryStateMachineService extends Service implements
                         String newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
                         if (status.isSuccess()) {
                             setNewState(newState);
+                            if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Success moving to " + newState);
+                            }
                         } else {
+                            if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Failed moving to " + newState);
+                        }
                         }
                         mApiClient.disconnect();
                     }
@@ -279,11 +284,15 @@ public class TripDiaryStateMachineService extends Service implements
                     String newState = fCtxt.getString(R.string.state_ongoing_trip);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
+                        }
                     } else {
+                        if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState+" failed");
+                    }
                     }
                     mApiClient.disconnect();
                 }
@@ -301,11 +310,15 @@ public class TripDiaryStateMachineService extends Service implements
                     String newState = fCtxt.getString(R.string.state_tracking_stopped);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
+                        }
                     } else {
+                        if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
+                    }
                     }
                     mApiClient.disconnect();
                 }
@@ -348,11 +361,15 @@ public class TripDiaryStateMachineService extends Service implements
                             }
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
+                        }
                     } else {
+                        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
+                    }
                     }
                     mApiClient.disconnect();
                 }
@@ -373,11 +390,15 @@ public class TripDiaryStateMachineService extends Service implements
                     String newState = fCtxt.getString(R.string.state_tracking_stopped);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to " + newState);
+                        }
                     } else {
+                        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to " + newState);
+                    }
                     }
                     mApiClient.disconnect();
                 }
@@ -405,11 +426,15 @@ public class TripDiaryStateMachineService extends Service implements
                     String newState = fCtxt.getString(R.string.state_tracking_stopped);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
+                        }
                     } else {
+                        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
+                    }
                     }
                     mApiClient.disconnect();
                 }
