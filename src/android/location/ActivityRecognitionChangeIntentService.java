@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
@@ -34,8 +35,10 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
+			if (ConfigManager.getConfig(this).isSimulateUserInteraction()) {
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,
 					"Detected new activity "+activityType2Name(mostProbableActivity.getType()));
+			}
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
             // Let's suck everything up to the server for now and optimize later
