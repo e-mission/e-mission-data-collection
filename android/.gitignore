@@ -1,7 +1,0 @@
-.gradle
-.idea
-app/build
-local.properties
-**.swp
-**/.DS_Store
-build/*
