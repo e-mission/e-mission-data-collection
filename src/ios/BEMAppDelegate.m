@@ -31,6 +31,18 @@
                 categories:nil]];
     }
     
+    if ([BEMServerSyncConfigManager instance].ios_use_remote_push) {
+        if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
+            [[UIApplication sharedApplication] registerForRemoteNotifications];
+        } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
+            [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert)];
+        } else {
+            NSLog(@"registering for remote notifications not supported");
+        }
+    } else {
+        [BEMServerSyncPlugin applySync];
+    }
+    
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Initialized remote push notification handler %@, finished registering for notifications ",
                                                 [BEMRemotePushNotificationHandler instance]]
