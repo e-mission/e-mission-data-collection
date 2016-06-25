@@ -14,11 +14,10 @@
 #import "DataUtils.h"
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
+#import "BEMServerSyncConfigManager.h"
+#import "BEMServerSyncPlugin.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
-
-// 3600 secs = 1 hour
-#define ONE_HOUR 60 * 60
 
 @implementation AppDelegate (notification)
 
@@ -32,18 +31,18 @@
                 categories:nil]];
     }
     
-    if ([ConfigManager instance].ios_use_remote_push_for_sync) {
-    if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
-        [[UIApplication sharedApplication] registerForRemoteNotifications];
-    } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
-        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert)];
+    if ([BEMServerSyncConfigManager instance].ios_use_remote_push) {
+        if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
+            [[UIApplication sharedApplication] registerForRemoteNotifications];
+        } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
+            [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert)];
+        } else {
+            NSLog(@"registering for remote notifications not supported");
+        }
     } else {
-        NSLog(@"registering for remote notifications not supported");
+        [BEMServerSyncPlugin applySync];
     }
-    } else {
-        [[UIApplication sharedApplication] setMinimumBackgroundFetchInterval:ONE_HOUR];
-    }
-
+    
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Initialized remote push notification handler %@, finished registering for notifications ",
                                                 [BEMRemotePushNotificationHandler instance]]
@@ -64,6 +63,7 @@
     // Store the deviceToken in the current installation and save it to Parse.
     PFInstallation *currentInstallation = [PFInstallation currentInstallation];
     [currentInstallation setDeviceTokenFromData:deviceToken];
+    [BEMServerSyncPlugin applySync];
     [currentInstallation saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
         if (succeeded) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -84,7 +84,7 @@
 - (void)application:(UIApplication *)application
                     didReceiveRemoteNotification:(NSDictionary *)userInfo
                     fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    if ([ConfigManager instance].ios_use_remote_push_for_sync == YES) {
+    if ([BEMServerSyncConfigManager instance].ios_use_remote_push == YES) {
         [self launchTripEndCheckAndRemoteSync:completionHandler];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -124,7 +124,7 @@
 }
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    if ([ConfigManager instance].ios_use_remote_push_for_sync == NO) {
+    if ([BEMServerSyncConfigManager instance].ios_use_remote_push == NO) {
         [self launchTripEndCheckAndRemoteSync:completionHandler];
     } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -136,7 +136,7 @@
 
 - (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([ConfigManager instance].ios_use_remote_push_for_sync)]
+                                               @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([BEMServerSyncConfigManager instance].ios_use_remote_push)]
                                        showUI:FALSE];
     NSLog(@"About to check whether a trip has ended");
     NSDictionary* localUserInfo = @{@"handler": completionHandler};
