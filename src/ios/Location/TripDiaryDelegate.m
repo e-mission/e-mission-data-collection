@@ -255,7 +255,7 @@
     // like the one found in your application’s main thread.
     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"departure date is %@, isDistantDate? %@, after distantDate? %@ ", visit.departureDate, @([visit.departureDate isEqualToDate:[NSDate distantFuture]]),
                                                @([visit.departureDate compare:[NSDate distantFuture]])] showUI:FALSE];
-    if (visit.departureDate == [NSDate distantFuture]) {
+    if (visit.departureDate isEqualToDate:[NSDate distantFuture]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionVisitStarted];
     } else {
