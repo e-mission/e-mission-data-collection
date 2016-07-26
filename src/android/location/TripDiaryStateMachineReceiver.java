@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import org.apache.cordova.ConfigXmlParser;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,6 +40,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 	public static Set<String> validTransitions = null;
 	private static String TAG = "TripDiaryStateMachineReceiver";
     private static final String SETUP_COMPLETE_KEY = "setup_complete";
+    private static final int STARTUP_IN_NUMBERS = 7827887;
 
     public TripDiaryStateMachineReceiver() {
         // The automatically created receiver needs a default constructor
@@ -112,7 +115,17 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 
         int currentCompleteVersion = sp.getInt(SETUP_COMPLETE_KEY, 0);
         if(currentCompleteVersion != BuildConfig.VERSION_CODE) {
-            Log.d(ctxt, TAG, "Setup not complete, sending initialize");
+            Log.d(ctxt, TAG, "Setup not complete, checking consent before initialize");
+            // this is the code that checks whether the native collection has been upgraded and
+            // restarts the data collection in that case. Without this, tracking is turned off
+            // until the user restarts the app.
+            // https://github.com/e-mission/e-mission-data-collection/commit/5544afd64b0c731e1633d1dd9f51a713fdea85fa
+            // Since every consent change is (presumably) tied to a native code change, we can
+            // just check for the consent here before reinitializing.
+            ConfigXmlParser parser = new ConfigXmlParser();
+            parser.parse(ctxt);
+            String reqConsent = parser.getPreferences().getString("emSensorDataCollectionProtocolApprovalDate", null);
+            if (ConfigManager.isConsented(ctxt, reqConsent)) {
             ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
             SharedPreferences.Editor prefsEditor = sp.edit();
             // TODO: This is supposed to be set from the javascript as part of the onboarding process.
@@ -121,6 +134,10 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             // some questions of the maintainer. For now, setting it here for the first time should be fine.
             prefsEditor.putInt(SETUP_COMPLETE_KEY, BuildConfig.VERSION_CODE);
             prefsEditor.commit();
+        } else {
+                NotificationHelper.createNotification(ctxt, STARTUP_IN_NUMBERS,
+                        "New data collection terms - collection paused until consent");
+            }
         } else {
             Log.d(ctxt, TAG, "Setup complete, skipping initialize");
         }

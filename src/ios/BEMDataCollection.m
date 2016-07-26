@@ -19,9 +19,36 @@
     // I tried to move this into a background thread as part of a18f8f9385bdd9e37f7b412b386a911aee9a6ea0 and had
     // to revert it because even visit notification, which had been the bedrock of my existence so far, stopped
     // working although I made an explicit stop at the education library on the way to Soda.
+    NSString* reqConsent = self.commandDelegate.settings[@"emSensorDataCollectionProtocolApprovalDate"];
+    if ([ConfigManager isConsented:reqConsent]) {
     self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+    } else {
+        [LocalNotificationManager showNotification:@"New data collection terms - collection paused until consent"];
+    }
     NSDictionary* emptyOptions = @{};
     [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
+}
+
+- (void)markConsented:(CDVInvokedUrlCommand*)command
+{
+    NSString* callbackId = [command callbackId];
+    @try {
+        NSDictionary* newDict = [[command arguments] objectAtIndex:0];
+        ConsentConfig* newCfg = [ConsentConfig new];
+        [DataUtils dictToWrapper:newDict wrapper:newCfg];
+        [ConfigManager setConsented:newCfg];
+        self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While updating settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
 }
 
 - (void)launchInit:(CDVInvokedUrlCommand*)command

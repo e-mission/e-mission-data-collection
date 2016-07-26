@@ -24,6 +24,11 @@ var DataCollection = {
     launchInit: function (successCallback, errorCallback) {
         exec(successCallback, errorCallback, "DataCollection", "launchInit", []);
     },
+    markConsented: function (newConsent) {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "markConsented", [newConsent]);
+        });
+    },
     // Switching both the get and set config to a promise to experiment with promises!!
     getConfig: function () {
         return new Promise(function(resolve, reject) {

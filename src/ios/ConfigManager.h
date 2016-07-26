@@ -8,9 +8,12 @@
 
 #import <Foundation/Foundation.h>
 #import "LocationTrackingConfig.h"
+#import "ConsentConfig.h"
 
 @interface ConfigManager : NSObject
 
 + (LocationTrackingConfig*) instance;
 + (void) updateConfig:(LocationTrackingConfig*) newConfig;
++ (BOOL) isConsented:(NSString*)reqConsent;
++ (void) setConsented:(ConsentConfig*) newConfig;
 @end

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.berkeley.eecs.emission.*;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -32,7 +33,9 @@ public class DataCollectionPlugin extends CordovaPlugin {
         final Activity myActivity = cordova.getActivity();
         int connectionResult = GooglePlayServicesUtil.isGooglePlayServicesAvailable(myActivity);
         if (connectionResult == ConnectionResult.SUCCESS) {
-            Log.d(myActivity, TAG, "google play services available, initializing state machine");
+            Log.d(myActivity, TAG, "google play services available, checking consent");
+            String reqConsent = preferences.getString("emSensorDataCollectionProtocolApprovalDate", "");
+            if (ConfigManager.isConsented(myActivity, reqConsent)) {
             // we want to run this in a separate thread, since it may take some time to get the
             // current location and create a geofence
             cordova.getThreadPool().execute(new Runnable() {
@@ -41,16 +44,27 @@ public class DataCollectionPlugin extends CordovaPlugin {
                     TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
             }
             });
+            };
         } else {
             Log.e(myActivity, TAG, "unable to connect to google play services");
         }
     }
 
-
     @Override
     public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException {
         if (action.equals("launchInit")) {
             Log.d(cordova.getActivity(), TAG, "application launched, init is nop on android");
+            callbackContext.success();
+            return true;
+        } else if (action.equals("markConsented")) {
+            Log.d(cordova.getActivity(), TAG, "marking consent as done");
+            Context ctxt = cordova.getActivity();
+            JSONObject newConsent = data.getJSONObject(0);
+            ConsentConfig cfg = new Gson().fromJson(newConsent.toString(), ConsentConfig.class);
+            ConfigManager.setConsented(ctxt, cfg);
+            // Now, really initialize the state machine
+            TripDiaryStateMachineReceiver.initOnUpgrade(ctxt);
+            // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
         } else if (action.equals("getConfig")) {
