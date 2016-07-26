@@ -19,12 +19,22 @@
     // I tried to move this into a background thread as part of a18f8f9385bdd9e37f7b412b386a911aee9a6ea0 and had
     // to revert it because even visit notification, which had been the bedrock of my existence so far, stopped
     // working although I made an explicit stop at the education library on the way to Soda.
-    NSString* reqConsent = self.commandDelegate.settings[@"emSensorDataCollectionProtocolApprovalDate"];
-    if ([ConfigManager isConsented:reqConsent]) {
-    self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+    NSString* reqConsent = [self settingForKey:@"emSensorDataCollectionProtocolApprovalDate"];
+    BOOL isConsented = [ConfigManager isConsented:reqConsent];
+    if (isConsented) {
+        [self initWithConsent];
     } else {
         [LocalNotificationManager showNotification:@"New data collection terms - collection paused until consent"];
     }
+}
+
+- (id)settingForKey:(NSString*)key
+{
+    return [self.commandDelegate.settings objectForKey:[key lowercaseString]];
+}
+
+- (void)initWithConsent {
+    self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
     NSDictionary* emptyOptions = @{};
     [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
 }
@@ -37,7 +47,45 @@
         ConsentConfig* newCfg = [ConsentConfig new];
         [DataUtils dictToWrapper:newDict wrapper:newCfg];
         [ConfigManager setConsented:newCfg];
-        self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+        
+        [self initWithConsent];
+        
+        /*
+         * We don't strictly need to do this here since we don't use the data right now, but when we read
+         * the data to sync to the server. But doing it here allows us to notify users who don't have a sufficiently
+         * late model iPhone (https://github.com/e-mission/e-mission-phone/issues/60), and also gets all the notifications
+         * out of the way so that the user is not confronted with a random permission popup hours after installing the app.
+         * If/when we deal with users saying "no" to the permission prompts, it will make it easier to handle this in one
+         * place as well.
+         */
+        
+        if ([CMMotionActivityManager isActivityAvailable] == YES) {
+            CMMotionActivityManager* activityMgr = [[CMMotionActivityManager alloc] init];
+            NSOperationQueue* mq = [NSOperationQueue mainQueue];
+            NSDate* startDate = [NSDate new];
+            NSTimeInterval dayAgoSecs = 24 * 60 * 60;
+            NSDate* endDate = [NSDate dateWithTimeIntervalSinceNow:-(dayAgoSecs)];
+            [activityMgr queryActivityStartingFromDate:startDate toDate:endDate toQueue:mq withHandler:^(NSArray *activities, NSError *error) {
+                if (error == nil) {
+                    [LocalNotificationManager addNotification:@"activity recognition works fine"];
+                } else {
+                    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error while reading activities"
+                                                                    message:@"Travel mode detection may be unavailable."
+                                                                   delegate:nil
+                                                          cancelButtonTitle:@"OK"
+                                                          otherButtonTitles:nil];
+                    [alert show];
+                }
+            }];
+        } else {
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Activity detection unsupported"
+                                                            message:@"Travel mode detection unavailable - all trips will be UNKNOWN."
+                                                           delegate:nil
+                                                  cancelButtonTitle:@"OK"
+                                                  otherButtonTitles:nil];
+            [alert show];
+        }
+
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];

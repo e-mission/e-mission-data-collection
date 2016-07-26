@@ -33,18 +33,13 @@ public class DataCollectionPlugin extends CordovaPlugin {
         final Activity myActivity = cordova.getActivity();
         int connectionResult = GooglePlayServicesUtil.isGooglePlayServicesAvailable(myActivity);
         if (connectionResult == ConnectionResult.SUCCESS) {
-            Log.d(myActivity, TAG, "google play services available, checking consent");
-            String reqConsent = preferences.getString("emSensorDataCollectionProtocolApprovalDate", "");
-            if (ConfigManager.isConsented(myActivity, reqConsent)) {
-            // we want to run this in a separate thread, since it may take some time to get the
-            // current location and create a geofence
+            Log.d(myActivity, TAG, "google play services available, initializing state machine");
             cordova.getThreadPool().execute(new Runnable() {
                 @Override
                 public void run() {
                     TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
             }
             });
-            };
         } else {
             Log.e(myActivity, TAG, "unable to connect to google play services");
         }

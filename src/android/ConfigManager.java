@@ -42,7 +42,7 @@ public class ConfigManager {
     public static boolean isConsented(Context context, String reqConsent) {
         ConsentConfig currConfig = UserCacheFactory.getUserCache(context)
                 .getDocument(R.string.key_usercache_consent_config, ConsentConfig.class);
-        return reqConsent.equals(currConfig.getApproval_date());
+        return currConfig != null && reqConsent.equals(currConfig.getApproval_date());
     }
 
     public static void setConsented(Context context, ConsentConfig newConsent) {
