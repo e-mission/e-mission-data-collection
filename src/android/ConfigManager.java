@@ -5,6 +5,7 @@ import android.content.Context;
 import java.util.HashMap;
 
 import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
@@ -36,5 +37,16 @@ public class ConfigManager {
         UserCacheFactory.getUserCache(context)
                 .putReadWriteDocument(R.string.key_usercache_sensor_config, newConfig);
         cachedConfig = newConfig;
+    }
+
+    public static boolean isConsented(Context context, String reqConsent) {
+        ConsentConfig currConfig = UserCacheFactory.getUserCache(context)
+                .getDocument(R.string.key_usercache_consent_config, ConsentConfig.class);
+        return currConfig != null && reqConsent.equals(currConfig.getApproval_date());
+    }
+
+    public static void setConsented(Context context, ConsentConfig newConsent) {
+        UserCacheFactory.getUserCache(context)
+                .putReadWriteDocument(R.string.key_usercache_consent_config, newConsent);
     }
 }

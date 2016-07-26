@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import org.apache.cordova.ConfigXmlParser;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,6 +40,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 	public static Set<String> validTransitions = null;
 	private static String TAG = "TripDiaryStateMachineReceiver";
     private static final String SETUP_COMPLETE_KEY = "setup_complete";
+    private static final int STARTUP_IN_NUMBERS = 7827887;
 
     public TripDiaryStateMachineReceiver() {
         // The automatically created receiver needs a default constructor
@@ -74,6 +77,22 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             return;
         }
 
+        /*
+         * Before we initialize the state machine, let's check to see whether the user has
+         * consented to the current data collection.
+         */
+        if (intent.getAction().equals(context.getString(R.string.transition_initialize))) {
+            String reqConsent = getReqConsent(context);
+            if (!ConfigManager.isConsented(context, reqConsent)) {
+                Log.i(context, TAG, reqConsent + " is not the current consented version, skipping init...");
+                NotificationHelper.createNotification(context, STARTUP_IN_NUMBERS,
+                        "New data collection terms - collection paused until consent");
+                return;
+            } else {
+                Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
+            }
+        }
+
         Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
         context.startService(serviceStartIntent);
@@ -82,11 +101,20 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
     /*
  * TODO: Need to find a place to put this.
  */
+    private static String getReqConsent(Context ctxt) {
+        ConfigXmlParser parser = new ConfigXmlParser();
+        parser.parse(ctxt);
+        String reqConsent = parser.getPreferences().getString("emSensorDataCollectionProtocolApprovalDate", null);
+        return reqConsent;
+    }
+
+
     public static void validateAndCleanupState(Context ctxt) {
         /*
          * Check for being in geofence if in waiting_for_trip_state.
          */
         if (TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_start))) {
+            Log.d(ctxt, TAG, "Still in start state, sending initialize...");
             ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
         } else if (TripDiaryStateMachineService.getState(ctxt).equals(
                 ctxt.getString(R.string.state_waiting_for_trip_start))) {
@@ -113,6 +141,12 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         int currentCompleteVersion = sp.getInt(SETUP_COMPLETE_KEY, 0);
         if(currentCompleteVersion != BuildConfig.VERSION_CODE) {
             Log.d(ctxt, TAG, "Setup not complete, sending initialize");
+            // this is the code that checks whether the native collection has been upgraded and
+            // restarts the data collection in that case. Without this, tracking is turned off
+            // until the user restarts the app.
+            // https://github.com/e-mission/e-mission-data-collection/commit/5544afd64b0c731e1633d1dd9f51a713fdea85fa
+            // Since every consent change is (presumably) tied to a native code change, we can
+            // just check for the consent here before reinitializing.
             ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
             SharedPreferences.Editor prefsEditor = sp.edit();
             // TODO: This is supposed to be set from the javascript as part of the onboarding process.
