@@ -111,7 +111,7 @@
     double startTs = nowTs - nMinutes * 60;
     
     TimeQuery* tq = [TimeQuery new];
-    tq.timeKey = @"metadata.usercache.write_ts";
+    tq.timeKey = [[BuiltinUserCache database] getStatName:@"metadata.usercache.write_ts"];
     tq.startTs = startTs;
     tq.endTs = nowTs;
 
