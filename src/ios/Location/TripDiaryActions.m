@@ -167,7 +167,9 @@
      * Going with the push notification route...
      */
     manager.distanceFilter = cfg.filter_distance;
+    if([manager respondsToSelector:@selector(setAllowsBackgroundLocationUpdates:)]) {
     manager.allowsBackgroundLocationUpdates = YES;
+    }
     [manager startUpdatingLocation];
 }
 
