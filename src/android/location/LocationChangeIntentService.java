@@ -109,7 +109,7 @@ public class LocationChangeIntentService extends IntentService {
         SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location, pointsToQuery , SimpleLocation.class);
 
         double nowSecs = ((double)System.currentTimeMillis())/1000;
-        UserCache.TimeQuery tq = new UserCache.TimeQuery(R.string.metadata_usercache_write_ts,
+        UserCache.TimeQuery tq = new UserCache.TimeQuery(getString(R.string.metadata_usercache_write_ts),
                 nowSecs - tripEndSecs - 10, nowSecs);
 
         Log.d(this, TAG, "Finding points in the range "+tq);
