@@ -54,8 +54,6 @@ static LocationTrackingConfig *_instance;
     }
     } @catch (NSException *exception) {
         return false;
-    } @finally {
-        return true;
     }
 }
 
