@@ -15,12 +15,14 @@ import android.location.Location;
 
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
+import com.google.android.gms.location.LocationAvailability;
 
 public class LocationChangeIntentService extends IntentService {
 	private static final String TAG = "LocationChangeIntentService";
@@ -63,7 +65,15 @@ public class LocationChangeIntentService extends IntentService {
         PollSensorManager.getAndSaveAllValues(this);
 
 		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+		LocationAvailability locationAvailability = LocationAvailability.extractLocationAvailability(intent);
         Log.d(this, TAG, "Read location "+loc+" from intent");
+		if (locationAvailability != null) {
+			Log.d(this, TAG, "availability = "+locationAvailability.isLocationAvailable());
+			if (!locationAvailability.isLocationAvailable()) {
+				NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID,
+						"location is not available, move to start state?");
+			}
+		}
 
 		/*
 		It seems that newer version of Google Play will send along an intent that does not have the
@@ -73,6 +83,7 @@ public class LocationChangeIntentService extends IntentService {
 
 		see http://stackoverflow.com/questions/29960981/why-does-android-fusedlocationproviderapi-requestlocationupdates-send-updates-wi
 		 */
+
 		if (loc == null) return;
 
         SimpleLocation simpleLoc = new SimpleLocation(loc);

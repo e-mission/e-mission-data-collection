@@ -71,7 +71,9 @@ static NSString * const kCurrState = @"CURR_STATE";
      */
     self.locMgr = [[CLLocationManager alloc] init];
     self.locMgr.pausesLocationUpdatesAutomatically = NO;
+    if([self.locMgr respondsToSelector:@selector(setAllowsBackgroundLocationUpdates:)]) {
     self.locMgr.allowsBackgroundLocationUpdates = YES;
+    }
     _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
     self.locMgr.delegate = _locDelegate;
     self.currState = [defaults integerForKey:kCurrState];

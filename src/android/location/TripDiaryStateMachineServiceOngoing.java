@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
@@ -118,6 +119,26 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver onConnected("+connectionHint+") called");
+
+        ConnectionResult locResult = mApiClient.getConnectionResult(LocationServices.API);
+        ConnectionResult activityResult = mApiClient.getConnectionResult(ActivityRecognition.API);
+        if (!locResult.isSuccess()) {
+            if (locResult.hasResolution()) {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage(),
+                        locResult.getResolution());
+            } else {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage());
+            }
+        }
+        if (!activityResult.isSuccess()) {
+            if (activityResult.hasResolution()) {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage(),
+                        activityResult.getResolution());
+            } else {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage());
+            }
+        }
+
         handleAction(this, mApiClient, mCurrState, mTransition);
 
         // Note that it does NOT work to disconnect from here because the actions in the state
@@ -214,6 +235,11 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             String newState = ctxt.getString(R.string.state_tracking_stopped);
             setNewState(newState);
                 }
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                    "Location tracking turned off. Please turn on for emission to work properly");
+            Log.i(this, TAG, "Already in the start state, so going to stay there");
+        }
         }
 
     // Originally, when the location tracking options were fixed at compile time, we didn't really
@@ -230,6 +256,10 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             // just move to the stop tracking state
             String newState = ctxt.getString(R.string.state_tracking_stopped);
             setNewState(newState);
+        } else if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                    "Location tracking turned off. Please turn on for emission to work properly");
+            setNewState(getString(R.string.state_start));
         } else {
             String newState = ctxt.getString(R.string.state_tracking_stopped);
             setNewState(newState);
@@ -264,6 +294,11 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                 }
             });
         }
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                    "Location tracking turned off. Please turn on for emission to work properly");
+            setNewState(getString(R.string.state_start));
+        }
     }
 
     private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
@@ -271,6 +306,9 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
             setNewState(ctxt.getString(R.string.state_start));
             ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+        }
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
         }
     }
 

@@ -61,6 +61,17 @@ public class GeofenceExitIntentService extends IntentService {
             // intent.setAction(getString(R.string.transition_exited_geofence));
             // sendBroadcast(intent);
             sendBroadcast(new Intent(getString(R.string.transition_exited_geofence)));
+        } else if (parsedEvent.getGeofenceTransition() == -1) {
+			// This must be a location services on/off transition
+			// https://github.com/e-mission/e-mission-data-collection/issues/128#issuecomment-250304943
+			if (parsedEvent.hasError()) {
+				Log.i(this, TAG, "Found error "+parsedEvent.getErrorCode()+
+								"moving to start state");
+				sendBroadcast(new Intent(getString(R.string.transition_tracking_error)));
+			} else {
+				Log.i(this, TAG, "Got event with transition = "+parsedEvent.getGeofenceTransition()+
+					" but hasError = false, ignoring");
+			}
         }
 	}
 }

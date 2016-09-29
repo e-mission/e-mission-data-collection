@@ -10,7 +10,7 @@
 
 @interface TimeQuery : NSObject
 
-@property NSString* timeKey;
+@property NSString* key;
 @property double startTs;
 @property double endTs;
 @property NSDate* startDate;

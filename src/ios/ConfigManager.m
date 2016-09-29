@@ -19,7 +19,12 @@ static LocationTrackingConfig *_instance;
 
 + (LocationTrackingConfig*) instance {
     if (_instance == NULL) {
+        @try {
         _instance = [self readFromCache];
+        } @catch (NSException *exception) {
+            _instance = [LocationTrackingConfig new];
+        }
+        
         if (_instance == NULL) {
             // This is still NULL, which means that there is no document in the usercache.
             // Let us add a dummy one based on the default settings
@@ -40,11 +45,17 @@ static LocationTrackingConfig *_instance;
 }
 
 + (BOOL) isConsented:(NSString*)reqConsent {
+    @try {
     ConsentConfig* currConfig = (ConsentConfig*)[[BuiltinUserCache database] getDocument:CONSENT_CONFIG_KEY wrapperClass:[ConsentConfig class]];
     if ([reqConsent isEqualToString:currConfig.approval_date]) {
         return YES;
     } else {
         return NO;
+    }
+    } @catch (NSException *exception) {
+        return false;
+    } @finally {
+        return true;
     }
 }
 

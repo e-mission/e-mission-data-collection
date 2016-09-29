@@ -26,7 +26,9 @@
      */
     _locMgr = [CLLocationManager new];
     _locMgr.pausesLocationUpdatesAutomatically = FALSE;
+    if([_locMgr respondsToSelector:@selector(setAllowsBackgroundLocationUpdates:)]) {
     _locMgr.allowsBackgroundLocationUpdates = TRUE;
+    }
     // I am not sure that we really need this, but basically, when we are creating the geofence,
     // we want a good quality point quickly. If the user configured settings were for medium accuracy
     // and a large distance filter, then we might get a poor accuracy point first, and then get no updates

@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+
 import org.apache.cordova.ConfigXmlParser;
 
 import java.util.Arrays;
@@ -69,7 +72,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_exited_geofence),
                 context.getString(R.string.transition_stopped_moving),
                 context.getString(R.string.transition_stop_tracking),
-                context.getString(R.string.transition_start_tracking)
+                context.getString(R.string.transition_start_tracking),
+                context.getString(R.string.transition_tracking_error)
         }));
 
         if (!validTransitions.contains(intent.getAction())) {
@@ -108,6 +112,16 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         return reqConsent;
     }
 
+    public static void performPeriodicActivity(Context ctxt) {
+        /*
+         * Now, do some validation of the current state and clean it up if necessary. This should
+         * help with issues we have seen in the field where location updates pause mysteriously, or
+         * geofences are never exited.
+         */
+        validateAndCleanupState(ctxt);
+        initOnUpgrade(ctxt);
+        saveBatteryAndSimulateUser(ctxt);
+    }
 
     public static void validateAndCleanupState(Context ctxt) {
         /*
@@ -122,7 +136,6 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             // In particular, there is no method to get a geofence given an ID, and no method to get the status of a geofence
             // even if we did have it. So this is not a check that we can do.
         }
-        initOnUpgrade(ctxt);
     }
 
     public static void saveBatteryAndSimulateUser(Context ctxt) {

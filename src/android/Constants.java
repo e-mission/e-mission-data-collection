@@ -1,6 +1,8 @@
 package edu.berkeley.eecs.emission.cordova.tracker;
 
 public final class Constants {
+	public static int TRACKING_ERROR_ID = 87225377;
+
 	public static String LONGITUDE = "longitude";
 	public static String LATITUDE = "latitude";
 	public static String ACCELERATOR_X = "ax";
@@ -9,6 +11,7 @@ public final class Constants {
 	public static String BATTERY_LEVEL = "battery_level";
 	public static String ACTIVITY_TYPE = "activity_type";
 	public static String ACTIVITY_CONFIDENCE = "activity_confidence";
+	
 	
 	public static int TRIP_EDGE_THRESHOLD = 100; // meters
 
