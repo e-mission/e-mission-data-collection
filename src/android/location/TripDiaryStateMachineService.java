@@ -17,12 +17,19 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityRecognitionApi;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
@@ -120,6 +127,25 @@ public class TripDiaryStateMachineService extends Service implements
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver onConnected("+connectionHint+") called");
+        ConnectionResult locResult = mApiClient.getConnectionResult(LocationServices.API);
+        ConnectionResult activityResult = mApiClient.getConnectionResult(ActivityRecognition.API);
+        if (!locResult.isSuccess()) {
+            if (locResult.hasResolution()) {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage(),
+                        locResult.getResolution());
+            } else {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage());
+            }
+        }
+        if (!activityResult.isSuccess()) {
+            if (activityResult.hasResolution()) {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage(),
+                        activityResult.getResolution());
+            } else {
+                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage());
+            }
+        }
+
         handleAction(this, mApiClient, mCurrState, mTransition);
 
         // Note that it does NOT work to disconnect from here because the actions in the state
@@ -239,7 +265,15 @@ public class TripDiaryStateMachineService extends Service implements
                                     "Success moving to " + newState);
                             }
                         } else {
-                            if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
+                            if (status.hasResolution()) {
+                                NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                        "Error " + status.getStatusCode()+" while creating geofence", status.getResolution());
+                            } else {
+                                NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                        "Error " + status.getStatusCode()+" while creating geofence");
+                                // checkLocationSettings();
+                            }
+                            if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Failed moving to " + newState);
                         }
@@ -259,6 +293,12 @@ public class TripDiaryStateMachineService extends Service implements
             // just move to the stop tracking state
             String newState = ctxt.getString(R.string.state_tracking_stopped);
             setNewState(newState);
+        }
+
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                    "Location tracking turned off. Please turn on for emission to work properly");
+            Log.i(this, TAG, "Already in the start state, so going to stay there");
         }
     }
 
@@ -289,9 +329,18 @@ public class TripDiaryStateMachineService extends Service implements
                                 "Success moving to "+newState);
                         }
                     } else {
+                        if (batchResult.getStatus().hasResolution()) {
+                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
+                                    batchResult.getStatus().getResolution());
+                        } else {
+                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
+                            // checkLocationSettings();
+                        }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Failed moving to "+newState+" failed");
+                                    "Failed moving to "+newState);
                     }
                     }
                     mApiClient.disconnect();
@@ -315,6 +364,15 @@ public class TripDiaryStateMachineService extends Service implements
                                 "Success moving to "+newState);
                         }
                     } else {
+                        if (batchResult.getStatus().hasResolution()) {
+                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
+                                    batchResult.getStatus().getResolution());
+                        } else {
+                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
+                            // checkLocationSettings();
+                        }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
@@ -323,6 +381,12 @@ public class TripDiaryStateMachineService extends Service implements
                     mApiClient.disconnect();
                 }
             });
+        }
+
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                    "Location tracking turned off. Please turn on for emission to work properly");
+            setNewState(getString(R.string.state_start));
         }
     }
 
@@ -366,6 +430,15 @@ public class TripDiaryStateMachineService extends Service implements
                                 "Success moving to "+newState);
                         }
                     } else {
+                        if (batchResult.getStatus().hasResolution()) {
+                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
+                                    batchResult.getStatus().getResolution());
+                        } else {
+                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
+                            // checkLocationSettings();
+                        }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
@@ -404,6 +477,12 @@ public class TripDiaryStateMachineService extends Service implements
                 }
             });
         }
+
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                    "Location tracking turned off. Please turn on for emission to work properly");
+            setNewState(getString(R.string.state_start));
+        }
     }
 
     private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
@@ -440,5 +519,56 @@ public class TripDiaryStateMachineService extends Service implements
                 }
             });
         }
+
+        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
+        }
     }
+
+    /* This does not work. When location is turned off, we get a result that has a resolution, but if we pass the resolution
+     * into the notification, clicking on the notification does not launch the intent. Need to experiment with this further,
+     * but no time to do that now.
+     */
+
+    /*
+private void checkLocationSettings() {
+
+        LocationRequest request = new LocationTrackingActions(TripDiaryStateMachineService.this, mApiClient).getLocationRequest();
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(request);
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult result) {
+                final Status status = result.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        // All location settings are satisfied. The client can initialize location
+                        // requests here.
+                        Log.i(TripDiaryStateMachineService.this, TAG, "All settings are valid, nothing to show");
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied. But could be fixed by showing the user
+                        // a dialog.
+                        if (status.hasResolution()) {
+                            NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                                    "Error " + status.getStatusCode() + " in location settings",
+                                    status.getResolution());
+                        } else {
+                            NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                                    "Error " + status.getStatusCode() + " in location settings");
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        // Location settings are not satisfied. However, we have no way to fix the
+                        // settings so we won't show the dialog.
+                        NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                                "Error " + status.getStatusCode() + " in location settings");
+                        break;
+                }
+            }
+        });
+    }
+        */
 }
