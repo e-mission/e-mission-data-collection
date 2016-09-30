@@ -71,7 +71,28 @@ public class TripDiaryStateMachineService extends Service implements
     }
 
     @Override
+    public void onCreate() {
+        Log.i(this, TAG, "Service created. Initializing one-time variables!");
+        /*
+         * Need to initialize once per create.
+         * http://stackoverflow.com/questions/29343922/googleapiclient-is-throwing-googleapiclient-is-not-connected-yet-after-onconne
+         * https://github.com/e-mission/e-mission-data-collection/issues/132
+         */
+        // We create this here because for the activity lifecycle, we are supposed to
+        // create the client in create, connect in start and disconnect in stop.
+        // so the equivalent for us is to create in the onCreate method,
+        mApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .addApi(ActivityRecognition.API)
+                .build();
+
+    }
+
+    @Override
     public void onDestroy() {
+        mApiClient.disconnect();
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
     }
 
@@ -95,21 +116,10 @@ public class TripDiaryStateMachineService extends Service implements
         UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_transition,
                 new Transition(mCurrState, mTransition));
 
-        // We create this here because for the activity lifecycle, we are supposed to
-        // create the client in create, connect in start and disconnect in stop.
-        // so the equivalent for us is to create in the constructor,
-        mApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .addApi(ActivityRecognition.API)
-                .build();
-
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
-        // TODO: Also figure out whether it is best to create it here or in the constructor.
-        // If it in the constructor, where do we get the context from?
         mApiClient.connect();
+
         /*
          We are returning with START_REDELIVER_INTENT, so the process will be restarted with the
          same intent if it is killed. We need to think through the implications of this. If the
