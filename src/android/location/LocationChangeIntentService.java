@@ -70,8 +70,7 @@ public class LocationChangeIntentService extends IntentService {
 		if (locationAvailability != null) {
 			Log.d(this, TAG, "availability = "+locationAvailability.isLocationAvailable());
 			if (!locationAvailability.isLocationAvailable()) {
-				NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID,
-						"location is not available, move to start state?");
+				Log.d(this, TAG, "location is not available, move to start state?");
 			}
 		}
 
