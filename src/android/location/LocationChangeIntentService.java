@@ -202,9 +202,10 @@ public class LocationChangeIntentService extends IntentService {
 		Log.d(this, TAG, "last9Distances = "+ Arrays.toString(last9Distances));
         Log.d(this, TAG, "last5MinsDistances = "+ Arrays.toString(last5MinsDistances));
 
-		double last5MinsSpan = points5MinsAgo[points5MinsAgo.length - 1].getTs()
-									- points5MinsAgo[0].getTs();
+		double last5MinsSpan = points5MinsAgo[0].getTs()
+									- points5MinsAgo[points5MinsAgo.length - 1].getTs();
 
+		Log.d(this, TAG, "last5MinsSpan = "+last5MinsSpan+"secs, threshold = "+tripEndSecs);
 		if (stoppedMoving(last9Distances) && last5MinsSpan > tripEndSecs &&
 				stoppedMoving(last5MinsDistances)) {
 			Log.i(this, TAG, "stoppedMoving = true");
