@@ -261,7 +261,11 @@
      * Start tracking
      * Ugh! My eyeballs hurt to even read that?!
      */
-    
+    if (self.tripDiaryStateMachine.currState == kTrackingStoppedState) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"in restartCollection, state is already TRACKING_STOPPED, early return"]];
+        return;
+    }
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionForceStopTracking];
     
