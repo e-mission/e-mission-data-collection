@@ -156,7 +156,7 @@ public class LocationChangeIntentService extends IntentService {
 
         // We will check whether the trip ended only when the point is valid.
         // Otherwise, we might end up with the duplicates triggering trip ends.
-		if (validPoint && isTripEnded(last10Points, points5MinsAgo)) {
+		if (validPoint && isTripEnded(last10Points, points5MinsAgo, tripEndSecs)) {
 			// Stop listening to more updates
 			Intent stopMonitoringIntent = new Intent();
 			stopMonitoringIntent.setAction(getString(R.string.transition_stopped_moving));
@@ -180,7 +180,7 @@ public class LocationChangeIntentService extends IntentService {
 		return tempArray.toArray(retArray);
 	}
 	
-	public boolean isTripEnded(SimpleLocation[] last10Points, SimpleLocation[] points5MinsAgo) {
+	public boolean isTripEnded(SimpleLocation[] last10Points, SimpleLocation[] points5MinsAgo, int tripEndSecs) {
 		/* We have requested 10 points, but we might get less than 10 if the trip has just started
 		 * We request updates every 30 secs, but we might get updates more frequently if other apps have
 		 * requested that. So maybe relying on the last n updates is not such a good idea.
@@ -202,7 +202,11 @@ public class LocationChangeIntentService extends IntentService {
 		Log.d(this, TAG, "last9Distances = "+ Arrays.toString(last9Distances));
         Log.d(this, TAG, "last5MinsDistances = "+ Arrays.toString(last5MinsDistances));
 
-		if (stoppedMoving(last9Distances) && stoppedMoving(last5MinsDistances)) {
+		double last5MinsSpan = points5MinsAgo[points5MinsAgo.length - 1].getTs()
+									- points5MinsAgo[0].getTs();
+
+		if (stoppedMoving(last9Distances) && last5MinsSpan > tripEndSecs &&
+				stoppedMoving(last5MinsDistances)) {
 			Log.i(this, TAG, "stoppedMoving = true");
 			return true;
 		}
