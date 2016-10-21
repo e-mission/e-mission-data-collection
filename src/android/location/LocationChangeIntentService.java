@@ -205,13 +205,14 @@ public class LocationChangeIntentService extends IntentService {
 		double last5MinsSpan = points5MinsAgo[0].getTs()
 									- points5MinsAgo[points5MinsAgo.length - 1].getTs();
 
-		Log.d(this, TAG, "last5MinsSpan = "+last5MinsSpan+"secs, threshold = "+tripEndSecs);
-		if (stoppedMoving(last9Distances) && last5MinsSpan > tripEndSecs &&
+		Log.d(this, TAG, "last5MinsSpan = "+last5MinsSpan+" secs, threshold + fuzz = "+(tripEndSecs - 30));
+		// -30 fuzz factor because we only look for the range in now - tripEndSecs - 10 anyway
+		if (stoppedMoving(last9Distances) && last5MinsSpan > (tripEndSecs - 30) &&
 				stoppedMoving(last5MinsDistances)) {
-			Log.i(this, TAG, "stoppedMoving = true");
+			Log.i(this, TAG, "isTripEnded: stoppedMoving = true");
 			return true;
 		}
-		Log.i(this, TAG, "stoppedMoving = false");
+		Log.i(this, TAG, "isTripEnded: stoppedMoving = false");
 		return false;
 	}
 	
@@ -256,10 +257,10 @@ public class LocationChangeIntentService extends IntentService {
 		Log.d(this, TAG, "maxDistance = "+maxDistance+" TRIP_END_RADIUS = "+TRIP_END_RADIUS);
 		// If all the distances are below the trip radius, then we have ended
 		if (maxDistance < TRIP_END_RADIUS) {
-			Log.d(this, TAG, "stoppedMoving = true");
+			Log.d(this, TAG, "stoppedMoving: stoppedMoving = true");
 			return true;
 		} else {
-			Log.d(this, TAG, "stoppedMoving = false");
+			Log.d(this, TAG, "stoppedMoving: stoppedMoving = false");
 			return false;
 		}
 	}
