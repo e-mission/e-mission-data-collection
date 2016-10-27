@@ -305,6 +305,7 @@ static NSString * const kCurrState = @"CURR_STATE";
             // for e.g. silent push during an ongoing trip. We could send a different notification here, but
             // that will make the state machine even more complex than it currently instead.
             // So instead, we send the NOP after the push is complete. Two birds with one stone!
+            [[BuiltinUserCache database] checkAfterPull];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionDataPushed];
             return nil;
@@ -377,6 +378,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];
         [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
+            [[BuiltinUserCache database] checkAfterPull];
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Returning with fetch result = new data"]
                                                showUI:FALSE];
@@ -429,6 +431,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 - (void) syncAndNotify
 {
     [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
+        [[BuiltinUserCache database] checkAfterPull];
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Returning with fetch result = new data"]
                                            showUI:FALSE];
