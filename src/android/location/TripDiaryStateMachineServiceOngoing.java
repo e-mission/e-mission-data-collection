@@ -299,7 +299,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
     private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
-            stopEverything(ctxt, apiClient, actionString);
+            startEverything(ctxt, apiClient, actionString);
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
