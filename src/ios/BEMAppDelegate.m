@@ -48,9 +48,6 @@
                                                 [BEMRemotePushNotificationHandler instance]]
                                        showUI:FALSE];
 
-    // Handle google+ sign on
-    [AuthCompletionHandler sharedInstance].clientId = [[ConnectionSettings sharedInstance] getGoogleiOSClientID];
-    [AuthCompletionHandler sharedInstance].clientSecret = [[ConnectionSettings sharedInstance] getGoogleiOSClientSecret];
     return YES;
 }
 
