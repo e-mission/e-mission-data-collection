@@ -181,6 +181,12 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * Start tracking
          * Ugh! My eyeballs hurt to even read that?!
          */
+        if (TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_tracking_stopped))) {
+            Log.i(ctxt, TAG, "in restartCollection, tracking is already stopped "
+                + " new config will be picked up when it starts"
+                + " early return");
+            return;
+        }
         ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_stop_tracking)));
         final Context fCtxt = ctxt;
         new Thread(new Runnable() {
