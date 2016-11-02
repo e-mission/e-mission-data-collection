@@ -4,6 +4,8 @@
 #import "BEMAppDelegate.h"
 #import "ConfigManager.h"
 #import "DataUtils.h"
+#import "StatsEvent.h"
+#import "BEMBuiltinUserCache.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
@@ -14,6 +16,10 @@
     // to android - then it doesn't matter if the pre-populated database is not
     // copied over.
     NSLog(@"BEMDataCollection:pluginInitialize singleton -> initialize statemachine and delegate");
+    
+    StatsEvent* se = [[StatsEvent alloc] initForEvent:@"app_launched"];
+    [[BuiltinUserCache database] putMessage:@"key.usercache.client_nav_event" value:se];
+
     // NOTE: This CANNOT be part of a background thread because when the geofence creation, and more importantly,
     // the visit notification, are run as part of a background thread, they don't work.
     // I tried to move this into a background thread as part of a18f8f9385bdd9e37f7b412b386a911aee9a6ea0 and had
