@@ -23,8 +23,10 @@ import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 public class DataCollectionPlugin extends CordovaPlugin {
     public static String TAG = "DataCollectionPlugin";
@@ -46,6 +48,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
             NotificationHelper.createNotification(myActivity, Constants.TRACKING_ERROR_ID,
                     "Unable to connect to google play services, tracking turned off");
         }
+        BuiltinUserCache.getDatabase(myActivity).putMessage(R.string.key_usercache_client_nav_event,
+                new StatsEvent(myActivity, R.string.app_launched));
     }
 
     @Override
