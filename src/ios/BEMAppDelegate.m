@@ -16,6 +16,7 @@
 #import "ConfigManager.h"
 #import "BEMServerSyncConfigManager.h"
 #import "BEMServerSyncPlugin.h"
+#import "Cordova/CDVConfigParser.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
 
@@ -131,6 +132,25 @@
     }
 }
 
+// TODO: Figure out better solution for this.
+// Maybe a separate plist instead of putting it into the config.xml?
+
++ (NSString*) getReqConsent
+{
+    NSString* path = [[NSBundle mainBundle] pathForResource:@"config.xml" ofType:nil];
+    NSURL* url = [NSURL fileURLWithPath:path];
+
+    NSXMLParser* configParser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+    if (configParser == nil) {
+        NSLog(@"Failed to initialize XML parser.");
+        return NULL;
+    }
+    CDVConfigParser* delegate = [[CDVConfigParser alloc] init];
+    [configParser setDelegate:((id < NSXMLParserDelegate >)delegate)];
+    [configParser parse];
+    return [delegate.settings objectForKey:[@"emSensorDataCollectionProtocolApprovalDate" lowercaseString]];
+}
+
 - (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([BEMServerSyncConfigManager instance].ios_use_remote_push)]
@@ -155,6 +175,14 @@
         }
     } forceRefresh:TRUE];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
+    [AppDelegate checkNativeConsent];
+}
+
++ (void) checkNativeConsent {
+    BOOL isConsented = [ConfigManager isConsented:[AppDelegate getReqConsent]];
+    if (!isConsented) {
+        [LocalNotificationManager showNotification:@"New data collection terms - collection paused until consent"];
+    }
 }
 
 @end
