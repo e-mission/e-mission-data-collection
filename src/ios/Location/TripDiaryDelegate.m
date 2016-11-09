@@ -15,6 +15,7 @@
 #import "SimpleLocation.h"
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
+#import "BEMAppDelegate.h"
 
 #define ACCURACY_THRESHOLD 200
 
@@ -243,7 +244,7 @@
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received visit notification = %@",
                                                visit] showUI:true];
-
+    [AppDelegate checkNativeConsent];
     // According to the design pattern that I have followed here, I should post a notification from here
     // which will be handled by the state machine. However, as we have seen in the past, this does not really work
     // completely, because if a trip has ended, we want to create a geofence, and when we start monitoring the geofence,
