@@ -118,7 +118,9 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Application is about to terminate"]];
-
+    [LocalNotificationManager showNotificationAfterSecs:[NSString stringWithFormat:
+                                                         @"Please don't force-kill. It actually increases battery drain because we don't get silent push notifications and can't stop tracking properly. Click to relaunch."]
+                                              secsLater:60];
 }
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
