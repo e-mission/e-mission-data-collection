@@ -190,13 +190,23 @@
 
 +(void)startTrackingVisits:(CLLocationManager*) manager {
     if ([CLLocationManager instancesRespondToSelector:@selector(startMonitoringVisits)]) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"registered for visit notifications"]];
         [manager startMonitoringVisits];
+    } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"selector 'startMonitoringVisits' not found, skipped visit notification registration"]];
     }
 }
 
 +(void)stopTrackingVisits:(CLLocationManager*) manager {
     if ([CLLocationManager instancesRespondToSelector:@selector(stopMonitoringVisits)]) {
         [manager stopMonitoringVisits];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"unregistered for visit notifications"]];
+    } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"selector 'stopMonitoringVisits' not found, skipped visit notification unregistration"]];        
     }
 }
 
