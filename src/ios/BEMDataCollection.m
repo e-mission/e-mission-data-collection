@@ -75,6 +75,7 @@
                 if (error == nil) {
                     [LocalNotificationManager addNotification:@"activity recognition works fine"];
                 } else {
+                    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Error %@ while reading activities, travel mode detection may be unavailable", error]];
                     UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error while reading activities"
                                                                     message:@"Travel mode detection may be unavailable."
                                                                    delegate:nil
@@ -84,6 +85,7 @@
                 }
             }];
         } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Activity detection unsupported, all trips will be UNKNOWN"]];
             UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Activity detection unsupported"
                                                             message:@"Travel mode detection unavailable - all trips will be UNKNOWN."
                                                            delegate:nil
