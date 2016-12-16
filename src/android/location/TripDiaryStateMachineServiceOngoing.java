@@ -104,7 +104,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             this.getString(R.string.state_start));
         Log.d(this, TAG, "after reading from the prefs, the current state is "+mCurrState);
         UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_transition,
-                new Transition(mCurrState, mTransition));
+                new Transition(mCurrState, mTransition, ((double)System.currentTimeMillis())/1000));
 
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method

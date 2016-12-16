@@ -20,6 +20,7 @@ public class Battery {
         android_technology = batteryChangedIntent.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY);
         android_temperature = batteryChangedIntent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
         android_voltage = batteryChangedIntent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
+        ts = ((double)System.currentTimeMillis())/1000;
     }
 
     private String getHealthString(int healthConstant) {
@@ -54,4 +55,5 @@ public class Battery {
     private String android_technology;
     private int android_temperature;
     private int android_voltage;
+    private double ts;
 }

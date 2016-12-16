@@ -24,7 +24,7 @@ public class BootReceiver extends BroadcastReceiver {
             Log.i(ctx, TAG, "BootReceiver.onReceive called");
             // TODO: Use a different wrapper? Or a different key?
             UserCacheFactory.getUserCache(ctx).putMessage(R.string.key_usercache_transition,
-                    new Transition("unknown", "booted"));
+                    new Transition("unknown", "booted", ((double)System.currentTimeMillis())/1000));
 
             /*
              * End any ongoing trips, because the elapsed time will get reset at this
