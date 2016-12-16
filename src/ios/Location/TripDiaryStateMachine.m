@@ -159,6 +159,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     Transition* transitionWrapper = [Transition new];
     transitionWrapper.currState = [TripDiaryStateMachine getStateName:self.currState];
     transitionWrapper.transition = transition;
+    transitionWrapper.ts = [BuiltinUserCache getCurrentTimeSecs];
     [[BuiltinUserCache database] putMessage:@"key.usercache.transition" value:transitionWrapper];
     [DataUtils saveBatteryAndSimulateUser];
     

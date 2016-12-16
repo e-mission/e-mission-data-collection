@@ -14,5 +14,6 @@
 // on the server side.
 @property float battery_level_ratio;
 @property UIDeviceBatteryState battery_status;
+@property double ts;
 
 @end

@@ -257,6 +257,7 @@
     Battery* batteryInfo = [Battery new];
     batteryInfo.battery_level_ratio = [UIDevice currentDevice].batteryLevel;
     batteryInfo.battery_status = [UIDevice currentDevice].batteryState;
+    batteryInfo.ts = [BuiltinUserCache getCurrentTimeSecs];
     [[BuiltinUserCache database] putMessage:@"key.usercache.battery" value:batteryInfo];
     if ([ConfigManager instance].simulate_user_interaction == YES) {
         UILocalNotification *localNotif = [[UILocalNotification alloc] init];

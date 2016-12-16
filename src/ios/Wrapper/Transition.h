@@ -12,5 +12,6 @@
 
 @property NSString* currState;
 @property NSString* transition;
+@property double ts;
 
 @end
