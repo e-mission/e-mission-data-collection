@@ -23,9 +23,17 @@
 @implementation AppDelegate (notification)
 
 + (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    [Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
-                  clientKey:[[ConnectionSettings sharedInstance] getParseClientID]];
+    [Parse initializeWithConfiguration:[ParseClientConfiguration configurationWithBlock:^(id<ParseMutableClientConfiguration> configuration) {
+        configuration.applicationId = [[ConnectionSettings sharedInstance] getParseAppID];
+        configuration.clientKey = [[ConnectionSettings sharedInstance] getParseClientID];
+        configuration.server = @"https://parseapi.back4app.com";
+    }]];
     
+    /*
+    [[Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
+                  clientKey:[[ConnectionSettings sharedInstance] getParseClientID]
+                     server:[ConnectionSettings sharedInstance] getParseServer]];
+    */
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
         [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
