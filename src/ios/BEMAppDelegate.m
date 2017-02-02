@@ -23,11 +23,19 @@
 @implementation AppDelegate (notification)
 
 + (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    [Parse initializeWithConfiguration:[ParseClientConfiguration configurationWithBlock:^(id<ParseMutableClientConfiguration> configuration) {
+    ParseClientConfiguration* newConfig = [ParseClientConfiguration configurationWithBlock:^(id<ParseMutableClientConfiguration> configuration) {
         configuration.applicationId = [[ConnectionSettings sharedInstance] getParseAppID];
         configuration.clientKey = [[ConnectionSettings sharedInstance] getParseClientID];
         configuration.server = @"https://parseapi.back4app.com";
-    }]];
+        NSLog(@"At the end of the config block, configuration = %@", configuration);
+    }];
+    
+    if ([Parse currentConfiguration] == NULL) {
+        NSLog(@"currentConfiguration = NULL, going ahead with config");
+        [Parse initializeWithConfiguration:newConfig];
+    } else {
+        NSLog(@"currentConfiguration != NULL, skipping double config");
+    }
     
     /*
     [[Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
