@@ -207,7 +207,7 @@ public class LocationChangeIntentService extends IntentService {
 
 		Log.d(this, TAG, "last5MinsSpan = "+last5MinsSpan+" secs, threshold + fuzz = "+(tripEndSecs - 30));
 		// -30 fuzz factor because we only look for the range in now - tripEndSecs - 10 anyway
-		if (stoppedMoving(last9Distances) && last5MinsSpan > (tripEndSecs - 30) &&
+		if (stoppedMoving(last9Distances) && last5MinsSpan > (tripEndSecs - 60) &&
 				stoppedMoving(last5MinsDistances)) {
 			Log.i(this, TAG, "isTripEnded: stoppedMoving = true");
 			return true;
