@@ -52,6 +52,12 @@ var DataCollection = {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "forceTransition", [generalTransitionName]);
         });
+    },
+    handleSilentPush: function() {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "handleSilentPush",
+                 []);
+        })
     }
 }
 

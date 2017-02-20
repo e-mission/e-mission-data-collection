@@ -20,7 +20,7 @@
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
 
-@implementation AppDelegate (notification)
+@implementation AppDelegate (datacollection)
 
 + (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     ParseClientConfiguration* newConfig = [ParseClientConfiguration configurationWithBlock:^(id<ParseMutableClientConfiguration> configuration) {
@@ -37,11 +37,6 @@
         NSLog(@"currentConfiguration != NULL, skipping double config");
     }
     
-    /*
-    [[Parse setApplicationId:[[ConnectionSettings sharedInstance] getParseAppID]
-                  clientKey:[[ConnectionSettings sharedInstance] getParseClientID]
-                     server:[ConnectionSettings sharedInstance] getParseServer]];
-    */
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
         [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
@@ -49,13 +44,7 @@
     }
     
     if ([BEMServerSyncConfigManager instance].ios_use_remote_push) {
-        if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotifications)]) {
-            [[UIApplication sharedApplication] registerForRemoteNotifications];
-        } else if ([UIApplication instancesRespondToSelector:@selector(registerForRemoteNotificationTypes:)]){
-            [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeBadge|UIRemoteNotificationTypeAlert)];
-        } else {
-            NSLog(@"registering for remote notifications not supported");
-        }
+        // NOP - this is handled in javascript
     } else {
         [BEMServerSyncPlugin applySync];
     }
@@ -68,45 +57,6 @@
     return YES;
 }
 
-
-- (void)application:(UIApplication *)application
-                    didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Finished registering for remote notifications with token %@", deviceToken]];
-
-    // Store the deviceToken in the current installation and save it to Parse.
-    PFInstallation *currentInstallation = [PFInstallation currentInstallation];
-    [currentInstallation setDeviceTokenFromData:deviceToken];
-    [BEMServerSyncPlugin applySync];
-    [currentInstallation saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
-        if (succeeded) {
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Successfully registered remote push notifications for token %@ with parse", deviceToken]];
-        } else {
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Error %@ while registering remote push notifications for token %@ with parse", error.description, deviceToken] showUI:TRUE];
-        }
-    }];
-}
-
-- (void)application:(UIApplication *)application
-                    didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"Failed to register for remote push notifications with APN %@", error.description] showUI:TRUE];
-}
-
-- (void)application:(UIApplication *)application
-                    didReceiveRemoteNotification:(NSDictionary *)userInfo
-                    fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
-    if ([BEMServerSyncConfigManager instance].ios_use_remote_push == YES) {
-        [self launchTripEndCheckAndRemoteSync:completionHandler];
-        } else {
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Received remote push, ignoring"]
-                                               showUI:FALSE];
-        completionHandler(UIBackgroundFetchResultNewData);
-        }
-}
 
 - (void)applicationWillResignActive:(UIApplication *)application {
     // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
@@ -141,7 +91,7 @@
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     if ([BEMServerSyncConfigManager instance].ios_use_remote_push == NO) {
-        [self launchTripEndCheckAndRemoteSync:completionHandler];
+        [AppDelegate launchTripEndCheckAndRemoteSync:completionHandler];
     } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Received background fetch call, ignoring"]
@@ -169,7 +119,7 @@
     return [delegate.settings objectForKey:[@"emSensorDataCollectionProtocolApprovalDate" lowercaseString]];
 }
 
-- (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
++ (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Received background sync call when useRemotePush = %@, about to check whether a trip has ended", @([BEMServerSyncConfigManager instance].ios_use_remote_push)]
                                        showUI:FALSE];
