@@ -3,6 +3,6 @@
 @interface BEMRemotePushNotificationHandler : NSObject
 + (BEMRemotePushNotificationHandler*) instance;
 - (void) handleNotifications:(NSNotification*)note;
-@property (copy, nonatomic) SilentPushCompletionHandler silentPushHandler;
+@property NSMutableArray* silentPushHandlerList;
 
 @end

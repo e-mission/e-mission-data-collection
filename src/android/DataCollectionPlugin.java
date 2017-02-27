@@ -108,6 +108,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 }
             });
             return true;
+        } else if (action.equals("handleSilentPush")) {
+            throw new UnsupportedOperationException("silent push handling not supported for android");
         } else if (action.equals("getAccuracyOptions")) {
             JSONObject retVal = new JSONObject();
             retVal.put("PRIORITY_HIGH_ACCURACY", LocationRequest.PRIORITY_HIGH_ACCURACY);

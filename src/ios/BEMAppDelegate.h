@@ -11,14 +11,12 @@
 #import "AppDelegate.h"
 #import "BEMServerSyncCommunicationHelper.h"
 
-@interface AppDelegate (notification)
+@interface AppDelegate (datacollection)
 
 + (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
 + (NSString*) getReqConsent;
 + (void) checkNativeConsent;
-- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
-- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
-- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:( void (^)(UIBackgroundFetchResult))completionHandler;
++ (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler;
 - (void)applicationDidBecomeActive:(UIApplication *)application;
 
 @end

@@ -24,16 +24,30 @@
                                                   }];
 }
 
+- (id) init {
+    self = [super init];
+    self.silentPushHandlerList = [[NSMutableArray alloc] init];
+    return self;
+}
+
+- (void)notifyAllHandlers:(UIBackgroundFetchResult) result {
+    for (SilentPushCompletionHandler handler in self.silentPushHandlerList) {
+        handler(result);
+    }
+    [self.silentPushHandlerList removeAllObjects];
+}
+
 - (void)handleNotifications:(NSNotification*)note {
     @synchronized([BEMRemotePushNotificationHandler instance]) {
-        if (self.silentPushHandler == NULL && [note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
+            if ([note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
             // We are the silent push handler, so we store the handler block, but don't do anything else.
             NSDictionary* userInfo = note.userInfo;
-            self.silentPushHandler = [userInfo objectForKey:@"handler"];
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Setting the SILENT_PUSH handler block in the silent push handler"]];
+            SilentPushCompletionHandler newHandler = [userInfo objectForKey:@"handler"];
+            [self.silentPushHandlerList addObject:newHandler];
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Added SILENT_PUSH handler block %@ to list, new size = %lu", newHandler, (unsigned long)[self.silentPushHandlerList count]]];
         }
     }
-    if (self.silentPushHandler != NULL) {
+    if ([self.silentPushHandlerList count] > 0) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Received notification %@ while processing silent push notification", note.object] showUI:FALSE];
         // we only care about notifications when we are processing a silent remote push notification
@@ -48,7 +62,7 @@
             // One option is that the state machine wants to ignore it, possibly because it is not in ONGOING STATE
             // Let us assume that we will return NOP in that case
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Remote push state machine ignored the silent push, fetch result = new data"] showUI:FALSE];
-            self.silentPushHandler(UIBackgroundFetchResultNewData);
+            [self notifyAllHandlers:UIBackgroundFetchResultNewData];
         } else if ([note.object isEqualToString:CFCTransitionTripEndDetected]) {
             // Otherwise, if it is in OngoingTrip, it will try to see whether the trip has ended. If it hasn't,
             // let us assume that we will return a NOP, which is already handled.
@@ -64,18 +78,15 @@
         } else if ([note.object isEqualToString:CFCTransitionDataPushed]) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Data pushed, fetch result = new data"] showUI:FALSE];
-                    self.silentPushHandler(UIBackgroundFetchResultNewData);
+            [self notifyAllHandlers:UIBackgroundFetchResultNewData];
         } else if ([note.object isEqualToString:CFCTransitionTripRestarted]) {
             // The other option from TripEndDetected is that the trip is restarted instead of ended.
             // In that case, we still want to finish the handler
-            self.silentPushHandler(UIBackgroundFetchResultNewData);
+            [self notifyAllHandlers:UIBackgroundFetchResultNewData];
         } else {
             // Some random transition. Might as well call the handler and return
-            self.silentPushHandler(UIBackgroundFetchResultNewData);
+            [self notifyAllHandlers:UIBackgroundFetchResultNewData];
         }
-        // TODO: Figure out whether we should set it to NULL here or whether parts of
-        // the system will still try to access the handler.
-        // _silentPushHandler = nil;
     } else {
         // Not processing a silent remote push notification
         NSLog(@"Ignoring silent push notification");

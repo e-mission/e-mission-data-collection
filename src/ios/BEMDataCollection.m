@@ -222,6 +222,34 @@
     }
 }
 
+- (void)handleSilentPush:(CDVInvokedUrlCommand *)command
+{
+    NSString* callbackId = [command callbackId];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"handleSilentPush outside the try block = %@", callbackId]];
+    @try {
+        void (^resultHandler)(UIBackgroundFetchResult) = ^(UIBackgroundFetchResult fetchResult){
+                NSAssert(fetchResult == UIBackgroundFetchResultNewData,
+                         @"fetchResult = %lu, expected %lu", (unsigned long)fetchResult, (unsigned long)UIBackgroundFetchResultNewData);
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK];
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"in handleSilentPush, sending result to id %@", callbackId] showUI:TRUE];
+                [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+        };
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Before invoking launchTripEndCheckAndRemoteSync, id = %@", callbackId]];
+            [AppDelegate launchTripEndCheckAndRemoteSync:resultHandler];
+        });
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
 - (void)getAccuracyOptions:(CDVInvokedUrlCommand *)command
 {
     NSString* callbackId = [command callbackId];
