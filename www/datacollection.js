@@ -45,7 +45,7 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "getAccuracyOptions", []);
         });
     },
-    getState: function (successCallback, errorCallback) {
+    getState: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "getState", []);
         });
