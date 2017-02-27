@@ -46,7 +46,9 @@ var DataCollection = {
         });
     },
     getState: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "getState", []);
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "getState", []);
+        });
     },
     forceTransition: function (generalTransitionName) {
         return new Promise(function(resolve, reject) {
