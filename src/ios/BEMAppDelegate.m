@@ -19,6 +19,7 @@
 #import "Cordova/CDVConfigParser.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
+#import <GoogleSignIn/GoogleSignIn.h>
 
 @implementation AppDelegate (datacollection)
 
@@ -79,6 +80,41 @@
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 }
+
+- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary *)options {
+    if (!url) {
+        return NO;
+    }
+    
+    [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:CDVPluginHandleOpenURLNotification object:url userInfo:options]];
+    
+
+    return YES;
+}
+
+
+// this happens while we are running ( in the background, or from within our own app )
+// only valid if 40x-Info.plist specifies a protocol to handle
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+  sourceApplication:(NSString*)sourceApplication
+         annotation:(id)annotation
+{
+    if (!url) {
+        return NO;
+    }
+    
+    NSDictionary* userInfo = @{UIApplicationOpenURLOptionsSourceApplicationKey: sourceApplication,
+                               UIApplicationOpenURLOptionsAnnotationKey: annotation};
+    
+    // all plugins will get the notification, and their handlers will be called
+    [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:CDVPluginHandleOpenURLNotification object:url userInfo:userInfo]];
+    
+    return YES;
+}
+
 
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
