@@ -150,7 +150,7 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
-        <string>Our app would like to collect your location information in the background</string>
+        <string>We use your data to create an automatic trip diary</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSMotionUsageDescription">
