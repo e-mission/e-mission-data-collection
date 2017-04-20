@@ -9,7 +9,6 @@
 #import "BEMAppDelegate.h"
 #import "LocalNotificationManager.h"
 #import "BEMConnectionSettings.h"
-#import "AuthCompletionHandler.h"
 #import "BEMRemotePushNotificationHandler.h"
 #import "DataUtils.h"
 #import "LocationTrackingConfig.h"
@@ -19,6 +18,7 @@
 #import "Cordova/CDVConfigParser.h"
 #import <Parse/Parse.h>
 #import <objc/runtime.h>
+#import "AuthCompletionHandler.h"
 
 @implementation AppDelegate (datacollection)
 
@@ -80,12 +80,48 @@
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 }
 
+- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary *)options {
+    if (!url) {
+        return NO;
+    }
+    
+    [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:CDVPluginHandleOpenURLNotification object:url userInfo:options]];
+    
+
+    return YES;
+}
+
+
+// this happens while we are running ( in the background, or from within our own app )
+// only valid if 40x-Info.plist specifies a protocol to handle
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+  sourceApplication:(NSString*)sourceApplication
+         annotation:(id)annotation
+{
+    if (!url) {
+        return NO;
+    }
+    
+    NSDictionary* userInfo = @{UIApplicationOpenURLOptionsSourceApplicationKey: sourceApplication,
+                               UIApplicationOpenURLOptionsAnnotationKey: annotation};
+    
+    // all plugins will get the notification, and their handlers will be called
+    [[NSNotificationCenter defaultCenter] postNotification:[NSNotification notificationWithName:CDVPluginHandleOpenURLNotification object:url userInfo:userInfo]];
+    
+    return YES;
+}
+
+
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Application is about to terminate"]];
     [LocalNotificationManager showNotificationAfterSecs:[NSString stringWithFormat:
                                                          @"Please don't force-kill. It actually increases battery drain because we don't get silent push notifications and can't stop tracking properly. Click to relaunch."]
+                                           withUserInfo:NULL
                                               secsLater:60];
 }
 
@@ -125,23 +161,24 @@
                                        showUI:FALSE];
     NSLog(@"About to check whether a trip has ended");
     NSDictionary* localUserInfo = @{@"handler": completionHandler};
-    [[AuthCompletionHandler sharedInstance] getValidAuth:^(GTMOAuth2Authentication *auth, NSError *error) {
+    
+    [[AuthCompletionHandler sharedInstance] getValidAuth:^(GIDGoogleUser *user, NSError *error) {
         /*
          * Note that we do not condition any further tasks on this refresh. That is because, in general, we expect that
          * the token refreshed at this time will be used to push the next set of values. This is just pre-emptive refreshing,
          * to increase the chance that we will finish pushing our data within the 30 sec interval.
          */
         if (error == NULL) {
-            GTMOAuth2Authentication* currAuth = [AuthCompletionHandler sharedInstance].currAuth;
+            GIDAuthentication* currAuth = user.authentication;
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Finished refreshing token in background, new expiry is %@", currAuth.expirationDate]
+                                                       @"Finished refreshing token in background, new expiry is %@", currAuth.idTokenExpirationDate]
                                                showUI:FALSE];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Error %@ while refreshing token in background", error]
+                                                       @"Check your login - error %@ while refreshing token in background", error]
                                                showUI:TRUE];
         }
-    } forceRefresh:TRUE];
+    }];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName object:CFCTransitionRecievedSilentPush userInfo:localUserInfo];
     [AppDelegate checkNativeConsent];
 }
