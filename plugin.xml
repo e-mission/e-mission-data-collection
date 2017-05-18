@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="edu.berkeley.eecs.emission.cordova.datacollection"
-        version="1.0.0">
+        version="1.0.1">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -13,11 +13,17 @@
     <engine name="cordova" version=">=3.6.0"/>
   </engines>
 
-  <asset src="www/datacollection.js" target="js/datacollection.js"/>
+  <asset src="www/ui/ionic/templates/main-collect-settings.html" target="templates/control/main-collect-settings.html"/>
+  <asset src="www/ui/ionic/js/collect-settings.js" target="js/control/collect-settings.js"/>
 
   <js-module src="www/datacollection.js" name="datacollection">
     <clobbers target="cordova.plugins.BEMDataCollection" />
   </js-module>
+
+  <!--
+  <js-module src="www/ui/ionic/js/collect-settings.js" name="collect-settings">
+  </js-module>
+  -->
 
   <!--
     Dependency checking on iOS does not work well - if the same dependency
