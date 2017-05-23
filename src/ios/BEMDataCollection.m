@@ -30,7 +30,11 @@
     if (isConsented) {
         [self initWithConsent];
     } else {
-        [LocalNotificationManager showNotification:@"New data collection terms - collection paused until consent"];
+        NSDictionary* introDoneResult = [[BuiltinUserCache database] getLocalStorage:@"intro_done" withMetadata:NO];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"intro_done result = %@", introDoneResult]];
+        if (introDoneResult != NULL) {
+            [LocalNotificationManager showNotification:@"New data collection terms - collection paused until consent"];
+        }
     }
 }
 
