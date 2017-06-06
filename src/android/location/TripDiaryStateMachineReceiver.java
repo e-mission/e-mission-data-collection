@@ -12,6 +12,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import org.apache.cordova.ConfigXmlParser;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -25,6 +27,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 /*
@@ -41,7 +44,7 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 
 	public static Set<String> validTransitions = null;
-	private static String TAG = "TripDiaryStateMachineReceiver";
+	private static String TAG = "TripDiaryStateMachineRcvr";
     private static final String SETUP_COMPLETE_KEY = "setup_complete";
     private static final int STARTUP_IN_NUMBERS = 7827887;
 
@@ -86,14 +89,24 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * consented to the current data collection.
          */
         if (intent.getAction().equals(context.getString(R.string.transition_initialize))) {
-            String reqConsent = getReqConsent(context);
-            if (!ConfigManager.isConsented(context, reqConsent)) {
-                Log.i(context, TAG, reqConsent + " is not the current consented version, skipping init...");
-                NotificationHelper.createNotification(context, STARTUP_IN_NUMBERS,
-                        "New data collection terms - collection paused until consent");
-                return;
+            JSONObject introDoneResult = null;
+            try {
+                introDoneResult = BuiltinUserCache.getDatabase(context).getLocalStorage("intro_done", false);
+            } catch(JSONException e) {
+                Log.i(context, TAG, "unable to read intro done state, skipping prompt");
+            }
+            if (introDoneResult != null) {
+                String reqConsent = getReqConsent(context);
+                if (!ConfigManager.isConsented(context, reqConsent)) {
+                    Log.i(context, TAG, reqConsent + " is not the current consented version, skipping init...");
+                    NotificationHelper.createNotification(context, STARTUP_IN_NUMBERS,
+                            "New data collection terms - collection paused until consent");
+                    return;
+                } else {
+                    Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
+                }
             } else {
-                Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
+                Log.i(context, TAG, "onboarding is not complete, skipping prompt");
             }
         }
 
