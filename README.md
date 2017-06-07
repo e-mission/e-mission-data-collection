@@ -31,7 +31,7 @@ the IDE for the appropriate platform.
 1. Run the e-mission-phone code once so that it generates all the project files
 1. Open the project in the IDE for the appropriate native platform
   2. <b>Android</b>: Open `~/e-mission/e-mission-phone/platforms/android/build.gradle` using [Android Studio](https://developer.android.com/sdk/index.html)
-  3. <b>iOS</b>: Open `~/e-mission/e-mission-phone/platforms/ios/emission.xcodeproj` using XCode
+  3. <b>iOS</b>: Open `~/e-mission/e-mission-phone/platforms/ios/emission.xcworkspace` using XCode
 1. make all the change to native code in the IDE and test them, and 
 1. copy all the changes from `~/e-mission/e-mission/phone/platforms/android/src/edu/berkeley/eecs/emission/cordova/tracker` -> `~/e-mission/e-mission-data-collection/src/android`, and
 1. finally check in the changes back into this repo from the `~/e-mission/e-mission-data-collection` directory.
