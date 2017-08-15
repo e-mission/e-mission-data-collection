@@ -16,27 +16,12 @@
 #import "BEMServerSyncConfigManager.h"
 #import "BEMServerSyncPlugin.h"
 #import "Cordova/CDVConfigParser.h"
-#import <Parse/Parse.h>
 #import <objc/runtime.h>
 #import "AuthCompletionHandler.h"
 
 @implementation AppDelegate (datacollection)
 
 + (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    ParseClientConfiguration* newConfig = [ParseClientConfiguration configurationWithBlock:^(id<ParseMutableClientConfiguration> configuration) {
-        configuration.applicationId = [[ConnectionSettings sharedInstance] getParseAppID];
-        configuration.clientKey = [[ConnectionSettings sharedInstance] getParseClientID];
-        configuration.server = @"https://parseapi.back4app.com";
-        NSLog(@"At the end of the config block, configuration = %@", configuration);
-    }];
-    
-    if ([Parse currentConfiguration] == NULL) {
-        NSLog(@"currentConfiguration = NULL, going ahead with config");
-        [Parse initializeWithConfiguration:newConfig];
-    } else {
-        NSLog(@"currentConfiguration != NULL, skipping double config");
-    }
-    
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
         [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
