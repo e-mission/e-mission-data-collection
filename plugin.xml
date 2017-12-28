@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="edu.berkeley.eecs.emission.cordova.datacollection"
-        version="1.0.4">
+        version="1.0.5">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -160,6 +160,10 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
+        <string>We use your data to create an automatic trip diary</string>
+    </config-file>
+
+    <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
         <string>We use your data to create an automatic trip diary</string>
     </config-file>
 
