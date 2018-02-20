@@ -186,6 +186,15 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         }
     }
 
+    public static void startForegroundIfNeeded(Context ctxt) {
+        Log.d(ctxt, TAG, "checking to see whether to start foreground service");
+        if(TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_ongoing_trip))) {
+           Log.d(ctxt, TAG, "app restarted while in the ongoing state, starting foreground service ASAP");
+           Intent foregroundServiceIntent = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
+           ctxt.startService(foregroundServiceIntent);
+        }
+    }
+
     public static void restartCollection(Context ctxt) {
         /*
          Super hacky solution, but works for now. Steps are:
