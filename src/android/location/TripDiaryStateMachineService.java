@@ -206,6 +206,10 @@ public class TripDiaryStateMachineService extends Service implements
 
     }
 
+    private Intent getForegroundServiceIntent() {
+        return new Intent(this, TripDiaryStateMachineForegroundService.class);
+    }
+
     /*
      * Handles the transition based on the current state.
      * Assumes that the API client is already connected.
@@ -269,6 +273,7 @@ public class TripDiaryStateMachineService extends Service implements
 
     public void handleTripStart(Context ctxt, final GoogleApiClient apiClient, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripStart(" + actionString + ") called");
+
         if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
             // Delete geofence
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
@@ -289,6 +294,7 @@ public class TripDiaryStateMachineService extends Service implements
                     String newState = fCtxt.getString(R.string.state_ongoing_trip);
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        startService(getForegroundServiceIntent());
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
@@ -360,6 +366,7 @@ public class TripDiaryStateMachineService extends Service implements
                             }
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        stopService(getForegroundServiceIntent());
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);

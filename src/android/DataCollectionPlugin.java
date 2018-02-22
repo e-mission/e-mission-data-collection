@@ -52,6 +52,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
         }
         BuiltinUserCache.getDatabase(myActivity).putMessage(R.string.key_usercache_client_nav_event,
                 new StatsEvent(myActivity, R.string.app_launched));
+        TripDiaryStateMachineReceiver.startForegroundIfNeeded(myActivity);
     }
 
     @Override

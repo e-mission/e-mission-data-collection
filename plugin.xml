@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="edu.berkeley.eecs.emission.cordova.datacollection"
-        version="1.0.5">
+        version="1.0.6">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -89,6 +89,11 @@
             android:exported="false">
         </service>
         <service
+            android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService"
+            android:enabled="true"
+            android:exported="false">
+        </service>
+        <service
 		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService"
 		    android:enabled="true" 
 		    android:exported="false">
@@ -119,6 +124,7 @@
     <source-file src="src/android/location/TripDiaryStateMachineReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/TripDiaryStateMachineService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/TripDiaryStateMachineServiceOngoing.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/TripDiaryStateMachineForegroundService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/actions/ActivityRecognitionActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/GeofenceActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/GeofenceLocationIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
