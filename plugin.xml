@@ -36,6 +36,7 @@
   <dependency id="edu.berkeley.eecs.emission.cordova.serversync"
                 url="https://github.com/e-mission/cordova-server-sync.git"/>
   -->
+  <hook type="after_plugin_install" src="hooks/android/addResourcesClassImport.js" />
 
   <platform name="android">
 
