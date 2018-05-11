@@ -24,6 +24,39 @@ function getRegexGroupMatches(string, regex, index) {
     return matches;
 }
 
+// Adapted from 
+// https://stackoverflow.com/a/5827895
+// Using this and not one of the wrapper modules
+// e.g. `file` or `node-dir` because I don't see an obvious way to add
+// javascript modules using plugin.xml, and this uses only standard modules
+
+var walk = function(ctx, dir, done) {
+  var results = [];
+
+  var fs = ctx.requireCordovaModule('fs'),
+      path = ctx.requireCordovaModule('path');
+
+  fs.readdir(dir, function(err, list) {
+    if (err) return done(err);
+    var pending = list.length;
+    if (!pending) return done(null, results);
+    list.forEach(function(file) {
+      file = path.resolve(dir, file);
+      fs.stat(file, function(err, stat) {
+        if (stat && stat.isDirectory()) {
+          walk(ctx, file, function(err, res) {
+            results = results.concat(res);
+            if (!--pending) done(null, results);
+          });
+        } else {
+          results.push(file);
+          if (!--pending) done(null, results);
+        }
+      });
+    });
+  });
+};
+
 module.exports = function (ctx) {
     // If Android platform is not installed, don't even execute
     if (ctx.opts.cordova.platforms.indexOf('android') < 0)
@@ -41,7 +74,8 @@ module.exports = function (ctx) {
     var androidPluginsData = JSON.parse(fs.readFileSync(path.join(ctx.opts.projectRoot, 'plugins', 'android.json'), 'utf8'));
     var appPackage = androidPluginsData.installed_plugins[ctx.opts.plugin.id]['PACKAGE_NAME'];
 
-    fs.readdir(pluginSourcesRoot, function (err, files) {
+    walk(ctx, pluginSourcesRoot, function (err, files) {
+        console.log("walk callback with files = "+files);
         if (err) {
             console.error('Error when reading file:', err)
             deferral.reject();
@@ -54,8 +88,11 @@ module.exports = function (ctx) {
             .forEach(function (file) {
                 var deferral = Q.defer();
 
+                // console.log("Considering file "+file);
                 var filename = path.basename(file);
-                var file = path.join(pluginSourcesRoot, filename);
+                // console.log("basename "+filename);
+                // var file = path.join(pluginSourcesRoot, filename);
+                // console.log("newfile"+file);
                 fs.readFile(file, 'utf-8', function (err, contents) {
                     if (err) {
                         console.error('Error when reading file:', err)
@@ -63,7 +100,7 @@ module.exports = function (ctx) {
                         return
                     }
 
-                    if (contents.match(/[^\.\w]R\./)) {
+                    if (contents.match(/[^\.\w]R\./) || contents.match(/[^\.\w]BuildConfig\./) || contents.match(/[^\.\w]MainActivity\./)) {
                         console.log('Trying to get packages from file:', filename);
                         var packages = getRegexGroupMatches(contents, /package ([^;]+);/);
                         for (var p = 0; p < packages.length; p++) {
@@ -80,9 +117,27 @@ module.exports = function (ctx) {
                                 if (!sourceFileContents) 
                                     throw 'Can\'t read file contents.';
 
-                                var newContents = sourceFileContents
-                                    .replace(/(import ([^;]+).R;)/g, '')
-                                    .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.R;');
+                                var newContents = sourceFileContents;
+
+                                if (contents.match(/[^\.\w]R\./)) {
+                                    newContents = sourceFileContents
+                                        .replace(/(import ([^;]+).R;)/g, '')
+                                        .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.R;');
+                                }
+
+                                // replace BuildConfig as well
+                                if (contents.match(/[^\.\w]BuildConfig\./)) {
+                                    newContents = newContents
+                                        .replace(/(import ([^;]+).BuildConfig;)/g, '')
+                                        .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.BuildConfig;');
+                                }
+
+                                // replace MainActivity as well
+                                if (contents.match(/[^\.\w]MainActivity\./)) {
+                                    newContents = newContents
+                                        .replace(/(import ([^;]+).MainActivity;)/g, '')
+                                        .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.MainActivity;');
+                                }
 
                                 fs.writeFileSync(sourceFile, newContents, 'utf8');
                                 break;
