@@ -55,7 +55,7 @@ var walk = function(ctx, dir, done) {
       });
     });
   });
-};
+}
 
 module.exports = function (ctx) {
     // If Android platform is not installed, don't even execute
@@ -65,8 +65,6 @@ module.exports = function (ctx) {
     var fs = ctx.requireCordovaModule('fs'),
         path = ctx.requireCordovaModule('path'),
         Q = ctx.requireCordovaModule('q');
-
-    var deferral = Q.defer();
 
     var platformSourcesRoot = path.join(ctx.opts.projectRoot, 'platforms/android/src');
     var pluginSourcesRoot = path.join(ctx.opts.plugin.dir, 'src/android');
@@ -78,7 +76,6 @@ module.exports = function (ctx) {
         console.log("walk callback with files = "+files);
         if (err) {
             console.error('Error when reading file:', err)
-            deferral.reject();
             return
         }
 
@@ -155,9 +152,6 @@ module.exports = function (ctx) {
         Q.all(deferrals)
             .then(function() {
                 console.log('Done with the hook!');
-                deferral.resolve();
             })
     });
-
-    return deferral.promise;
 }
