@@ -17,7 +17,11 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,6 +31,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
+
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
@@ -307,7 +312,7 @@ public class TripDiaryStateMachineService extends Service implements
                         } else {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
-                            // checkLocationSettings();
+                            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -328,6 +333,7 @@ public class TripDiaryStateMachineService extends Service implements
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
             setNewState(getString(R.string.state_start));
+            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
         }
     }
 
@@ -379,7 +385,7 @@ public class TripDiaryStateMachineService extends Service implements
                         } else {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
-                            // checkLocationSettings();
+                            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -460,7 +466,7 @@ public class TripDiaryStateMachineService extends Service implements
                                 } else {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Error " + status.getStatusCode()+" while creating geofence");
-                                    // checkLocationSettings();
+                                    checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -498,7 +504,7 @@ public class TripDiaryStateMachineService extends Service implements
                     } else {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Error " + batchResult.getStatus().getStatusCode() + " while creating geofence");
-                        // checkLocationSettings();
+                        checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -546,45 +552,45 @@ public class TripDiaryStateMachineService extends Service implements
      * but no time to do that now.
      */
 
-    /*
-private void checkLocationSettings() {
-
-        LocationRequest request = new LocationTrackingActions(TripDiaryStateMachineService.this, mApiClient).getLocationRequest();
+    public static void checkLocationSettings(final Context ctxt, GoogleApiClient apiClient) {
+        LocationRequest request = new LocationTrackingActions(ctxt, apiClient).getLocationRequest();
+        Log.d(ctxt, TAG, "Checking location settings for request "+request);
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(request);
 
         PendingResult<LocationSettingsResult> result =
-                LocationServices.SettingsApi.checkLocationSettings(mApiClient, builder.build());
+                LocationServices.SettingsApi.checkLocationSettings(apiClient, builder.build());
+        Log.d(ctxt, TAG, "Got back result "+result);
         result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
             @Override
             public void onResult(LocationSettingsResult result) {
+                Log.d(ctxt, TAG, "Found location settings "+result.getLocationSettingsStates());
                 final Status status = result.getStatus();
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
                         // All location settings are satisfied. The client can initialize location
                         // requests here.
-                        Log.i(TripDiaryStateMachineService.this, TAG, "All settings are valid, nothing to show");
+                        Log.i(ctxt, TAG, "All settings are valid, nothing to show");
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                         // Location settings are not satisfied. But could be fixed by showing the user
                         // a dialog.
                         if (status.hasResolution()) {
-                            NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings",
                                     status.getResolution());
                         } else {
-                            NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings");
                         }
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
-                        NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                 "Error " + status.getStatusCode() + " in location settings");
                         break;
                 }
             }
         });
     }
-        */
 }
