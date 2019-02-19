@@ -130,6 +130,7 @@ public class GeofenceActions {
                 Log.d(mCtxt, TAG, "After waiting for location reading result, location is " + this.newLastLocation);
                 return this.newLastLocation;
             } catch (InterruptedException e) {
+                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, geofenceLocationIntent);
                 Log.w(mCtxt, TAG, "Timed out waiting for location result, returning null ");
                 return null;
             }
@@ -160,33 +161,12 @@ public class GeofenceActions {
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
-    ResultCallback<Status> locationCallback = new ResultCallback<Status>() {
-        Context mCtxt = GeofenceActions.this.mCtxt;
-        @Override
-        public void onResult(Status status) {
-            if (status.isSuccess()) {
-                Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                        mGoogleApiClient);
-                if (mLastLocation != null) {
-                    LocationServices.GeofencingApi.addGeofences(mGoogleApiClient,
-                            createGeofenceRequest(mLastLocation.getLatitude(), mLastLocation.getLongitude()),
-                            getGeofenceExitPendingIntent(mCtxt))
-                            .await();
-                } else {
-                    notifyFailure();
-                }
-            } else {
-                notifyFailure();
-            }
-        }
-
         public void notifyFailure() {
             Log.w(mCtxt, TAG,
                     "Unable to detect current location even after forcing, will retry at next sync");
             NotificationHelper.createNotification(mCtxt, GEOFENCE_IN_NUMBERS,
                     "Unable to detect current location even after forcing, will retry at next sync");
         }
-    };
 
     /*
      * Returns the geofence request object to be used with the geofencing API.
