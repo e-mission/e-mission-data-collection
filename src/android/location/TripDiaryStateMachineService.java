@@ -287,6 +287,7 @@ public class TripDiaryStateMachineService extends Service implements
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
             Log.i(this, TAG, "Already in the start state, so going to stay there");
         }
     }
@@ -494,6 +495,9 @@ public class TripDiaryStateMachineService extends Service implements
                             fApiClient.disconnect();
                         }
                     });
+                } else {
+                    // Geofence was not created properly. let's generate a tracking error so that the user is notified
+                    fCtxt.sendBroadcast(new Intent(fCtxt.getString(R.string.transition_tracking_error)));
                 }
             }
         }).start();

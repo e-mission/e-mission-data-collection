@@ -6,6 +6,8 @@ import android.location.Location;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
+import com.google.android.gms.location.LocationAvailability;
+import com.google.android.gms.location.LocationResult;
 
 import java.util.Arrays;
 
@@ -47,10 +49,16 @@ public class GeofenceLocationIntentService extends IntentService {
 		 * The intent is called when we get a location update.
 		 */
         Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
-        Log.d(this, TAG, "Extras keys are "+ Arrays.toString(intent.getExtras().keySet().toArray()));
-        int ACCURACY_THRESHOLD = ConfigManager.getConfig(this).getAccuracyThreshold();
+        Log.d(this, TAG, "Extras bundle = "+intent.getExtras().toString());
 
-        UserCache uc = UserCacheFactory.getUserCache(this);
+        Object[] extraKeys = intent.getExtras().keySet().toArray();
+        Log.d(this, TAG, "Extras keys are "+ Arrays.toString(extraKeys));
+        Object[] extraValues = new Object[extraKeys.length];
+        for (int i = 0; i < extraKeys.length; i++) {
+            extraValues[i] = intent.getExtras().get((String)extraKeys[i]);
+        }
+        Log.d(this, TAG, "Extras values are "+ Arrays.toString(extraValues));
+
 
         /*
          * For the sensors that are not managed by the android sensor manager, but instead, require
@@ -68,17 +76,35 @@ public class GeofenceLocationIntentService extends IntentService {
 		It seems that newer version of Google Play will send along an intent that does not have the
 		KEY_LOCATION_CHANGED extra, but rather an EXTRA_LOCATION_AVAILABILITY. The original code
 		assumed KEY_LOCATION_CHANGED would always be there, and didn't check for this other type
-		of extra. I think we can safely ignore these intents and just return when loc is null.
+		of extra. If this is sent with availability = false, let's broadcast null.
 
 		see http://stackoverflow.com/questions/29960981/why-does-android-fusedlocationproviderapi-requestlocationupdates-send-updates-wi
 		 */
-        if (loc == null) return;
+        if (loc == null) {
+            if (LocationAvailability.hasLocationAvailability(intent)) {
+                LocationAvailability locationAvailability = LocationAvailability.extractLocationAvailability(intent);
+                Log.d(this, TAG, "availability = "+locationAvailability.isLocationAvailable());
+                if (!locationAvailability.isLocationAvailable()) {
+                    Log.d(this, TAG, "location is not available, broadcast null result");
+                    broadcastLoc(null);
+                }
+            }  else {
+                // loc is null, but no location availability flag, let's continue ignoring the intent
+                return;
+            }
+        }
 
         if (GeofenceActions.isValidLocation(this, loc)) {
             // notify something
-            Intent answerIntent = new Intent(INTENT_NAME);
-            answerIntent.putExtra(INTENT_RESULT_KEY, loc);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(answerIntent);
+            Log.d(this, TAG, "location is valid, broadcast it "+loc);
+            broadcastLoc(loc);
         }
+    }
+
+    private void broadcastLoc(Location loc) {
+        Intent answerIntent = new Intent(INTENT_NAME);
+        answerIntent.putExtra(INTENT_RESULT_KEY, loc);
+        Log.i(this, TAG, "broadcasting intent "+answerIntent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(answerIntent);
     }
 }

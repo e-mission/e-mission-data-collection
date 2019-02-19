@@ -149,7 +149,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
         PendingIntent piFromIntent = intent.getParcelableExtra(NotificationHelper.RESOLUTION_PENDING_INTENT_KEY);
         if (piFromIntent != null) {
             try {
-                cordova.setActivityResultCallback(this);
+                // cordova.setActivityResultCallback(this);
                 cordova.getActivity().startIntentSenderForResult(piFromIntent.getIntentSender(), ENABLE_LOCATION_CODE, null, 0, 0, 0, null);
             } catch (IntentSender.SendIntentException e) {
                 NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, "Unable to resolve issue");

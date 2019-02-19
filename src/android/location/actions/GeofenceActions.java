@@ -101,6 +101,7 @@ public class GeofenceActions {
         LocalBroadcastManager.getInstance(mCtxt).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                Log.i(mCtxt, TAG, "recieved broadcast intent "+intent);
                 synchronized(GeofenceActions.this) {
                     GeofenceActions.this.newLastLocation = intent.getParcelableExtra(GeofenceLocationIntentService.INTENT_RESULT_KEY);
                     GeofenceActions.this.notify();
