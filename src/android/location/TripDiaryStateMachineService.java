@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -91,6 +92,7 @@ public class TripDiaryStateMachineService extends Service implements
 
     @Override
     public void onDestroy() {
+        Log.d(this, TAG, "About to disconnect the api client");
         mApiClient.disconnect();
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
     }
@@ -121,6 +123,7 @@ public class TripDiaryStateMachineService extends Service implements
         } else {
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
+            Log.d(this, TAG, "Launched connect to the google API client, returning from onStartCommand");
         mApiClient.connect();
         }
 
@@ -135,7 +138,6 @@ public class TripDiaryStateMachineService extends Service implements
          API. For example, deleting a geofence. It might be easiest to convert the actions to be
          idempotent, but that requires some careful work. TODO: Need to think through this carefully.
          */
-        Log.d(this, TAG, "Launched connect to the google API client, returning from onStartCommand");
         return START_REDELIVER_INTENT;
     }
 
@@ -178,6 +180,16 @@ public class TripDiaryStateMachineService extends Service implements
     public static String getState(Context ctxt) {
         SharedPreferences sPrefs = PreferenceManager.getDefaultSharedPreferences(ctxt);
         return sPrefs.getString(ctxt.getString(R.string.curr_state_key), ctxt.getString(R.string.state_start));
+    }
+
+    public static void restartFSMIfStartState(Context ctxt) {
+        String START_STATE = ctxt.getString(R.string.state_start);
+        String currState = getState(ctxt);
+        Log.i(ctxt, TAG, "in restartFSMIfStartState, currState = "+currState);
+        if (START_STATE.equals(currState)) {
+            Log.i(ctxt, TAG, "in start state, sending initialize");
+            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+        }
     }
 
     public void setNewState(String newState) {
@@ -240,6 +252,9 @@ public class TripDiaryStateMachineService extends Service implements
                 BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
+        } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
+            // should we do a handleXXX() wrapper for this too?
+            checkLocationSettings(ctxt, apiClient);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
@@ -319,6 +334,7 @@ public class TripDiaryStateMachineService extends Service implements
                                     "Failed moving to "+newState);
                     }
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
@@ -392,6 +408,7 @@ public class TripDiaryStateMachineService extends Service implements
                                 "Failed moving to "+newState);
                     }
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
@@ -473,6 +490,7 @@ public class TripDiaryStateMachineService extends Service implements
                                             "Failed moving to " + newState);
                                 }
                             }
+                            Log.d(fCtxt, TAG, "About to disconnect the api client");
                             fApiClient.disconnect();
                         }
                     });
@@ -511,6 +529,7 @@ public class TripDiaryStateMachineService extends Service implements
                                 "Failed moving to " + newState);
                     }
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
@@ -542,6 +561,7 @@ public class TripDiaryStateMachineService extends Service implements
                                 "Failed moving to "+newState);
                     }
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
@@ -564,13 +584,16 @@ public class TripDiaryStateMachineService extends Service implements
         result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
             @Override
             public void onResult(LocationSettingsResult result) {
-                Log.d(ctxt, TAG, "Found location settings "+result.getLocationSettingsStates());
+                Log.d(ctxt, TAG, "isLocationUsable() "+result.getLocationSettingsStates().isLocationUsable());
                 final Status status = result.getStatus();
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
                         // All location settings are satisfied. The client can initialize location
                         // requests here.
-                        Log.i(ctxt, TAG, "All settings are valid, nothing to show");
+                        Log.i(ctxt, TAG, "All settings are valid, checking current state");
+                        NotificationHelper.cancelNotification(ctxt, Constants.TRACKING_ERROR_ID);
+                        restartFSMIfStartState(ctxt);
+                        break;
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                         // Location settings are not satisfied. But could be fixed by showing the user
                         // a dialog.

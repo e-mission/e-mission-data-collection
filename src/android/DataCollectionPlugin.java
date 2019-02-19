@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.berkeley.eecs.emission.*;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
@@ -156,20 +157,23 @@ public class DataCollectionPlugin extends CordovaPlugin {
         }
     }
 
+    /*
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(cordova.getActivity(), TAG, "received onActivityResult("+requestCode+","+
                 resultCode+","+data.getDataString()+")");
         switch (requestCode) {
             case ENABLE_LOCATION_CODE:
-                Log.d(cordova.getActivity(), TAG, requestCode + " is our code, handling callback");
+                Activity mAct = cordova.getActivity();
+                Log.d(mAct, TAG, requestCode + " is our code, handling callback");
                 cordova.setActivityResultCallback(null);
                 final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
                 switch (resultCode) {
                     case Activity.RESULT_OK:
                         // All required changes were successfully made
                         Log.i(cordova.getActivity(), TAG, "All changes successfully made, reinitializing");
-                        cordova.getActivity().sendBroadcast(new Intent(cordova.getActivity().getString(R.string.transition_initialize)));
+                        NotificationHelper.cancelNotification(mAct, Constants.TRACKING_ERROR_ID);
+                        TripDiaryStateMachineService.restartFSMIfStartState(mAct);
                         break;
                     case Activity.RESULT_CANCELED:
                         // The user was asked to change settings, but chose not to
@@ -183,5 +187,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
         }
     }
+    */
 
 }

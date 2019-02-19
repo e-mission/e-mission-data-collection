@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -25,6 +26,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
+
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -230,6 +232,9 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         // - have initialize function as a reset, which stops any current stuff and starts the new one
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
+        } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
+            // should we do a handleXXX() wrapper for this too?
+            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
@@ -258,6 +263,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
             Log.i(this, TAG, "Already in the start state, so going to stay there");
+            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
         }
         }
 
@@ -279,6 +285,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
             setNewState(getString(R.string.state_start));
+            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
         } else {
             final String newState = ctxt.getString(R.string.state_tracking_stopped);
             stopEverything(ctxt, apiClient, actionString);
@@ -293,6 +300,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
             setNewState(getString(R.string.state_start));
+            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
         }
     }
 
