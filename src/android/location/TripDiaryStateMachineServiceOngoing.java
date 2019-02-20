@@ -209,6 +209,10 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
 
     }
 
+    private Intent getForegroundServiceIntent() {
+        return new Intent(this, TripDiaryStateMachineForegroundService.class);
+    }
+
     /*
      * Handles the transition based on the current state.
      * Assumes that the API client is already connected.
@@ -260,10 +264,11 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             setNewState(newState);
                 }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+                    */
             Log.i(this, TAG, "Already in the start state, so going to stay there");
-            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
         }
         }
 
@@ -276,31 +281,35 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
     // If we stop tracking, we stop everything
     // For everything else, go to the ongoing state :)
     private void handleWaitingForTripStart(final Context ctxt, final GoogleApiClient apiClient, final String actionString) {
-        if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
+        if (actionString.equals(getString(R.string.transition_exited_geofence))) {
+            startEverything(ctxt, apiClient, actionString);
+        } else if (actionString.equals(getString(R.string.transition_start_tracking))) {
+            startEverything(ctxt, apiClient, actionString);
+        } else if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Haven't started anything yet (that's why we are in the start state).
             // just move to the stop tracking state
-            String newState = ctxt.getString(R.string.state_tracking_stopped);
-            setNewState(newState);
+            stopEverything(ctxt, apiClient, getString(R.string.state_tracking_stopped));
         } else if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
-            setNewState(getString(R.string.state_start));
-            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
+                    */
+            stopEverything(ctxt, apiClient, getString(R.string.state_start));
         } else {
-            final String newState = ctxt.getString(R.string.state_tracking_stopped);
-            stopEverything(ctxt, apiClient, actionString);
+            stopEverything(ctxt, apiClient, getString(R.string.state_tracking_stopped));
         }
     }
 
     private void handleOngoing(Context ctxt, GoogleApiClient apiClient, String actionString) {
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
-            stopEverything(ctxt, apiClient, actionString);
+            stopEverything(ctxt, apiClient, getString(R.string.state_tracking_stopped));
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
-            setNewState(getString(R.string.state_start));
-            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
+                    */
+            stopEverything(ctxt, mApiClient, getString(R.string.state_start));
         }
     }
 
@@ -332,6 +341,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                 String newState = fCtxt.getString(R.string.state_ongoing_trip);
                 if (batchResult.getStatus().isSuccess()) {
                     setNewState(newState);
+                    startService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                             "Success moving to " + newState);
@@ -347,7 +357,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         });
     }
 
-    private void stopEverything(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+    private void stopEverything(final Context ctxt, final GoogleApiClient apiClient, final String targetState) {
         final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
         Batch.Builder resultBarrier = new Batch.Builder(apiClient);
         tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
@@ -356,9 +366,10 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
             @Override
             public void onResult(BatchResult batchResult) {
-                String newState = fCtxt.getString(R.string.state_tracking_stopped);
+                String newState = targetState;
                 if (batchResult.getStatus().isSuccess()) {
                     setNewState(newState);
+                    stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to " + newState);
