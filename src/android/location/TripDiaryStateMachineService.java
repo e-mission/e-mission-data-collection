@@ -285,9 +285,10 @@ public class TripDiaryStateMachineService extends Service implements
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
-            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
+                    */
             Log.i(this, TAG, "Already in the start state, so going to stay there");
         }
     }
@@ -343,14 +344,17 @@ public class TripDiaryStateMachineService extends Service implements
 
         if(actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Delete geofence
-            deleteGeofence(ctxt, apiClient, actionString);
+            deleteGeofence(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+                    */
+            Log.i(this, TAG, "Got tracking_error moving to start state");
+            deleteGeofence(ctxt, mApiClient, ctxt.getString(R.string.state_start));
             setNewState(getString(R.string.state_start));
-            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
         }
     }
 
@@ -418,12 +422,17 @@ public class TripDiaryStateMachineService extends Service implements
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
-            stopAll(ctxt, apiClient, actionString);
+            stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+                    */
+            Log.i(this, TAG, "Got tracking_error moving to start state");
+            // should I stop everything? maybe to be consistent with the start state
+            stopAll(this, mApiClient, ctxt.getString(R.string.state_start));
             setNewState(getString(R.string.state_start));
         }
     }
@@ -433,7 +442,7 @@ public class TripDiaryStateMachineService extends Service implements
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
             createGeofenceInThread(ctxt, apiClient, actionString);
         } else {
-            stopAll(ctxt, apiClient, actionString);
+            stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
@@ -497,13 +506,13 @@ public class TripDiaryStateMachineService extends Service implements
                     });
                 } else {
                     // Geofence was not created properly. let's generate a tracking error so that the user is notified
-                    fCtxt.sendBroadcast(new Intent(fCtxt.getString(R.string.transition_tracking_error)));
+                    checkLocationSettings(fCtxt, fApiClient);
                 }
             }
         }).start();
     }
 
-    private void deleteGeofence(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void deleteGeofence(Context ctxt, GoogleApiClient apiClient, final String targetState) {
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
             Batch.Builder resultBarrier = new Batch.Builder(apiClient);
         tokenList.add(resultBarrier.add(new GeofenceActions(ctxt, apiClient).remove()));
@@ -511,7 +520,7 @@ public class TripDiaryStateMachineService extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
+                    String newState = targetState;
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
@@ -540,7 +549,7 @@ public class TripDiaryStateMachineService extends Service implements
 
     }
 
-    private void stopAll(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void stopAll(Context ctxt, GoogleApiClient apiClient, final String targetState) {
             // We don't really care about any other transitions, but if we are getting random transitions
             // in this state, may be good to turn everything off
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
@@ -552,9 +561,10 @@ public class TripDiaryStateMachineService extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
+                    String newState = targetState;
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
@@ -571,10 +581,6 @@ public class TripDiaryStateMachineService extends Service implements
             });
         }
 
-    /* This does not work. When location is turned off, we get a result that has a resolution, but if we pass the resolution
-     * into the notification, clicking on the notification does not launch the intent. Need to experiment with this further,
-     * but no time to do that now.
-     */
 
     public static void checkLocationSettings(final Context ctxt, GoogleApiClient apiClient) {
         LocationRequest request = new LocationTrackingActions(ctxt, apiClient).getLocationRequest();
@@ -601,6 +607,7 @@ public class TripDiaryStateMachineService extends Service implements
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                         // Location settings are not satisfied. But could be fixed by showing the user
                         // a dialog.
+                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
                         if (status.hasResolution()) {
                             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings",
@@ -613,9 +620,14 @@ public class TripDiaryStateMachineService extends Service implements
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
+                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                 "Error " + status.getStatusCode() + " in location settings");
                         break;
+                    default:
+                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
+                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                                "Unknown error while reading location, please check your settings");
                 }
             }
         });

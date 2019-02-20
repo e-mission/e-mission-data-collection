@@ -24,6 +24,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService;
@@ -146,13 +147,19 @@ public class GeofenceActions {
         }
         LocationTrackingConfig cfg = ConfigManager.getConfig(mCtxt);
         if (testLoc.getAccuracy() > cfg.getAccuracyThreshold()) {
+            Log.i(mCtxt, TAG, "testLoc.getAccuracy "+testLoc.getAccuracy()+
+                    " > " + cfg.getAccuracyThreshold() + " isValidLocation = false");
             return false; // too inaccurate. Note that a high accuracy number means a larger radius
             // of validity which effectively means a low accuracy
         }
         int fiveMins = 5 * 60 * 1000;
         if ((testLoc.getTime() - System.currentTimeMillis()) > fiveMins * 60) {
+            Log.i(mCtxt, TAG, "testLoc.getTime() = "+ new Date(testLoc.getTime()) +
+                    " testLoc.oldness "+(testLoc.getTime() - System.currentTimeMillis()) +
+                    " > " + fiveMins * 60 + " isValidLocation = false");
             return false; // too old
         }
+        Log.i(mCtxt, TAG, "isValidLocation = true. Yay!");
         return true;
     }
 
