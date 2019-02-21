@@ -65,6 +65,8 @@ public class TripDiaryStateMachineService extends Service implements
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
+    // List of actions being currently processed
+    private List<String> currActions = null;
 
     public TripDiaryStateMachineService() {
         super();
@@ -87,7 +89,7 @@ public class TripDiaryStateMachineService extends Service implements
                 .addApi(LocationServices.API)
                 .addApi(ActivityRecognition.API)
                 .build();
-
+        currActions = new LinkedList<String>();
     }
 
     @Override
@@ -110,6 +112,15 @@ public class TripDiaryStateMachineService extends Service implements
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
         mTransition = intent.getAction();
+        if (currActions.contains(mTransition)) {
+            Log.i(this, TAG, "Service started again for "+mTransition+
+                    " while processing "+currActions+" early exit from id " + startId);
+            // stopSelf(startId);
+            return START_REDELIVER_INTENT;
+        }
+        Log.i(this, TAG, "Handling new action "+mTransition+
+                " existing actions are "+currActions+" adding it to list");
+        currActions.add(mTransition);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
             this.getString(R.string.state_start));
@@ -201,6 +212,9 @@ public class TripDiaryStateMachineService extends Service implements
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
+        currActions.remove(mTransition);
+        Log.i(this, TAG, "After removing transition "+mTransition+
+                ", currActions = "+currActions);
         stopSelf();
     }
 
@@ -255,6 +269,8 @@ public class TripDiaryStateMachineService extends Service implements
         } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
             // should we do a handleXXX() wrapper for this too?
             checkLocationSettings(ctxt, apiClient);
+            // stay in the current state, but do all the service cleanup stuff
+            setNewState(currState);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
@@ -290,6 +306,7 @@ public class TripDiaryStateMachineService extends Service implements
                     "Location tracking turned off. Please turn on for emission to work properly");
                     */
             Log.i(this, TAG, "Already in the start state, so going to stay there");
+            setNewState(mCurrState);
         }
     }
 
@@ -335,6 +352,7 @@ public class TripDiaryStateMachineService extends Service implements
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Failed moving to "+newState);
                     }
+                        setNewState(mCurrState);
                     }
                     Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
@@ -412,6 +430,7 @@ public class TripDiaryStateMachineService extends Service implements
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
                     }
+                        setNewState(mCurrState);
                     }
                     Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
@@ -446,6 +465,7 @@ public class TripDiaryStateMachineService extends Service implements
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
+            setNewState(mCurrState);
         }
     }
 
@@ -487,6 +507,7 @@ public class TripDiaryStateMachineService extends Service implements
                                             "Success moving to " + newState);
                                 }
                             } else {
+                                setNewState(mCurrState);
                                 if (status.hasResolution()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Error " + status.getStatusCode()+" while creating geofence", status.getResolution());
@@ -507,6 +528,7 @@ public class TripDiaryStateMachineService extends Service implements
                 } else {
                     // Geofence was not created properly. let's generate a tracking error so that the user is notified
                     checkLocationSettings(fCtxt, fApiClient);
+                    setNewState(mCurrState);
                 }
             }
         }).start();
@@ -541,6 +563,7 @@ public class TripDiaryStateMachineService extends Service implements
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to " + newState);
                     }
+                        setNewState(mCurrState);
                     }
                     Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
@@ -574,6 +597,7 @@ public class TripDiaryStateMachineService extends Service implements
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
                     }
+                        setNewState(mCurrState);
                     }
                     Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();

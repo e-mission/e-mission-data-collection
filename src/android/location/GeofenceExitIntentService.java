@@ -66,8 +66,7 @@ public class GeofenceExitIntentService extends IntentService {
 			// https://github.com/e-mission/e-mission-data-collection/issues/128#issuecomment-250304943
 			if (parsedEvent.hasError()) {
 				Log.i(this, TAG, "Found error "+parsedEvent.getErrorCode()+
-								"moving to start state");
-				sendBroadcast(new Intent(getString(R.string.transition_tracking_error)));
+								"will be handled by MODE_CHANGE transition");
 			} else {
 				Log.i(this, TAG, "Got event with transition = "+parsedEvent.getGeofenceTransition()+
 					" but hasError = false, ignoring");
