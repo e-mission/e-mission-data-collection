@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="edu.berkeley.eecs.emission.cordova.datacollection"
-        version="1.1.0">
+        version="1.2.0">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -72,6 +72,8 @@
                 <action android:name="local.transition.stopped_moving"></action>
                 <action android:name="local.transition.stop_tracking"></action>
                 <action android:name="local.transition.start_tracking"></action>
+                <action android:name="local.transition.tracking_error"></action>
+                <action android:name="android.location.MODE_CHANGED"></action>
             </intent-filter>
         </receiver>
         <service

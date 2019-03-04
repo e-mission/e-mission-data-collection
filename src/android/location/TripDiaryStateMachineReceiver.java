@@ -6,10 +6,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.LocationManager;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
 
 import org.apache.cordova.ConfigXmlParser;
 import org.json.JSONException;
@@ -21,6 +23,7 @@ import java.util.Set;
 
 import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.R;
+
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
@@ -76,7 +79,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_stopped_moving),
                 context.getString(R.string.transition_stop_tracking),
                 context.getString(R.string.transition_start_tracking),
-                context.getString(R.string.transition_tracking_error)
+                context.getString(R.string.transition_tracking_error),
+                LocationManager.MODE_CHANGED_ACTION
         }));
 
         if (!validTransitions.contains(intent.getAction())) {

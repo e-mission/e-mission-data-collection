@@ -24,6 +24,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService;
@@ -101,6 +102,7 @@ public class GeofenceActions {
         LocalBroadcastManager.getInstance(mCtxt).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                Log.i(mCtxt, TAG, "recieved broadcast intent "+intent);
                 synchronized(GeofenceActions.this) {
                     GeofenceActions.this.newLastLocation = intent.getParcelableExtra(GeofenceLocationIntentService.INTENT_RESULT_KEY);
                     GeofenceActions.this.notify();
@@ -130,6 +132,7 @@ public class GeofenceActions {
                 Log.d(mCtxt, TAG, "After waiting for location reading result, location is " + this.newLastLocation);
                 return this.newLastLocation;
             } catch (InterruptedException e) {
+                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, geofenceLocationIntent);
                 Log.w(mCtxt, TAG, "Timed out waiting for location result, returning null ");
                 return null;
             }
@@ -144,13 +147,19 @@ public class GeofenceActions {
         }
         LocationTrackingConfig cfg = ConfigManager.getConfig(mCtxt);
         if (testLoc.getAccuracy() > cfg.getAccuracyThreshold()) {
+            Log.i(mCtxt, TAG, "testLoc.getAccuracy "+testLoc.getAccuracy()+
+                    " > " + cfg.getAccuracyThreshold() + " isValidLocation = false");
             return false; // too inaccurate. Note that a high accuracy number means a larger radius
             // of validity which effectively means a low accuracy
         }
         int fiveMins = 5 * 60 * 1000;
         if ((testLoc.getTime() - System.currentTimeMillis()) > fiveMins * 60) {
+            Log.i(mCtxt, TAG, "testLoc.getTime() = "+ new Date(testLoc.getTime()) +
+                    " testLoc.oldness "+(testLoc.getTime() - System.currentTimeMillis()) +
+                    " > " + fiveMins * 60 + " isValidLocation = false");
             return false; // too old
         }
+        Log.i(mCtxt, TAG, "isValidLocation = true. Yay!");
         return true;
     }
 
@@ -160,33 +169,12 @@ public class GeofenceActions {
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
-    ResultCallback<Status> locationCallback = new ResultCallback<Status>() {
-        Context mCtxt = GeofenceActions.this.mCtxt;
-        @Override
-        public void onResult(Status status) {
-            if (status.isSuccess()) {
-                Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                        mGoogleApiClient);
-                if (mLastLocation != null) {
-                    LocationServices.GeofencingApi.addGeofences(mGoogleApiClient,
-                            createGeofenceRequest(mLastLocation.getLatitude(), mLastLocation.getLongitude()),
-                            getGeofenceExitPendingIntent(mCtxt))
-                            .await();
-                } else {
-                    notifyFailure();
-                }
-            } else {
-                notifyFailure();
-            }
-        }
-
         public void notifyFailure() {
             Log.w(mCtxt, TAG,
                     "Unable to detect current location even after forcing, will retry at next sync");
             NotificationHelper.createNotification(mCtxt, GEOFENCE_IN_NUMBERS,
                     "Unable to detect current location even after forcing, will retry at next sync");
         }
-    };
 
     /*
      * Returns the geofence request object to be used with the geofencing API.

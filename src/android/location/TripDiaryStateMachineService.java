@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -17,7 +18,11 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,6 +32,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
+
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
@@ -59,6 +65,8 @@ public class TripDiaryStateMachineService extends Service implements
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
+    // List of actions being currently processed
+    private List<String> currActions = null;
 
     public TripDiaryStateMachineService() {
         super();
@@ -81,11 +89,12 @@ public class TripDiaryStateMachineService extends Service implements
                 .addApi(LocationServices.API)
                 .addApi(ActivityRecognition.API)
                 .build();
-
+        currActions = new LinkedList<String>();
     }
 
     @Override
     public void onDestroy() {
+        Log.d(this, TAG, "About to disconnect the api client");
         mApiClient.disconnect();
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
     }
@@ -103,6 +112,15 @@ public class TripDiaryStateMachineService extends Service implements
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
         mTransition = intent.getAction();
+        if (currActions.contains(mTransition)) {
+            Log.i(this, TAG, "Service started again for "+mTransition+
+                    " while processing "+currActions+" early exit from id " + startId);
+            // stopSelf(startId);
+            return START_REDELIVER_INTENT;
+        }
+        Log.i(this, TAG, "Handling new action "+mTransition+
+                " existing actions are "+currActions+" adding it to list");
+        currActions.add(mTransition);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
             this.getString(R.string.state_start));
@@ -116,6 +134,7 @@ public class TripDiaryStateMachineService extends Service implements
         } else {
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
+            Log.d(this, TAG, "Launched connect to the google API client, returning from onStartCommand");
         mApiClient.connect();
         }
 
@@ -130,7 +149,6 @@ public class TripDiaryStateMachineService extends Service implements
          API. For example, deleting a geofence. It might be easiest to convert the actions to be
          idempotent, but that requires some careful work. TODO: Need to think through this carefully.
          */
-        Log.d(this, TAG, "Launched connect to the google API client, returning from onStartCommand");
         return START_REDELIVER_INTENT;
     }
 
@@ -175,6 +193,16 @@ public class TripDiaryStateMachineService extends Service implements
         return sPrefs.getString(ctxt.getString(R.string.curr_state_key), ctxt.getString(R.string.state_start));
     }
 
+    public static void restartFSMIfStartState(Context ctxt) {
+        String START_STATE = ctxt.getString(R.string.state_start);
+        String currState = getState(ctxt);
+        Log.i(ctxt, TAG, "in restartFSMIfStartState, currState = "+currState);
+        if (START_STATE.equals(currState)) {
+            Log.i(ctxt, TAG, "in start state, sending initialize");
+            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+        }
+    }
+
     public void setNewState(String newState) {
         Log.d(this, TAG, "newState after handling action is "+newState);
         SharedPreferences.Editor prefsEditor =
@@ -184,6 +212,9 @@ public class TripDiaryStateMachineService extends Service implements
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
+        currActions.remove(mTransition);
+        Log.i(this, TAG, "After removing transition "+mTransition+
+                ", currActions = "+currActions);
         stopSelf();
     }
 
@@ -235,6 +266,11 @@ public class TripDiaryStateMachineService extends Service implements
                 BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
+        } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
+            // should we do a handleXXX() wrapper for this too?
+            checkLocationSettings(ctxt, apiClient);
+            // stay in the current state, but do all the service cleanup stuff
+            setNewState(currState);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
@@ -265,9 +301,12 @@ public class TripDiaryStateMachineService extends Service implements
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+                    */
             Log.i(this, TAG, "Already in the start state, so going to stay there");
+            setNewState(mCurrState);
         }
     }
 
@@ -307,13 +346,15 @@ public class TripDiaryStateMachineService extends Service implements
                         } else {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
-                            // checkLocationSettings();
+                            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Failed moving to "+newState);
                     }
+                        setNewState(mCurrState);
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
@@ -321,12 +362,16 @@ public class TripDiaryStateMachineService extends Service implements
 
         if(actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Delete geofence
-            deleteGeofence(ctxt, apiClient, actionString);
+            deleteGeofence(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+                    */
+            Log.i(this, TAG, "Got tracking_error moving to start state");
+            deleteGeofence(ctxt, mApiClient, ctxt.getString(R.string.state_start));
             setNewState(getString(R.string.state_start));
         }
     }
@@ -379,13 +424,15 @@ public class TripDiaryStateMachineService extends Service implements
                         } else {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
-                            // checkLocationSettings();
+                            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
                     }
+                        setNewState(mCurrState);
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
@@ -394,12 +441,17 @@ public class TripDiaryStateMachineService extends Service implements
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
-            stopAll(ctxt, apiClient, actionString);
+            stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+            /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
+                    */
+            Log.i(this, TAG, "Got tracking_error moving to start state");
+            // should I stop everything? maybe to be consistent with the start state
+            stopAll(this, mApiClient, ctxt.getString(R.string.state_start));
             setNewState(getString(R.string.state_start));
         }
     }
@@ -409,10 +461,11 @@ public class TripDiaryStateMachineService extends Service implements
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
             createGeofenceInThread(ctxt, apiClient, actionString);
         } else {
-            stopAll(ctxt, apiClient, actionString);
+            stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
+            setNewState(mCurrState);
         }
     }
 
@@ -454,28 +507,34 @@ public class TripDiaryStateMachineService extends Service implements
                                             "Success moving to " + newState);
                                 }
                             } else {
+                                setNewState(mCurrState);
                                 if (status.hasResolution()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Error " + status.getStatusCode()+" while creating geofence", status.getResolution());
                                 } else {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Error " + status.getStatusCode()+" while creating geofence");
-                                    // checkLocationSettings();
+                                    checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Failed moving to " + newState);
                                 }
                             }
+                            Log.d(fCtxt, TAG, "About to disconnect the api client");
                             fApiClient.disconnect();
                         }
                     });
+                } else {
+                    // Geofence was not created properly. let's generate a tracking error so that the user is notified
+                    checkLocationSettings(fCtxt, fApiClient);
+                    setNewState(mCurrState);
                 }
             }
         }).start();
     }
 
-    private void deleteGeofence(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void deleteGeofence(Context ctxt, GoogleApiClient apiClient, final String targetState) {
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
             Batch.Builder resultBarrier = new Batch.Builder(apiClient);
         tokenList.add(resultBarrier.add(new GeofenceActions(ctxt, apiClient).remove()));
@@ -483,7 +542,7 @@ public class TripDiaryStateMachineService extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
+                    String newState = targetState;
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
@@ -498,20 +557,22 @@ public class TripDiaryStateMachineService extends Service implements
                     } else {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Error " + batchResult.getStatus().getStatusCode() + " while creating geofence");
-                        // checkLocationSettings();
+                        checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to " + newState);
                     }
+                        setNewState(mCurrState);
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
 
     }
 
-    private void stopAll(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void stopAll(Context ctxt, GoogleApiClient apiClient, final String targetState) {
             // We don't really care about any other transitions, but if we are getting random transitions
             // in this state, may be good to turn everything off
             final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
@@ -523,9 +584,10 @@ public class TripDiaryStateMachineService extends Service implements
             resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
                 @Override
                 public void onResult(BatchResult batchResult) {
-                    String newState = fCtxt.getString(R.string.state_tracking_stopped);
+                    String newState = targetState;
                     if (batchResult.getStatus().isSuccess()) {
                         setNewState(newState);
+                        stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Success moving to "+newState);
@@ -535,56 +597,63 @@ public class TripDiaryStateMachineService extends Service implements
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Failed moving to "+newState);
                     }
+                        setNewState(mCurrState);
                     }
+                    Log.d(fCtxt, TAG, "About to disconnect the api client");
                     mApiClient.disconnect();
                 }
             });
         }
 
-    /* This does not work. When location is turned off, we get a result that has a resolution, but if we pass the resolution
-     * into the notification, clicking on the notification does not launch the intent. Need to experiment with this further,
-     * but no time to do that now.
-     */
 
-    /*
-private void checkLocationSettings() {
-
-        LocationRequest request = new LocationTrackingActions(TripDiaryStateMachineService.this, mApiClient).getLocationRequest();
+    public static void checkLocationSettings(final Context ctxt, GoogleApiClient apiClient) {
+        LocationRequest request = new LocationTrackingActions(ctxt, apiClient).getLocationRequest();
+        Log.d(ctxt, TAG, "Checking location settings for request "+request);
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(request);
 
         PendingResult<LocationSettingsResult> result =
-                LocationServices.SettingsApi.checkLocationSettings(mApiClient, builder.build());
+                LocationServices.SettingsApi.checkLocationSettings(apiClient, builder.build());
+        Log.d(ctxt, TAG, "Got back result "+result);
         result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
             @Override
             public void onResult(LocationSettingsResult result) {
+                Log.d(ctxt, TAG, "isLocationUsable() "+result.getLocationSettingsStates().isLocationUsable());
                 final Status status = result.getStatus();
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
                         // All location settings are satisfied. The client can initialize location
                         // requests here.
-                        Log.i(TripDiaryStateMachineService.this, TAG, "All settings are valid, nothing to show");
+                        Log.i(ctxt, TAG, "All settings are valid, checking current state");
+                        NotificationHelper.cancelNotification(ctxt, Constants.TRACKING_ERROR_ID);
+                        restartFSMIfStartState(ctxt);
+                        break;
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                         // Location settings are not satisfied. But could be fixed by showing the user
                         // a dialog.
+                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
                         if (status.hasResolution()) {
-                            NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings",
                                     status.getResolution());
                         } else {
-                            NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings");
                         }
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
-                        NotificationHelper.createNotification(TripDiaryStateMachineService.this, Constants.TRACKING_ERROR_ID,
+                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
+                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                 "Error " + status.getStatusCode() + " in location settings");
                         break;
+                    default:
+                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
+                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                                "Unknown error while reading location, please check your settings");
                 }
             }
         });
     }
-        */
 }

@@ -8,20 +8,25 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationSettingsStates;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import edu.berkeley.eecs.emission.*;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
@@ -31,7 +36,8 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 public class DataCollectionPlugin extends CordovaPlugin {
-    public static String TAG = "DataCollectionPlugin";
+    public static final String TAG = "DataCollectionPlugin";
+    public static final int ENABLE_LOCATION_CODE = 362253;
 
     @Override
     public void pluginInitialize() {
@@ -135,4 +141,52 @@ public class DataCollectionPlugin extends CordovaPlugin {
         retVal.put("START_TRACKING", ctxt.getString(R.string.transition_start_tracking));
         return retVal;
     }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        Log.d(cordova.getActivity(), TAG, "onNewIntent(" + intent.getDataString() + ")");
+        Log.d(cordova.getActivity(), TAG, "Found extras " + intent.getExtras());
+        PendingIntent piFromIntent = intent.getParcelableExtra(NotificationHelper.RESOLUTION_PENDING_INTENT_KEY);
+        if (piFromIntent != null) {
+            try {
+                // cordova.setActivityResultCallback(this);
+                cordova.getActivity().startIntentSenderForResult(piFromIntent.getIntentSender(), ENABLE_LOCATION_CODE, null, 0, 0, 0, null);
+            } catch (IntentSender.SendIntentException e) {
+                NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, "Unable to resolve issue");
+            }
+        }
+    }
+
+    /*
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(cordova.getActivity(), TAG, "received onActivityResult("+requestCode+","+
+                resultCode+","+data.getDataString()+")");
+        switch (requestCode) {
+            case ENABLE_LOCATION_CODE:
+                Activity mAct = cordova.getActivity();
+                Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+                cordova.setActivityResultCallback(null);
+                final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        // All required changes were successfully made
+                        Log.i(cordova.getActivity(), TAG, "All changes successfully made, reinitializing");
+                        NotificationHelper.cancelNotification(mAct, Constants.TRACKING_ERROR_ID);
+                        TripDiaryStateMachineService.restartFSMIfStartState(mAct);
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        // The user was asked to change settings, but chose not to
+                        Log.e(cordova.getActivity(), TAG, "User chose not to change settings, dunno what to do");
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
+        }
+    }
+    */
+
 }
