@@ -25,6 +25,7 @@ import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.R;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
@@ -146,7 +147,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          */
         if (TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_start))) {
             Log.d(ctxt, TAG, "Still in start state, sending initialize...");
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
         } else if (TripDiaryStateMachineService.getState(ctxt).equals(
                 ctxt.getString(R.string.state_waiting_for_trip_start))) {
             // We cannot check to see whether there is an existing geofence and whether we are in it.
@@ -177,7 +178,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             // https://github.com/e-mission/e-mission-data-collection/commit/5544afd64b0c731e1633d1dd9f51a713fdea85fa
             // Since every consent change is (presumably) tied to a native code change, we can
             // just check for the consent here before reinitializing.
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             SharedPreferences.Editor prefsEditor = sp.edit();
             // TODO: This is supposed to be set from the javascript as part of the onboarding process.
             // However, it looks like it doesn't actually work - it looks like the app preferences plugin
@@ -213,7 +214,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 + " early return");
             return;
         }
-        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_stop_tracking)));
+        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_stop_tracking));
         final Context fCtxt = ctxt;
         new Thread(new Runnable() {
             @Override
@@ -230,7 +231,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 stateChanged = true;
             }
         }
-                fCtxt.sendBroadcast(new Intent(fCtxt.getString(R.string.transition_start_tracking)));
+                fCtxt.sendBroadcast(new ExplicitIntent(fCtxt, R.string.transition_start_tracking));
             }
         }).start();
     }

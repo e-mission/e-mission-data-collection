@@ -109,7 +109,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
                     Map<String, String> transitionMap = getTransitionMap(ctxt);
                     if (transitionMap.containsKey(generalTransition)) {
                         String androidTransition = transitionMap.get(generalTransition);
-                        ctxt.sendBroadcast(new Intent(androidTransition));
+                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, androidTransition));
                         callbackContext.success(androidTransition);
                     } else {
                         callbackContext.error(generalTransition + " not supported, ignoring");

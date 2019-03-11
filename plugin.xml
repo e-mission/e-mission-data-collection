@@ -120,6 +120,7 @@
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/Constants.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/ExplicitIntent.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/GooglePlayChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/ConfigManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/location/ActivityRecognitionChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>

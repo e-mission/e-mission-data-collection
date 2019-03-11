@@ -8,6 +8,8 @@ import java.util.Arrays;
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.R;
+
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.PollSensorManager;
 import android.app.IntentService;
 import android.content.Intent;
@@ -161,7 +163,7 @@ public class LocationChangeIntentService extends IntentService {
 			Intent stopMonitoringIntent = new Intent();
 			stopMonitoringIntent.setAction(getString(R.string.transition_stopped_moving));
 			stopMonitoringIntent.putExtra(FusedLocationProviderApi.KEY_LOCATION_CHANGED, loc);
-			sendBroadcast(stopMonitoringIntent);
+			sendBroadcast(new ExplicitIntent(this, stopMonitoringIntent));
             Log.d(this, TAG, "Finished broadcasting state change to receiver, ending trip now");
             // DataUtils.endTrip(this);
 		}

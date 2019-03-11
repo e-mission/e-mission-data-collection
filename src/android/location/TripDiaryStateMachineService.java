@@ -29,9 +29,11 @@ import java.util.List;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
+
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
@@ -130,7 +132,7 @@ public class TripDiaryStateMachineService extends Service implements
 
         if (mApiClient.isConnected()) {
             Log.d(this, TAG, "client is already connected, can directly handle the action");
-            handleAction(this, mApiClient, mCurrState, mTransition);
+            // handleAction(this, mApiClient, mCurrState, mTransition);
         } else {
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
@@ -199,7 +201,7 @@ public class TripDiaryStateMachineService extends Service implements
         Log.i(ctxt, TAG, "in restartFSMIfStartState, currState = "+currState);
         if (START_STATE.equals(currState)) {
             Log.i(ctxt, TAG, "in start state, sending initialize");
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
         }
     }
 
@@ -631,7 +633,7 @@ public class TripDiaryStateMachineService extends Service implements
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                         // Location settings are not satisfied. But could be fixed by showing the user
                         // a dialog.
-                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
+                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         if (status.hasResolution()) {
                             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings",
@@ -644,12 +646,12 @@ public class TripDiaryStateMachineService extends Service implements
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
-                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
+                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                 "Error " + status.getStatusCode() + " in location settings");
                         break;
                     default:
-                        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_tracking_error)));
+                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                 "Unknown error while reading location, please check your settings");
                 }

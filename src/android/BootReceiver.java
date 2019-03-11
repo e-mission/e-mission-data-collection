@@ -36,7 +36,7 @@ public class BootReceiver extends BroadcastReceiver {
             // Re-initialize the state machine if we haven't stopped tracking
             if (!TripDiaryStateMachineService.getState(ctx).equals(
                     ctx.getString(R.string.state_tracking_stopped))) {
-                ctx.sendBroadcast(new Intent(ctx.getString(R.string.transition_initialize)));
+                ctx.sendBroadcast(new ExplicitIntent(ctx, R.string.transition_initialize));
             }
         }
 	}
