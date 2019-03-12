@@ -89,45 +89,34 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             return;
         }
 
-        /*
-         * Before we initialize the state machine, let's check to see whether the user has
-         * consented to the current data collection.
-         */
         if (intent.getAction().equals(context.getString(R.string.transition_initialize))) {
+            String reqConsent = ConfigManager.getReqConsent(context);
+            if (ConfigManager.isConsented(context, reqConsent)) {
+                Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
+            } else {
             JSONObject introDoneResult = null;
             try {
                 introDoneResult = BuiltinUserCache.getDatabase(context).getLocalStorage("intro_done", false);
             } catch(JSONException e) {
                 Log.i(context, TAG, "unable to read intro done state, skipping prompt");
+                    return;
             }
             if (introDoneResult != null) {
-                String reqConsent = getReqConsent(context);
-                if (!ConfigManager.isConsented(context, reqConsent)) {
                     Log.i(context, TAG, reqConsent + " is not the current consented version, skipping init...");
                     NotificationHelper.createNotification(context, STARTUP_IN_NUMBERS,
                             "New data collection terms - collection paused until consent");
                     return;
                 } else {
-                    Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
-                }
-            } else {
                 Log.i(context, TAG, "onboarding is not complete, skipping prompt");
+                    return;
+                }
             }
         }
 
+        // we should only get here if the user has consented
         Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
         context.startService(serviceStartIntent);
-    }
-
-    /*
- * TODO: Need to find a place to put this.
- */
-    private static String getReqConsent(Context ctxt) {
-        ConfigXmlParser parser = new ConfigXmlParser();
-        parser.parse(ctxt);
-        String reqConsent = parser.getPreferences().getString("emSensorDataCollectionProtocolApprovalDate", null);
-        return reqConsent;
     }
 
     public static void performPeriodicActivity(Context ctxt) {
@@ -170,6 +159,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         System.out.println("All preferences are "+sp.getAll());
 
         int currentCompleteVersion = sp.getInt(SETUP_COMPLETE_KEY, 0);
+        Log.d(ctxt, TAG, "Comparing installed version "+currentCompleteVersion
+            + " with new version " + BuildConfig.VERSION_CODE);
         if(currentCompleteVersion != BuildConfig.VERSION_CODE) {
             Log.d(ctxt, TAG, "Setup not complete, sending initialize");
             // this is the code that checks whether the native collection has been upgraded and

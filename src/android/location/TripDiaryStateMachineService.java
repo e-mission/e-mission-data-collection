@@ -132,7 +132,7 @@ public class TripDiaryStateMachineService extends Service implements
 
         if (mApiClient.isConnected()) {
             Log.d(this, TAG, "client is already connected, can directly handle the action");
-            // handleAction(this, mApiClient, mCurrState, mTransition);
+            handleAction(this, mApiClient, mCurrState, mTransition);
         } else {
         // And then connect to the client. All subsequent processing will be in the onConnected
         // method
@@ -159,6 +159,10 @@ public class TripDiaryStateMachineService extends Service implements
         Log.d(this, TAG, "onConnected("+connectionHint+") called");
         ConnectionResult locResult = mApiClient.getConnectionResult(LocationServices.API);
         ConnectionResult activityResult = mApiClient.getConnectionResult(ActivityRecognition.API);
+        if (locResult.isSuccess() && activityResult.isSuccess()) {
+            // we go ahead and handle the original issue
+            handleAction(this, mApiClient, mCurrState, mTransition);
+        }
         if (!locResult.isSuccess()) {
             if (locResult.hasResolution()) {
                 NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage(),
@@ -176,7 +180,6 @@ public class TripDiaryStateMachineService extends Service implements
             }
         }
 
-        handleAction(this, mApiClient, mCurrState, mTransition);
 
         // Note that it does NOT work to disconnect from here because the actions in the state
         // might happen asynchronously, and we disconnect too early, then the async callbacks
@@ -391,8 +394,7 @@ public class TripDiaryStateMachineService extends Service implements
             tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
             tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).stop()));
                     // TODO: change once we move to chained promises
-                    PendingResult<Status> createGeofenceResult =
-                    new GeofenceActions(ctxt, apiClient).create();
+            PendingResult<Status> createGeofenceResult = new GeofenceActions(ctxt, apiClient).create();
             if (createGeofenceResult != null) {
                 tokenList.add(resultBarrier.add(createGeofenceResult));
             }
@@ -461,7 +463,9 @@ public class TripDiaryStateMachineService extends Service implements
     private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
-            createGeofenceInThread(ctxt, apiClient, actionString);
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
+            setNewState(ctxt.getString(R.string.state_start));
+            // createGeofenceInThread(ctxt, apiClient, actionString);
         } else {
             stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
         }

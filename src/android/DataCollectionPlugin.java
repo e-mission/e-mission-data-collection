@@ -42,22 +42,10 @@ public class DataCollectionPlugin extends CordovaPlugin {
     @Override
     public void pluginInitialize() {
         final Activity myActivity = cordova.getActivity();
-        int connectionResult = GooglePlayServicesUtil.isGooglePlayServicesAvailable(myActivity);
-        if (connectionResult == ConnectionResult.SUCCESS) {
-            Log.d(myActivity, TAG, "google play services available, initializing state machine");
-            cordova.getThreadPool().execute(new Runnable() {
-                @Override
-                public void run() {
-                    TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
-            }
-            });
-        } else {
-            Log.e(myActivity, TAG, "unable to connect to google play services");
-            NotificationHelper.createNotification(myActivity, Constants.TRACKING_ERROR_ID,
-                    "Unable to connect to google play services, tracking turned off");
-        }
         BuiltinUserCache.getDatabase(myActivity).putMessage(R.string.key_usercache_client_nav_event,
                 new StatsEvent(myActivity, R.string.app_launched));
+
+        TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
         TripDiaryStateMachineReceiver.startForegroundIfNeeded(myActivity);
     }
 
@@ -74,7 +62,9 @@ public class DataCollectionPlugin extends CordovaPlugin {
             ConsentConfig cfg = new Gson().fromJson(newConsent.toString(), ConsentConfig.class);
             ConfigManager.setConsented(ctxt, cfg);
             // Now, really initialize the state machine
-            TripDiaryStateMachineReceiver.initOnUpgrade(ctxt);
+            // Note that we don't call initOnUpgrade so that we can handle the case where the
+            // user deleted the consent and re-consented, but didn't upgrade the app
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
