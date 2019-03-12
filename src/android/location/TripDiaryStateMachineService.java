@@ -1,13 +1,17 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.Batch;
@@ -29,10 +33,13 @@ import java.util.List;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
+import edu.berkeley.eecs.emission.cordova.tracker.DataCollectionPlugin;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
+import edu.berkeley.eecs.emission.MainActivity;
+
 
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
@@ -273,7 +280,7 @@ public class TripDiaryStateMachineService extends Service implements
             handleStart(ctxt, apiClient, actionString);
         } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
             // should we do a handleXXX() wrapper for this too?
-            checkLocationSettings(ctxt, apiClient);
+            checkLocationSettingsAndPermissions(ctxt, apiClient);
             // stay in the current state, but do all the service cleanup stuff
             setNewState(currState);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
@@ -345,13 +352,13 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                     } else {
                         if (batchResult.getStatus().hasResolution()) {
-                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                            NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
                                     batchResult.getStatus().getResolution());
                         } else {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
-                            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
+                            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -422,13 +429,13 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                     } else {
                         if (batchResult.getStatus().hasResolution()) {
-                            NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                            NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
                                     batchResult.getStatus().getResolution());
                         } else {
                             NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
-                            checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
+                            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -515,12 +522,12 @@ public class TripDiaryStateMachineService extends Service implements
                             } else {
                                 setNewState(mCurrState);
                                 if (status.hasResolution()) {
-                                    NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                                    NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Error " + status.getStatusCode()+" while creating geofence", status.getResolution());
                                 } else {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             "Error " + status.getStatusCode()+" while creating geofence");
-                                    checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
+                                    checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -533,7 +540,7 @@ public class TripDiaryStateMachineService extends Service implements
                     });
                 } else {
                     // Geofence was not created properly. let's generate a tracking error so that the user is notified
-                    checkLocationSettings(fCtxt, fApiClient);
+                    checkLocationSettingsAndPermissions(fCtxt, fApiClient);
                     setNewState(mCurrState);
                 }
             }
@@ -557,13 +564,13 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                     } else {
                     if (batchResult.getStatus().hasResolution()) {
-                        NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
+                        NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Error " + batchResult.getStatus().getStatusCode() + " while creating geofence",
                                 batchResult.getStatus().getResolution());
                     } else {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 "Error " + batchResult.getStatus().getStatusCode() + " while creating geofence");
-                        checkLocationSettings(TripDiaryStateMachineService.this, mApiClient);
+                        checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -611,10 +618,42 @@ public class TripDiaryStateMachineService extends Service implements
             });
         }
 
-
-    public static void checkLocationSettings(final Context ctxt, GoogleApiClient apiClient) {
+        public static void checkLocationSettingsAndPermissions(final Context ctxt, final GoogleApiClient apiClient) {
         LocationRequest request = new LocationTrackingActions(ctxt, apiClient).getLocationRequest();
-        Log.d(ctxt, TAG, "Checking location settings for request "+request);
+            Log.d(ctxt, TAG, "Checking location settings and permissions for request "+request);
+            // let's do the permission check first since it is synchronous
+            if (checkLocationPermissions(ctxt, apiClient, request)) {
+                Log.d(ctxt, TAG, "checkPermissions returned true, checking settings");
+                checkLocationSettings(ctxt, apiClient, request);
+            } else {
+                Log.d(ctxt, TAG, "checkPermissions returned false, no point checking settings");
+            }
+        }
+
+        public static boolean checkLocationPermissions(final Context ctxt,
+                                                       final GoogleApiClient apiClient,
+                                                       final LocationRequest request) {
+            // Ideally, we would use the request accuracy to figure out the permissions requested
+            // but I can't find an authoritative mapping, and I'm running out of time for
+            // fancy stuff
+            int result = ContextCompat.checkSelfPermission(ctxt, DataCollectionPlugin.LOCATION_PERMISSION);
+            Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
+            if (PackageManager.PERMISSION_GRANTED == result) {
+                return true;
+            } else {
+                Intent activityIntent = new Intent(ctxt, MainActivity.class);
+                activityIntent.setAction(DataCollectionPlugin.ENABLE_LOCATION_PERMISSION_ACTION);
+                PendingIntent pi = PendingIntent.getActivity(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
+                        activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                NotificationHelper.createNotification(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
+                        "Location permission off, click to enable", pi);
+                return false;
+            }
+        }
+
+    public static void checkLocationSettings(final Context ctxt,
+                                             final GoogleApiClient apiClient,
+                                             final LocationRequest request) {
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(request);
 
@@ -639,7 +678,7 @@ public class TripDiaryStateMachineService extends Service implements
                         // a dialog.
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         if (status.hasResolution()) {
-                            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                            NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     "Error " + status.getStatusCode() + " in location settings",
                                     status.getResolution());
                         } else {

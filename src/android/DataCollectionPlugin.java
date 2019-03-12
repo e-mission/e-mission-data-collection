@@ -7,6 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -14,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -37,7 +39,12 @@ import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 public class DataCollectionPlugin extends CordovaPlugin {
     public static final String TAG = "DataCollectionPlugin";
-    public static final int ENABLE_LOCATION_CODE = 362253;
+    public static String LOCATION_PERMISSION = Manifest.permission.ACCESS_FINE_LOCATION;
+
+    public static final int ENABLE_LOCATION_SETTINGS = 362253738;
+    public static final int ENABLE_LOCATION_PERMISSION = 362253737;
+
+    public static final String ENABLE_LOCATION_PERMISSION_ACTION = "ENABLE_LOCATION_PERMISSION";
 
     @Override
     public void pluginInitialize() {
@@ -64,7 +71,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
             // user deleted the consent and re-consented, but didn't upgrade the app
-            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
+            checkAndPromptPermissions();
+            // ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
@@ -132,18 +140,69 @@ public class DataCollectionPlugin extends CordovaPlugin {
         return retVal;
     }
 
-    @Override
-    public void onNewIntent(Intent intent) {
-        Log.d(cordova.getActivity(), TAG, "onNewIntent(" + intent.getDataString() + ")");
-        Log.d(cordova.getActivity(), TAG, "Found extras " + intent.getExtras());
-        PendingIntent piFromIntent = intent.getParcelableExtra(NotificationHelper.RESOLUTION_PENDING_INTENT_KEY);
-        if (piFromIntent != null) {
+    private void checkAndPromptPermissions() {
+        if(cordova.hasPermission(LOCATION_PERMISSION)) {
+            TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
+        } else {
+            cordova.requestPermission(this, ENABLE_LOCATION_PERMISSION, LOCATION_PERMISSION);
+        }
+    }
+
+    private void displayResolution(PendingIntent resolution) {
+        if (resolution != null) {
             try {
                 // cordova.setActivityResultCallback(this);
-                cordova.getActivity().startIntentSenderForResult(piFromIntent.getIntentSender(), ENABLE_LOCATION_CODE, null, 0, 0, 0, null);
+                cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
             } catch (IntentSender.SendIntentException e) {
                 NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, "Unable to resolve issue");
             }
+        }
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        Context mAct = cordova.getActivity();
+        Log.d(mAct, TAG, "onNewIntent(" + intent.getAction() + ")");
+        Log.d(mAct, TAG, "Found extras " + intent.getExtras());
+
+        if(ENABLE_LOCATION_PERMISSION_ACTION.equals(intent.getAction())) {
+            checkAndPromptPermissions();
+            return;
+        }
+        if (NotificationHelper.DISPLAY_RESOLUTION_ACTION.equals(intent.getAction())) {
+            PendingIntent piFromIntent = intent.getParcelableExtra(
+                    NotificationHelper.RESOLUTION_PENDING_INTENT_KEY);
+            displayResolution(piFromIntent);
+            return;
+        }
+        Log.i(mAct, TAG, "Action "+intent.getAction()+" unknown, ignoring ");
+    }
+
+    @Override
+    public void onRequestPermissionResult(int requestCode, String[] permissions,
+                                          int[] grantResults) throws JSONException
+    {
+        /*
+         Let us figure out if we want to sent a javascript callback with the error.
+         This is currently only called from markConsented, and I don't think we listen to failures there
+        for(int r:grantResults)
+        {
+            if(r == PackageManager.PERMISSION_DENIED)
+            {
+                this.callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, PERMISSION_DENIED_ERROR));
+                return;
+            }
+        }
+         */
+        switch(requestCode)
+        {
+            case ENABLE_LOCATION_PERMISSION:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
+                }
+                break;
+            default:
+                Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
     }
 
@@ -153,7 +212,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
         Log.d(cordova.getActivity(), TAG, "received onActivityResult("+requestCode+","+
                 resultCode+","+data.getDataString()+")");
         switch (requestCode) {
-            case ENABLE_LOCATION_CODE:
+            case ENABLE_LOCATION_SETTINGS:
                 Activity mAct = cordova.getActivity();
                 Log.d(mAct, TAG, requestCode + " is our code, handling callback");
                 cordova.setActivityResultCallback(null);
