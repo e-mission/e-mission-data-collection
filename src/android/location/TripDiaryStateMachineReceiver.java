@@ -80,8 +80,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_stopped_moving),
                 context.getString(R.string.transition_stop_tracking),
                 context.getString(R.string.transition_start_tracking),
-                context.getString(R.string.transition_tracking_error),
-                LocationManager.MODE_CHANGED_ACTION
+                context.getString(R.string.transition_tracking_error)
         }));
 
         if (!validTransitions.contains(intent.getAction())) {
@@ -125,9 +124,20 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * help with issues we have seen in the field where location updates pause mysteriously, or
          * geofences are never exited.
          */
+        checkLocationStillAvailable(ctxt);
         validateAndCleanupState(ctxt);
         initOnUpgrade(ctxt);
         saveBatteryAndSimulateUser(ctxt);
+    }
+
+    public static void checkLocationStillAvailable(Context ctxt) {
+        GoogleApiClient mApiClient = new GoogleApiClient.Builder(ctxt)
+                .addApi(LocationServices.API)
+                .build();
+        // This runs as part of the service thread and not the UI thread, so can block
+        // can switch to Tasks later anyway
+        mApiClient.blockingConnect();
+        TripDiaryStateMachineService.checkLocationSettingsAndPermissions(ctxt, mApiClient);
     }
 
     public static void validateAndCleanupState(Context ctxt) {

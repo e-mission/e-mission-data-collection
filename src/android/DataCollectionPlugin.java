@@ -151,7 +151,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
     private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
             try {
-                // cordova.setActivityResultCallback(this);
+                cordova.setActivityResultCallback(this);
                 cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
             } catch (IntentSender.SendIntentException e) {
                 NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, "Unable to resolve issue");
@@ -198,7 +198,10 @@ public class DataCollectionPlugin extends CordovaPlugin {
         {
             case ENABLE_LOCATION_PERMISSION:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    NotificationHelper.cancelNotification(cordova.getActivity(), ENABLE_LOCATION_PERMISSION);
                     TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
+                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                    TripDiaryStateMachineService.generateLocationEnableNotification(cordova.getActivity());
                 }
                 break;
             default:
@@ -206,7 +209,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
         }
     }
 
-    /*
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(cordova.getActivity(), TAG, "received onActivityResult("+requestCode+","+
@@ -217,6 +219,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 Log.d(mAct, TAG, requestCode + " is our code, handling callback");
                 cordova.setActivityResultCallback(null);
                 final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
+                Log.d(cordova.getActivity(), TAG, "at this point, isLocationUsable = "+states.isLocationUsable());
                 switch (resultCode) {
                     case Activity.RESULT_OK:
                         // All required changes were successfully made
@@ -229,6 +232,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
                         Log.e(cordova.getActivity(), TAG, "User chose not to change settings, dunno what to do");
                         break;
                     default:
+                        Log.e(cordova.getActivity(), TAG, "Unknown result code while enabling location "+resultCode);
                         break;
                 }
                 break;
@@ -236,6 +240,5 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
         }
     }
-    */
 
 }

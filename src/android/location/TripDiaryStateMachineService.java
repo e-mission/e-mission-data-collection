@@ -42,6 +42,8 @@ import edu.berkeley.eecs.emission.MainActivity;
 
 
 
+
+
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
@@ -278,11 +280,6 @@ public class TripDiaryStateMachineService extends Service implements
                 BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
-        } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
-            // should we do a handleXXX() wrapper for this too?
-            checkLocationSettingsAndPermissions(ctxt, apiClient);
-            // stay in the current state, but do all the service cleanup stuff
-            setNewState(currState);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
@@ -641,14 +638,18 @@ public class TripDiaryStateMachineService extends Service implements
             if (PackageManager.PERMISSION_GRANTED == result) {
                 return true;
             } else {
+                generateLocationEnableNotification(ctxt);
+                return false;
+            }
+        }
+
+        public static void generateLocationEnableNotification(Context ctxt) {
                 Intent activityIntent = new Intent(ctxt, MainActivity.class);
                 activityIntent.setAction(DataCollectionPlugin.ENABLE_LOCATION_PERMISSION_ACTION);
                 PendingIntent pi = PendingIntent.getActivity(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
                         activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 NotificationHelper.createNotification(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
                         "Location permission off, click to enable", pi);
-                return false;
-            }
         }
 
     public static void checkLocationSettings(final Context ctxt,

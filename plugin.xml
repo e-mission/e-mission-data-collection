@@ -73,7 +73,6 @@
                 <action android:name="local.transition.stop_tracking"></action>
                 <action android:name="local.transition.start_tracking"></action>
                 <action android:name="local.transition.tracking_error"></action>
-                <action android:name="android.location.MODE_CHANGED"></action>
             </intent-filter>
         </receiver>
         <service
