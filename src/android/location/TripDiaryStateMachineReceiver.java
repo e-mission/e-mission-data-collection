@@ -25,6 +25,7 @@ import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.R;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
@@ -79,8 +80,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_stopped_moving),
                 context.getString(R.string.transition_stop_tracking),
                 context.getString(R.string.transition_start_tracking),
-                context.getString(R.string.transition_tracking_error),
-                LocationManager.MODE_CHANGED_ACTION
+                context.getString(R.string.transition_tracking_error)
         }));
 
         if (!validTransitions.contains(intent.getAction())) {
@@ -88,45 +88,34 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             return;
         }
 
-        /*
-         * Before we initialize the state machine, let's check to see whether the user has
-         * consented to the current data collection.
-         */
         if (intent.getAction().equals(context.getString(R.string.transition_initialize))) {
+            String reqConsent = ConfigManager.getReqConsent(context);
+            if (ConfigManager.isConsented(context, reqConsent)) {
+                Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
+            } else {
             JSONObject introDoneResult = null;
             try {
                 introDoneResult = BuiltinUserCache.getDatabase(context).getLocalStorage("intro_done", false);
             } catch(JSONException e) {
                 Log.i(context, TAG, "unable to read intro done state, skipping prompt");
+                    return;
             }
             if (introDoneResult != null) {
-                String reqConsent = getReqConsent(context);
-                if (!ConfigManager.isConsented(context, reqConsent)) {
                     Log.i(context, TAG, reqConsent + " is not the current consented version, skipping init...");
                     NotificationHelper.createNotification(context, STARTUP_IN_NUMBERS,
                             "New data collection terms - collection paused until consent");
                     return;
                 } else {
-                    Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
-                }
-            } else {
                 Log.i(context, TAG, "onboarding is not complete, skipping prompt");
+                    return;
+                }
             }
         }
 
+        // we should only get here if the user has consented
         Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
         context.startService(serviceStartIntent);
-    }
-
-    /*
- * TODO: Need to find a place to put this.
- */
-    private static String getReqConsent(Context ctxt) {
-        ConfigXmlParser parser = new ConfigXmlParser();
-        parser.parse(ctxt);
-        String reqConsent = parser.getPreferences().getString("emSensorDataCollectionProtocolApprovalDate", null);
-        return reqConsent;
     }
 
     public static void performPeriodicActivity(Context ctxt) {
@@ -135,9 +124,20 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * help with issues we have seen in the field where location updates pause mysteriously, or
          * geofences are never exited.
          */
+        checkLocationStillAvailable(ctxt);
         validateAndCleanupState(ctxt);
         initOnUpgrade(ctxt);
         saveBatteryAndSimulateUser(ctxt);
+    }
+
+    public static void checkLocationStillAvailable(Context ctxt) {
+        GoogleApiClient mApiClient = new GoogleApiClient.Builder(ctxt)
+                .addApi(LocationServices.API)
+                .build();
+        // This runs as part of the service thread and not the UI thread, so can block
+        // can switch to Tasks later anyway
+        mApiClient.blockingConnect();
+        TripDiaryStateMachineService.checkLocationSettingsAndPermissions(ctxt, mApiClient);
     }
 
     public static void validateAndCleanupState(Context ctxt) {
@@ -146,7 +146,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          */
         if (TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_start))) {
             Log.d(ctxt, TAG, "Still in start state, sending initialize...");
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
         } else if (TripDiaryStateMachineService.getState(ctxt).equals(
                 ctxt.getString(R.string.state_waiting_for_trip_start))) {
             // We cannot check to see whether there is an existing geofence and whether we are in it.
@@ -169,6 +169,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         System.out.println("All preferences are "+sp.getAll());
 
         int currentCompleteVersion = sp.getInt(SETUP_COMPLETE_KEY, 0);
+        Log.d(ctxt, TAG, "Comparing installed version "+currentCompleteVersion
+            + " with new version " + BuildConfig.VERSION_CODE);
         if(currentCompleteVersion != BuildConfig.VERSION_CODE) {
             Log.d(ctxt, TAG, "Setup not complete, sending initialize");
             // this is the code that checks whether the native collection has been upgraded and
@@ -177,7 +179,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             // https://github.com/e-mission/e-mission-data-collection/commit/5544afd64b0c731e1633d1dd9f51a713fdea85fa
             // Since every consent change is (presumably) tied to a native code change, we can
             // just check for the consent here before reinitializing.
-            ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_initialize)));
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             SharedPreferences.Editor prefsEditor = sp.edit();
             // TODO: This is supposed to be set from the javascript as part of the onboarding process.
             // However, it looks like it doesn't actually work - it looks like the app preferences plugin
@@ -213,7 +215,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 + " early return");
             return;
         }
-        ctxt.sendBroadcast(new Intent(ctxt.getString(R.string.transition_stop_tracking)));
+        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_stop_tracking));
         final Context fCtxt = ctxt;
         new Thread(new Runnable() {
             @Override
@@ -230,7 +232,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 stateChanged = true;
             }
         }
-                fCtxt.sendBroadcast(new Intent(fCtxt.getString(R.string.transition_start_tracking)));
+                fCtxt.sendBroadcast(new ExplicitIntent(fCtxt, R.string.transition_start_tracking));
             }
         }).start();
     }

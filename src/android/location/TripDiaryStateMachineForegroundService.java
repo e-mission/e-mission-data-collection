@@ -1,8 +1,10 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
@@ -10,6 +12,7 @@ import android.support.annotation.Nullable;
 
 import de.appplant.cordova.plugin.notification.ClickActivity;
 import edu.berkeley.eecs.emission.MainActivity;
+
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
@@ -35,8 +38,9 @@ public class TripDiaryStateMachineForegroundService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(this, TAG, "onStartCommand called on oreo+, starting foreground service");
             // Go to the foreground with a dummy notification
+            NotificationManager nMgr = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
             Notification.Builder builder = NotificationHelper.getNotificationBuilderForApp(this,
-                    "background trip tracking started");
+                    nMgr, "background trip tracking started");
             builder.setOngoing(true);
 
             Intent activityIntent = new Intent(this, MainActivity.class);

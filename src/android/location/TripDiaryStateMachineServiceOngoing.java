@@ -27,6 +27,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
+
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -236,9 +237,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         // - have initialize function as a reset, which stops any current stuff and starts the new one
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
-        } else if (LocationManager.MODE_CHANGED_ACTION.equals(actionString)) {
-            // should we do a handleXXX() wrapper for this too?
-            TripDiaryStateMachineService.checkLocationSettings(ctxt, apiClient);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {

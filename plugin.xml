@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="edu.berkeley.eecs.emission.cordova.datacollection"
-        version="1.2.0">
+        version="1.3.0">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -73,7 +73,6 @@
                 <action android:name="local.transition.stop_tracking"></action>
                 <action android:name="local.transition.start_tracking"></action>
                 <action android:name="local.transition.tracking_error"></action>
-                <action android:name="android.location.MODE_CHANGED"></action>
             </intent-filter>
         </receiver>
         <service
@@ -114,11 +113,13 @@
     </config-file>
 
     <framework src="com.google.code.gson:gson:+"/>
-    <framework src="com.google.android.gms:play-services-location:10.2+"/>
+    <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
+    <preference name="LOCATION_VERSION" default="11.0.1"/>
 
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/Constants.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
+    <source-file src="src/android/ExplicitIntent.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/GooglePlayChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/ConfigManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/location/ActivityRecognitionChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>

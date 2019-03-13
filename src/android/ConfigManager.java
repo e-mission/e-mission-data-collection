@@ -5,9 +5,12 @@ import android.content.Context;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 
+import org.apache.cordova.ConfigXmlParser;
+
 import java.util.HashMap;
 
 import edu.berkeley.eecs.emission.R;
+
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -51,6 +54,13 @@ public class ConfigManager {
         UserCacheFactory.getUserCache(context)
                 .putReadWriteDocument(R.string.key_usercache_sensor_config, newConfig);
         cachedConfig = newConfig;
+    }
+
+    public static String getReqConsent(Context ctxt) {
+        ConfigXmlParser parser = new ConfigXmlParser();
+        parser.parse(ctxt);
+        String reqConsent = parser.getPreferences().getString("emSensorDataCollectionProtocolApprovalDate", null);
+        return reqConsent;
     }
 
     public static boolean isConsented(Context context, String reqConsent) {

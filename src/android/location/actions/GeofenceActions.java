@@ -16,7 +16,6 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
@@ -64,6 +63,7 @@ public class GeofenceActions {
      * see @GeofenceActions.createGeofenceRequest
      */
     public PendingResult<Status> create() {
+        try {
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient);
         Log.d(mCtxt, TAG, "Last location would have been " + mLastLocation +" if we hadn't reset it");
@@ -82,9 +82,13 @@ public class GeofenceActions {
                 return null;
             }
         }
+        } catch (SecurityException e) {
+            Log.e(mCtxt, TAG, "Found security error "+e.getMessage()+" while creating geofence");
+            return null;
+        }
     }
 
-    private PendingResult<Status> createGeofenceAtLocation(Location currLoc) {
+    private PendingResult<Status> createGeofenceAtLocation(Location currLoc)  throws SecurityException {
         Log.d(mCtxt, TAG, "creating geofence at location " + currLoc);
             // This is also an asynchronous call. We can either wait for the result,
             // or we can provide a callback. Let's provide a callback to keep the async
@@ -94,7 +98,7 @@ public class GeofenceActions {
                         getGeofenceExitPendingIntent(mCtxt));
     }
 
-    private Location readAndReturnCurrentLocation() {
+    private Location readAndReturnCurrentLocation() throws SecurityException {
         Intent geofenceLocIntent = new Intent(mCtxt, GeofenceLocationIntentService.class);
         final PendingIntent geofenceLocationIntent = PendingIntent.getService(mCtxt, 0,
                 geofenceLocIntent, PendingIntent.FLAG_UPDATE_CURRENT);

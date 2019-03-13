@@ -5,6 +5,7 @@ import edu.berkeley.eecs.emission.R;
 import android.app.IntentService;
 import android.content.Intent;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
@@ -60,7 +61,7 @@ public class GeofenceExitIntentService extends IntentService {
             // in case we need it on the other side.
             // intent.setAction(getString(R.string.transition_exited_geofence));
             // sendBroadcast(intent);
-            sendBroadcast(new Intent(getString(R.string.transition_exited_geofence)));
+            sendBroadcast(new ExplicitIntent(this, R.string.transition_exited_geofence));
         } else if (parsedEvent.getGeofenceTransition() == -1) {
 			// This must be a location services on/off transition
 			// https://github.com/e-mission/e-mission-data-collection/issues/128#issuecomment-250304943

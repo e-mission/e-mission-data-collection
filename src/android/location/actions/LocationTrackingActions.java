@@ -33,10 +33,15 @@ public class LocationTrackingActions {
     }
 
     public PendingResult<Status> start() {
+        try {
         return LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
                 getLocationRequest(),
                 getLocationTrackingPendingIntent(mCtxt));
                 // .setResultCallback(startCallback);
+        } catch (SecurityException e) {
+            Log.e(mCtxt, TAG, "Found security error "+e.getMessage()+" while creating geofence");
+            return null;
+        }
     }
 
     public LocationRequest getLocationRequest() {
