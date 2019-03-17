@@ -123,11 +123,6 @@ public class TripDiaryStateMachineService extends Service implements
         }
         mTransition = intent.getAction();
         ongoingOperations = ongoingOperations + 1;
-        if (currActions.contains(mTransition)) {
-            Log.i(this, TAG, "Service started again for "+mTransition+
-                    " while processing "+currActions+" early exit from id " + startId);
-            return START_REDELIVER_INTENT;
-        }
         Log.i(this, TAG, "Handling new action "+mTransition+
                 " existing actions are "+currActions+" adding it to list");
         currActions.add(mTransition);

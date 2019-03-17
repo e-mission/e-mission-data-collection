@@ -124,10 +124,12 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * help with issues we have seen in the field where location updates pause mysteriously, or
          * geofences are never exited.
          */
+        Log.i(ctxt, TAG, "START PERIODIC ACTIVITY");
         checkLocationStillAvailable(ctxt);
         validateAndCleanupState(ctxt);
         initOnUpgrade(ctxt);
         saveBatteryAndSimulateUser(ctxt);
+        Log.i(ctxt, TAG, "END PERIODIC ACTIVITY");
     }
 
     public static void checkLocationStillAvailable(Context ctxt) {
