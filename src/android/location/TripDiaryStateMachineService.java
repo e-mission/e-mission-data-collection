@@ -122,7 +122,10 @@ public class TripDiaryStateMachineService extends Service implements
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
         mTransition = intent.getAction();
-        ongoingOperations = ongoingOperations + 1;
+        synchronized (this) {
+            ongoingOperations = ongoingOperations + 1;
+            Log.i(this, TAG,"after increment, ongoingOperations = "+ongoingOperations);
+        }
         Log.i(this, TAG, "Handling new action "+mTransition+
                 " existing actions are "+currActions+" adding it to list");
         currActions.add(mTransition);
@@ -217,6 +220,7 @@ public class TripDiaryStateMachineService extends Service implements
     private void markOngoingOperationFinished() {
         synchronized (this) {
             ongoingOperations = ongoingOperations - 1;
+            Log.i(this, TAG,"after decrement, ongoingOperations = "+ongoingOperations);
         }
     }
 
@@ -231,9 +235,10 @@ public class TripDiaryStateMachineService extends Service implements
                         this.getString(R.string.curr_state_key), "not found"));
         synchronized (this) {
             ongoingOperations = ongoingOperations - 1;
+            Log.i(this, TAG,"after decrement, ongoingOperations = "+ongoingOperations);
             if (ongoingOperations == 0) {
-        Log.i(this, TAG, "About to stop service after handling "+currActions);
-        stopSelf();
+                Log.i(this, TAG, "About to stop service after handling "+currActions);
+                stopSelf();
             } else {
                 Log.i(this, TAG, ongoingOperations + " ongoingOperations pending, waiting to stop");
             }
