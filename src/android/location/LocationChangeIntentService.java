@@ -9,6 +9,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.R;
 
+
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.PollSensorManager;
 import android.app.IntentService;
@@ -41,9 +42,17 @@ public class LocationChangeIntentService extends IntentService {
 	}
 	
 	@Override
-	public void onStart(Intent i, int startId) {
+	public int onStartCommand(Intent i, int flags, int startId) {
 		Log.d(this, TAG, "onStart called with "+i+" startId "+startId);
-		super.onStart(i, startId);
+		TripDiaryStateMachineForegroundService.handleStart(this, "Handling geofence event", i, flags, startId);
+		return super.onStartCommand(i, flags, startId);
+	}
+
+	@Override
+	public void onDestroy() {
+		Log.d(this, TAG, "onDestroy called");
+		TripDiaryStateMachineForegroundService.handleDestroy(this);
+		super.onDestroy();
 	}
 
 	@Override

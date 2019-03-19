@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
@@ -80,7 +81,7 @@ public class LocationTrackingActions {
 		 * Setting FLAG_UPDATE_CURRENT so that sending the PendingIntent again updates the original.
 		 * We only want to have one geofence active at one point of time.
 		 */
-        return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		return TripDiaryStateMachineForegroundService.getProperPendingIntent(ctxt, innerIntent);
     }
 
 }

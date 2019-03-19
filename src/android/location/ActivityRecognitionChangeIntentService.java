@@ -27,6 +27,20 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 	private static final String TAG = "ActivityRecognitionChangeIntentService";
 
 	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.d(this, TAG, "onStartCommand called with intent "+intent+" flags "+flags+" startId "+startId);
+		TripDiaryStateMachineForegroundService.handleStart(this, "Handling geofence event", intent, flags, startId);
+		return super.onStartCommand(intent, flags, startId);
+	}
+
+	@Override
+	public void onDestroy() {
+		Log.d(this, TAG, "onDestroy called");
+		TripDiaryStateMachineForegroundService.handleDestroy(this);
+		super.onDestroy();
+	}
+
+	@Override
 	protected void onHandleIntent(Intent intent) {
 		Log.d(this, TAG, "FINALLY! Got activity update, intent is "+intent);
 //		Log.d(this, TAG, "Intent extras are "+intent.getExtras().describeContents());

@@ -35,7 +35,15 @@ public class GeofenceExitIntentService extends IntentService {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(this, TAG, "onStartCommand called with intent "+intent+" flags "+flags+" startId "+startId);
+		TripDiaryStateMachineForegroundService.handleStart(this, "Handling geofence event", intent, flags, startId);
 		return super.onStartCommand(intent, flags, startId);		
+	}
+
+	@Override
+	public void onDestroy() {
+		Log.d(this, TAG, "onDestroy called");
+		TripDiaryStateMachineForegroundService.handleDestroy(this);
+		super.onDestroy();
 	}
 
 	@Override
@@ -67,11 +75,15 @@ public class GeofenceExitIntentService extends IntentService {
 			// https://github.com/e-mission/e-mission-data-collection/issues/128#issuecomment-250304943
 			if (parsedEvent.hasError()) {
 				Log.i(this, TAG, "Found error "+parsedEvent.getErrorCode()+
-								"will be handled by MODE_CHANGE transition");
+								" generating tracking error");
+				sendBroadcast(new ExplicitIntent(this, R.string.transition_tracking_error));
 			} else {
 				Log.i(this, TAG, "Got event with transition = "+parsedEvent.getGeofenceTransition()+
 					" but hasError = false, ignoring");
 			}
+        } else {
+            Log.w(this, TAG, "Got geofencing event with unknown transition "+
+                parsedEvent.getGeofenceTransition() + " ignoring...");
         }
 	}
 }
