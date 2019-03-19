@@ -169,7 +169,12 @@ public class TripDiaryStateMachineService extends Service implements
         ConnectionResult activityResult = mApiClient.getConnectionResult(ActivityRecognition.API);
         if (locResult.isSuccess() && activityResult.isSuccess()) {
             // we go ahead and handle the original issue
-            handleAction(this, mApiClient, mCurrState, mTransition);
+            for (String transition: currActions) {
+                mCurrState = getState(this);
+                Log.i(this, TAG, "in onConnected, dealing with pending action "+transition
+                    +" from currstate "+mCurrState);
+                handleAction(this, mApiClient, mCurrState, transition);
+            }
         }
         if (!locResult.isSuccess()) {
             if (locResult.hasResolution()) {
@@ -310,10 +315,12 @@ public class TripDiaryStateMachineService extends Service implements
 
     private void handleStart(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleStarted(" + actionString + ") called");
+
         // Get current location
         if (actionString.equals(ctxt.getString(R.string.transition_initialize)) &&
                 !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
             createGeofenceInThread(ctxt, apiClient, actionString);
+            return;
             // we will wait for async geofence creation to complete
         }
 
@@ -325,6 +332,7 @@ public class TripDiaryStateMachineService extends Service implements
             // just move to the stop tracking state
             String newState = ctxt.getString(R.string.state_tracking_stopped);
             setNewState(newState);
+            return;
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
@@ -334,7 +342,12 @@ public class TripDiaryStateMachineService extends Service implements
                     */
             Log.i(this, TAG, "Already in the start state, so going to stay there");
             setNewState(mCurrState);
+            return;
         }
+
+        // if we got here, this must be a transition that we don't handle
+        Log.i(this, TAG, "Found unhandled transition "+actionString+" staying in current state ");
+        setNewState(mCurrState);
     }
 
     public void handleTripStart(Context ctxt, final GoogleApiClient apiClient, final String actionString) {
@@ -419,11 +432,13 @@ public class TripDiaryStateMachineService extends Service implements
                     } // all three branches have called setState or are waiting for sth else
                 } // onResult function end
             }); // result callback inner class end
+            return; // handled the transition, returning
         }
 
         if(actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Delete geofence
             deleteGeofence(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
+            return;
             // when this completes, it should generate transitions and move to the final state
         }
 
@@ -434,12 +449,18 @@ public class TripDiaryStateMachineService extends Service implements
                     */
             Log.i(this, TAG, "Got tracking_error moving to start state");
             deleteGeofence(ctxt, mApiClient, ctxt.getString(R.string.state_start));
+            return;
             // when this completes, it should generate transitions and move to the final state
         }
+
+        // if we got here, this must be a transition that we don't handle
+        Log.i(this, TAG, "Found unhandled transition "+actionString+" staying in current state ");
+        setNewState(mCurrState);
     }
 
     public void handleTripEnd(final Context ctxt, final GoogleApiClient apiClient, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripEnd(" + actionString + ") called");
+
         if (actionString.equals(ctxt.getString(R.string.transition_stopped_moving))) {
             // Stopping location tracking
             new Thread(new Runnable() {
@@ -515,10 +536,12 @@ public class TripDiaryStateMachineService extends Service implements
             });
         }
             }).start();
+            return;
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
+            return;
             // will wait for stopAll to set the state
         }
 
@@ -530,8 +553,13 @@ public class TripDiaryStateMachineService extends Service implements
             Log.i(this, TAG, "Got tracking_error moving to start state");
             // should I stop everything? maybe to be consistent with the start state
             stopAll(this, mApiClient, ctxt.getString(R.string.state_start));
+            return;
             // ditto
         }
+
+        // if we got here, this must be a transition that we don't handle
+        Log.i(this, TAG, "Found unhandled transition "+actionString+" staying in current state ");
+        setNewState(mCurrState);
     }
 
     private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
@@ -539,13 +567,18 @@ public class TripDiaryStateMachineService extends Service implements
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             setNewState(ctxt.getString(R.string.state_start));
+            return;
             // createGeofenceInThread(ctxt, apiClient, actionString);
         } else {
+            // we should have stopped everything when we got to this state,
+            // but let's just stop them all again anyway to make sure that
+            // they are really stopped and to provide a backstop for any
+            // error conditions
             stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
-        }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
-            setNewState(mCurrState);
+            }
+            return;
         }
     }
 
