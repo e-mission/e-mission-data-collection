@@ -6,9 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
+import android.os.Build;
 import android.support.v4.content.LocalBroadcastManager;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -100,8 +102,8 @@ public class GeofenceActions {
 
     private Location readAndReturnCurrentLocation() throws SecurityException {
         Intent geofenceLocIntent = new Intent(mCtxt, GeofenceLocationIntentService.class);
-        final PendingIntent geofenceLocationIntent = PendingIntent.getService(mCtxt, 0,
-                geofenceLocIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        final PendingIntent geofenceLocationIntent =
+                TripDiaryStateMachineForegroundService.getProperPendingIntent(mCtxt, geofenceLocIntent);
 
         LocalBroadcastManager.getInstance(mCtxt).registerReceiver(new BroadcastReceiver() {
             @Override
@@ -212,7 +214,7 @@ public class GeofenceActions {
 		 * Setting FLAG_UPDATE_CURRENT so that sending the PendingIntent again updates the original.
 		 * We only want to have one geofence active at one point of time.
 		 */
-        return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		return TripDiaryStateMachineForegroundService.getProperPendingIntent(ctxt, innerIntent);
     }
 
 }

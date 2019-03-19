@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.LocationManager;
+import android.os.Build;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -115,7 +116,13 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         // we should only get here if the user has consented
         Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.i(context, TAG, "build is O+, using startForegroundService");
+            context.startForegroundService(serviceStartIntent);
+        } else {
+            Log.i(context, TAG, "build is < 0, using startService");
         context.startService(serviceStartIntent);
+    }
     }
 
     public static void performPeriodicActivity(Context ctxt) {

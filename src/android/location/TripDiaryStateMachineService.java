@@ -107,6 +107,7 @@ public class TripDiaryStateMachineService extends Service implements
         Log.d(this, TAG, "About to disconnect the api client");
         mApiClient.disconnect();
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
+        TripDiaryStateMachineForegroundService.handleDestroy(this);
     }
 
     @Override
@@ -118,6 +119,7 @@ public class TripDiaryStateMachineService extends Service implements
     public int onStartCommand(Intent intent,  int flags, int startId) {
         Log.d(this, TAG, "service started with flags = "+flags+" startId = "+startId
                 +" action = "+intent.getAction());
+        TripDiaryStateMachineForegroundService.handleStart(this, "Controlling trip finite state machine (FSM)", intent, flags, startId);
         if (flags == Service.START_FLAG_REDELIVERY) {
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }

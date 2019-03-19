@@ -3,6 +3,7 @@ package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -10,6 +11,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService;
@@ -45,7 +47,7 @@ public class ActivityRecognitionActions {
 		 * Setting FLAG_UPDATE_CURRENT so that sending the PendingIntent again updates the original.
 		 * We only want to have one geofence active at one point of time.
 		 */
-        return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        return TripDiaryStateMachineForegroundService.getProperPendingIntent(ctxt, innerIntent);
     }
 
     public PendingResult<Status> stop() {
