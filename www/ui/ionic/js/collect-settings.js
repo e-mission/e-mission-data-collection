@@ -171,7 +171,7 @@ angular.module('emission.main.control.collection', [])
             if (ionic.Platform.isIOS()) {
                 cch.new_config.accuracy = cch.accuracyOptions["kCLLocationAccuracyBest"];
             } else if (ionic.Platform.isAndroid()) {
-                accuracy = cch.accuracyOptions["PRIORITY_HIGH_ACCURACY"];
+                cch.new_config.accuracy = cch.accuracyOptions["PRIORITY_HIGH_ACCURACY"];
             }
         } else {
             if (ionic.Platform.isIOS()) {
