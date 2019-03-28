@@ -1,6 +1,6 @@
 {
   "name": "e-mission-data-collection",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Simple package that stores all the connection settings that need to be configured",
   "cordova": {
     "id": "e-mission-data-collection",
