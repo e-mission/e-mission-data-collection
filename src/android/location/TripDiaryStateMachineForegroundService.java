@@ -36,7 +36,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(this, TAG, "onStartCommand called with flags = " + flags +
                 " and startId = " + startId);
-        handleStart(this, "background trip tracking started", intent, flags, startId);
+        handleStart(this, this.getString(R.string.trip_tracking_started), intent, flags, startId);
 
         // We want this service to continue running until it is explicitly
         // stopped, so return sticky.

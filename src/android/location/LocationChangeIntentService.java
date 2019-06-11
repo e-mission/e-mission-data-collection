@@ -44,7 +44,7 @@ public class LocationChangeIntentService extends IntentService {
 	@Override
 	public int onStartCommand(Intent i, int flags, int startId) {
 		Log.d(this, TAG, "onStart called with "+i+" startId "+startId);
-		TripDiaryStateMachineForegroundService.handleStart(this, "Recording location ", i, flags, startId);
+		TripDiaryStateMachineForegroundService.handleStart(this, this.getString(R.string.recording_location), i, flags, startId);
 		return super.onStartCommand(i, flags, startId);
 	}
 

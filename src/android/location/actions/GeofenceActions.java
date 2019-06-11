@@ -179,7 +179,7 @@ public class GeofenceActions {
             Log.w(mCtxt, TAG,
                     "Unable to detect current location even after forcing, will retry at next sync");
             NotificationHelper.createNotification(mCtxt, GEOFENCE_IN_NUMBERS,
-                    "Unable to detect current location even after forcing, will retry at next sync");
+                mCtxt.getString(R.string.unable_detect_current_location));
         }
 
     /*

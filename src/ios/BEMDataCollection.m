@@ -33,7 +33,7 @@
         NSDictionary* introDoneResult = [[BuiltinUserCache database] getLocalStorage:@"intro_done" withMetadata:NO];
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"intro_done result = %@", introDoneResult]];
         if (introDoneResult != NULL) {
-            [LocalNotificationManager showNotification:@"New data collection terms - collection paused until consent"];
+            [LocalNotificationManager showNotification:NSLocalizedStringFromTable(@"new-data-collections-terms", @"DCLocalizable", nil)];
         }
     }
 }
@@ -80,8 +80,8 @@
                     [LocalNotificationManager addNotification:@"activity recognition works fine"];
                 } else {
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Error %@ while reading activities, travel mode detection may be unavailable", error]];
-                    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error while reading activities"
-                                                                    message:@"Travel mode detection may be unavailable."
+                    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedStringFromTable(@"error-reading-activities", @"DCLocalizable", nil)
+                                                                    message:NSLocalizedStringFromTable(@"travel-mode-unavailable", @"DCLocalizable", nil)
                                                                    delegate:nil
                                                           cancelButtonTitle:@"OK"
                                                           otherButtonTitles:nil];
@@ -90,8 +90,8 @@
             }];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Activity detection unsupported, all trips will be UNKNOWN"]];
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Activity detection unsupported"
-                                                            message:@"Travel mode detection unavailable - all trips will be UNKNOWN."
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedStringFromTable(@"activity-detection-unsupported", @"DCLocalizable", nil)
+                                                            message:NSLocalizedStringFromTable(@"travel-mode-unknown", @"DCLocalizable", nil)
                                                            delegate:nil
                                                   cancelButtonTitle:@"OK"
                                                   otherButtonTitles:nil];

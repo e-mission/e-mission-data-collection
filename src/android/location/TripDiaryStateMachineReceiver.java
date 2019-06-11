@@ -104,7 +104,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             if (introDoneResult != null) {
                     Log.i(context, TAG, reqConsent + " is not the current consented version, skipping init...");
                     NotificationHelper.createNotification(context, STARTUP_IN_NUMBERS,
-                            "New data collection terms - collection paused until consent");
+                            context.getString(R.string.new_data_collection_terms));
                     return;
                 } else {
                 Log.i(context, TAG, "onboarding is not complete, skipping prompt");
@@ -168,8 +168,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         Battery currInfo = BatteryUtils.getBatteryInfo(ctxt);
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery, currInfo);
         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
-            NotificationHelper.createNotification(ctxt, 1234, "Interact with me! Battery level is "+
-                    currInfo.getBatteryLevelPct());
+            NotificationHelper.createNotification(ctxt, 1234, ctxt.getString(R.string.battery_level,
+                    currInfo.getBatteryLevelPct()));
         }
     }
 

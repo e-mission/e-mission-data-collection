@@ -29,7 +29,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(this, TAG, "onStartCommand called with intent "+intent+" flags "+flags+" startId "+startId);
-		TripDiaryStateMachineForegroundService.handleStart(this, "Recording activity ", intent, flags, startId);
+		TripDiaryStateMachineForegroundService.handleStart(this, this.getString(R.string.recording_activity), intent, flags, startId);
 		return super.onStartCommand(intent, flags, startId);
 	}
 
@@ -50,8 +50,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			if (ConfigManager.getConfig(this).isSimulateUserInteraction()) {
-			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,
-					"Detected new activity "+activityType2Name(mostProbableActivity.getType()));
+			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
 			}
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
@@ -101,21 +100,21 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 	 *@param activityType The detected activity type
 	 *@return A user-readable name for the type
 	 */
-	public static String activityType2Name(int activityType) {
+	public static String activityType2Name(int activityType, IntentService intentService) {
 		switch(activityType) {
 			case DetectedActivity.IN_VEHICLE:
-				return "transport";
+				return intentService.getString(R.string.activity_transport);
 			case DetectedActivity.ON_BICYCLE:
-				return "cycling";
+				return intentService.getString(R.string.activity_cycling);
 			case DetectedActivity.ON_FOOT:
-				return "walking";
+				return intentService.getString(R.string.activity_walking);
 			case DetectedActivity.STILL:
-				return "still";
+				return intentService.getString(R.string.activity_still);
 			case DetectedActivity.UNKNOWN:
-				return "unknown";
+				return intentService.getString(R.string.activity_unknown);
 			case DetectedActivity.TILTING:
-				return "tilting";
+				return intentService.getString(R.string.activity_tilting);
 		}
-		return "unknown";
+		return intentService.getString(R.string.activity_unknown);
 	}
 }

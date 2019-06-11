@@ -202,13 +202,13 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
             causeStr = "network disconnected";
         }
         NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                "google API client connection suspended" + causeStr);
+                this.getString(R.string.google_connection_suspended,causeStr));
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult cr) {
         NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                "google API client connection failed"+cr.toString());
+                this.getString(R.string.google_connection_failed,cr.toString()));
 
     }
 
@@ -344,12 +344,12 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                     startService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                            "Success moving to " + newState);
+                            fCtxt.getString(R.string.success_moving_new_state, newState));
                     }
                 } else {
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                            "Failed moving to " + newState + " failed");
+                            fCtxt.getString(R.string.failed_moving_new_state,newState));
                 }
                 }
                 mApiClient.disconnect();
@@ -372,12 +372,12 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                     stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Success moving to " + newState);
+                                fCtxt.getString(R.string.success_moving_new_state, newState));
                     }
                 } else {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Failed moving to " + newState);
+                                fCtxt.getString(R.string.failed_moving_new_state,newState));
                     }
                 }
                 mApiClient.disconnect();

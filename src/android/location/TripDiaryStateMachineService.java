@@ -261,14 +261,14 @@ public class TripDiaryStateMachineService extends Service implements
             causeStr = "network disconnected";
         }
         NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                "google API client connection suspended"+causeStr);
+                this.getString(R.string.google_connection_suspended,causeStr));
         // let's leave this here in case the connection is restored
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult cr) {
         NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                "google API client connection failed"+cr.toString());
+                this.getString(R.string.google_connection_failed,cr.toString()));
         setNewState(this.getString(R.string.state_start));
     }
 
@@ -399,13 +399,13 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Success moving to "+newState);
+                                fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                         setNewState(newState);
                     } else {
                         if (batchResult.getStatus().hasResolution()) {
                             NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
+                                    fCtxt.getResources().getString(R.string.error_creating_geofence, batchResult.getStatus().getStatusCode()),
                                     batchResult.getStatus().getResolution());
                             // we should set something here to stop the service since our async call
                             // is complete and since we already have a resolution, we are not going to do anything more
@@ -427,7 +427,7 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                    "Failed moving to "+newState);
+                                fCtxt.getString(R.string.failed_moving_new_state,newState));
                     }
                     } // all three branches have called setState or are waiting for sth else
                 } // onResult function end
@@ -495,13 +495,13 @@ public class TripDiaryStateMachineService extends Service implements
                         stopService(getForegroundServiceIntent());
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Success moving to "+newState);
+                                fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                         setNewState(newState);
                     } else {
                         if (batchResult.getStatus().hasResolution()) {
                             NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                    "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence",
+                                    fCtxt.getResources().getString(R.string.error_creating_geofence, batchResult.getStatus().getStatusCode()),
                                     batchResult.getStatus().getResolution());
                             // we should set something here to stop the service since our async call
                             // is complete and since we already have a resolution, we are not going to do anything more
@@ -529,7 +529,7 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Failed moving to "+newState);
+                                    fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
                     }
                 }
@@ -617,12 +617,13 @@ public class TripDiaryStateMachineService extends Service implements
                                 setNewState(newState);
                                 if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                            "Success moving to " + newState);
+                                                fCtxt.getString(R.string.success_moving_new_state, newState));
                                 }
                             } else {
                                 if (status.hasResolution()) {
                                     NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                            "Error " + status.getStatusCode()+" while creating geofence", status.getResolution());
+                                            fCtxt.getResources().getString(R.string.error_creating_geofence, status.getStatusCode()), 
+                                            status.getResolution());
                                     // we have a resolution so we will exit the service now
                                     setNewState(mCurrState);
                                 } else {
@@ -634,7 +635,7 @@ public class TripDiaryStateMachineService extends Service implements
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                            "Failed moving to " + newState);
+                                            fCtxt.getString(R.string.failed_moving_new_state, newState));
                                 }
                             }
                         }
@@ -663,12 +664,12 @@ public class TripDiaryStateMachineService extends Service implements
                         setNewState(newState);
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Success moving to " + newState);
+                                fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                     } else {
                     if (batchResult.getStatus().hasResolution()) {
                         NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Error " + batchResult.getStatus().getStatusCode() + " while creating geofence",
+                                fCtxt.getResources().getString(R.string.error_creating_geofence, batchResult.getStatus().getStatusCode()),
                                 batchResult.getStatus().getResolution());
                             setNewState(mCurrState);
                     } else {
@@ -680,7 +681,7 @@ public class TripDiaryStateMachineService extends Service implements
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Failed moving to " + newState);
+                                fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
                     }
                 }
@@ -704,13 +705,13 @@ public class TripDiaryStateMachineService extends Service implements
                         stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Success moving to "+newState);
+                                fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                         setNewState(newState);
                     } else {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                "Failed moving to "+newState);
+                                fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
 
                         if (!batchResult.take(tokenList.get(1)).isSuccess()) {
@@ -760,7 +761,8 @@ public class TripDiaryStateMachineService extends Service implements
                 PendingIntent pi = PendingIntent.getActivity(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
                         activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 NotificationHelper.createNotification(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
-                        "Location permission off, click to enable", pi);
+                        ctxt.getString(R.string.location_permission_off_enable), 
+                        pi);
         }
 
     public static void checkLocationSettings(final Context ctxt,
@@ -790,11 +792,11 @@ public class TripDiaryStateMachineService extends Service implements
                         // a dialog.
                         if (status.hasResolution()) {
                             NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    "Error " + status.getStatusCode() + " in location settings",
+                                    ctxt.getString(R.string.error_location_settings, status.getStatusCode()),
                                     status.getResolution());
                         } else {
                             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    "Error " + status.getStatusCode() + " in location settings");
+                                    ctxt.getString(R.string.error_location_settings, status.getStatusCode()));
                         }
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         break;
@@ -802,12 +804,12 @@ public class TripDiaryStateMachineService extends Service implements
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                "Error " + status.getStatusCode() + " in location settings");
+                                    ctxt.getString(R.string.error_location_settings, status.getStatusCode()));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         break;
                     default:
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                "Unknown error while reading location, please check your settings");
+                                    ctxt.getString(R.string.unknown_error_location_settings));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                 }
             }

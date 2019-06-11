@@ -35,7 +35,7 @@ public class GeofenceExitIntentService extends IntentService {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(this, TAG, "onStartCommand called with intent "+intent+" flags "+flags+" startId "+startId);
-		TripDiaryStateMachineForegroundService.handleStart(this, "Handling geofence exit ", intent, flags, startId);
+		TripDiaryStateMachineForegroundService.handleStart(this, this.getString(R.string.handling_geofence_exit), intent, flags, startId);
 		return super.onStartCommand(intent, flags, startId);		
 	}
 
