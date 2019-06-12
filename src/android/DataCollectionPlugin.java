@@ -154,7 +154,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 cordova.setActivityResultCallback(this);
                 cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
             } catch (IntentSender.SendIntentException e) {
-                NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, "Unable to resolve issue");
+                Context mAct = cordova.getActivity();
+                NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, mAct.getString(R.string.unable_resolve_issue));
             }
         }
     }

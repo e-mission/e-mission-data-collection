@@ -37,7 +37,7 @@ public class ConfigManager {
             } catch(JsonParseException e) {
                 Log.e(context, TAG, "Found error " + e + "parsing sync config json, resetting to defaults");
                 NotificationHelper.createNotification(context, Constants.TRACKING_ERROR_ID,
-                        "Error reading stored tracking config, reset to defaults");
+                        context.getString(R.string.error_reading_stored_config));
                 cachedConfig = new LocationTrackingConfig();
                 updateConfig(context, cachedConfig);
             }

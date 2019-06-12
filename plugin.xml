@@ -77,7 +77,7 @@
         </receiver>
         <service
 		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService"
-		    android:enabled="true" 
+		    android:enabled="true"
 		    android:exported="false">
 		</service>
         <service
@@ -97,17 +97,17 @@
         </service>
         <service
 		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService"
-		    android:enabled="true" 
+		    android:enabled="true"
 		    android:exported="false">
 		</service>
-		<service 
+		<service
 		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.LocationChangeIntentService"
-		    android:enabled="true" 
+		    android:enabled="true"
 		    android:exported="false">
 		</service>
-		<service 
+		<service
 		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceLocationIntentService"
-		    android:enabled="true" 
+		    android:enabled="true"
 		    android:exported="false">
 		</service>
     </config-file>
@@ -146,10 +146,11 @@
     <source-file src="src/android/wrapper/Timer.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/StatsEvent.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <resource-file src="res/android/statemachine.xml" target="res/values/statemachine.xml" />
+    <resource-file src="res/android/values/dc_strings.xml" target="res/values/dc_strings.xml"/>
   </platform>
 
   <platform name="ios">
-    
+
     <config-file target="config.xml" parent="/*">
       <feature name="DataCollection">
         <param name="ios-package" value="BEMDataCollection" />
@@ -233,5 +234,6 @@
     <source-file src="src/ios/Wrapper/ConsentConfig.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Timer.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/StatsEvent.m" target-dir="Wrapper"/>
-  </platform>
+    <resource-file src="res/ios/en.lproj/DCLocalizable.strings" target="en.lproj/DCLocalizable.strings"/>
+ </platform>
 </plugin>
