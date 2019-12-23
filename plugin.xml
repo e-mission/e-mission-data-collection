@@ -50,6 +50,7 @@
     <config-file target="AndroidManifest.xml" parent="/manifest">
         <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
         <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
+        <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
         <!-- COARSE_LOCATION obfuscates the location to a city block, change to FINE_LOCATION for accuracy -->
         <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     </config-file>
