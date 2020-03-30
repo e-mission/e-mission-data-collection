@@ -76,6 +76,10 @@ public class DataCollectionPlugin extends CordovaPlugin {
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
+        } else if (action.equals("storeBatteryLevel")) {
+            Context ctxt = cordova.getActivity();
+            TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);
+            callbackContext.success();
         } else if (action.equals("getConfig")) {
             Context ctxt = cordova.getActivity();
             LocationTrackingConfig cfg = ConfigManager.getConfig(ctxt);
@@ -103,7 +107,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             cordova.getThreadPool().execute(new Runnable() {
                 @Override
                 public void run() {
-            Context ctxt = cordova.getActivity();
+                    Context ctxt = cordova.getActivity();
                     Map<String, String> transitionMap = getTransitionMap(ctxt);
                     if (transitionMap.containsKey(generalTransition)) {
                         String androidTransition = transitionMap.get(generalTransition);
@@ -125,9 +129,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
             retVal.put("PRIORITY_NO_POWER", LocationRequest.PRIORITY_NO_POWER);
             callbackContext.success(retVal);
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     private static Map<String, String> getTransitionMap(Context ctxt) {
