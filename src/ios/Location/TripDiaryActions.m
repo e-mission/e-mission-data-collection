@@ -13,9 +13,11 @@
 #import "ConfigManager.h"
 #import "GeofenceActions.h"
 #import "DataUtils.h"
-
+#import "BEMBuiltinUserCache.h"
 
 @implementation TripDiaryActions
+
+static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
 
 + (void) resetFSM:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
     if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
@@ -99,6 +101,10 @@
     CLCircularRegion *geofenceRegion = [[CLCircularRegion alloc] initWithCenter:currLoc.coordinate
                                                                          radius:[ConfigManager instance].geofence_radius
                                                                      identifier:kCurrGeofenceID];
+    [[BuiltinUserCache database] putLocalStorage:GEOFENCE_LOC_KEY
+        jsonValue:@{ @"type" : @"Point",
+            @"coordinates": @[@(currLoc.coordinate.longitude), @(currLoc.coordinate.latitude)]
+    }];
     
     geofenceRegion.notifyOnEntry = YES;
     geofenceRegion.notifyOnExit = YES;
