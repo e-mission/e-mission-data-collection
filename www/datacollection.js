@@ -16,17 +16,14 @@ var exec = require("cordova/exec")
  */
 
 var DataCollection = {
-    /*
-     * Launch init: registers all the callbacks necessary on launch, mainly for
-     * iOS, where we have to re-register the listeners for fine location
-     * tracking every time the app is launched.
-     */
-    launchInit: function (successCallback, errorCallback) {
-        exec(successCallback, errorCallback, "DataCollection", "launchInit", []);
-    },
     markConsented: function (newConsent) {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "markConsented", [newConsent]);
+        });
+    },
+    storeBatteryLevel: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "storeBatteryLevel", []);
         });
     },
     // Switching both the get and set config to a promise to experiment with promises!!

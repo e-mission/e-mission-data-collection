@@ -30,6 +30,7 @@ import edu.berkeley.eecs.emission.R;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
+import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
@@ -237,6 +238,8 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         // - have a set state which allows the broadcast code and the test code to set the state to start
         // when restarting
         // - have initialize function as a reset, which stops any current stuff and starts the new one
+        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
+                BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, apiClient, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {

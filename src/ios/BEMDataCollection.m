@@ -111,6 +111,25 @@
     }
 }
 
+- (void)storeBatteryLevel:(CDVInvokedUrlCommand*)command
+{
+    NSString* callbackId = [command callbackId];
+    @try {
+        [DataUtils saveBatteryAndSimulateUser];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While storing battery, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
+
 - (void)launchInit:(CDVInvokedUrlCommand*)command
 {
     NSString* callbackId = [command callbackId];
