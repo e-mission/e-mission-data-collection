@@ -113,7 +113,7 @@
 		</service>
     </config-file>
 
-    <framework src="com.google.code.gson:gson:+"/>
+    <framework src="com.google.code.gson:gson:2.8.5"/>
     <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
     <preference name="LOCATION_VERSION" default="11.0.1"/>
 
