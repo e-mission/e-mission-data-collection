@@ -15,6 +15,10 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
+import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+
+
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -27,6 +31,9 @@ import com.google.android.gms.location.LocationServices;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService;
 
@@ -45,9 +52,11 @@ public class GeofenceActions {
     // of the location.
 
     private static final String TAG = "CreateGeofenceAction";
+    private static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
 
     private Context mCtxt;
     private GoogleApiClient mGoogleApiClient;
+    private UserCache uc;
     // Used only when the last location from the manager is null, or invalid and so we have
     // to read a new one. This is a private variable for synchronization
     private Location newLastLocation;
@@ -55,6 +64,7 @@ public class GeofenceActions {
     public GeofenceActions(Context ctxt, GoogleApiClient googleApiClient) {
         this.mCtxt = ctxt;
         this.mGoogleApiClient = googleApiClient;
+        this.uc = UserCacheFactory.getUserCache(ctxt);
     }
 
     /*
@@ -92,6 +102,15 @@ public class GeofenceActions {
 
     private PendingResult<Status> createGeofenceAtLocation(Location currLoc)  throws SecurityException {
         Log.d(mCtxt, TAG, "creating geofence at location " + currLoc);
+        try {
+            JSONObject jo = new JSONObject();
+            jo.put("type", "Point");
+            double[] currCoordinates = {currLoc.getLongitude(), currLoc.getLatitude()};
+            jo.put("coordinates", currCoordinates);
+            uc.putLocalStorage(GEOFENCE_LOC_KEY, jo);
+        } catch (JSONException e) {
+            Log.e(mCtxt, TAG, "Error while storing current geofence location, skipping..."+e.getMessage());
+        }
             // This is also an asynchronous call. We can either wait for the result,
             // or we can provide a callback. Let's provide a callback to keep the async
             // logic in place
