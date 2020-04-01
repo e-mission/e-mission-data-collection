@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
-import de.appplant.cordova.plugin.notification.ClickActivity;
 import edu.berkeley.eecs.emission.MainActivity;
 
 
