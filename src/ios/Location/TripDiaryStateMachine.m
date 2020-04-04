@@ -51,13 +51,6 @@ static NSString * const kCurrState = @"CURR_STATE";
 + (TripDiaryStateMachine*) instance {
     static dispatch_once_t once;
     static id sharedInstance;
-    
-    if (once != 0) {
-        [LocalNotificationManager
-         addNotification:[NSString stringWithFormat:@"once = %lu, found recursive call to instance creation, returning NULL on second call", once]];
-        return NULL;
-    }
-    
     dispatch_once(&once, ^{
         sharedInstance = [[self alloc] init];
         // when we create a new instance, we use it to register for notifications
