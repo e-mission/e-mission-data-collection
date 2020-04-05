@@ -66,7 +66,7 @@ module.exports = function (ctx) {
         path = ctx.requireCordovaModule('path'),
         Q = ctx.requireCordovaModule('q');
 
-    var platformSourcesRoot = path.join(ctx.opts.projectRoot, 'platforms/android/src');
+    var platformSourcesRoot = path.join(ctx.opts.projectRoot, 'platforms/android/app/src/main/java/');
     var pluginSourcesRoot = path.join(ctx.opts.plugin.dir, 'src/android');
 
     var androidPluginsData = JSON.parse(fs.readFileSync(path.join(ctx.opts.projectRoot, 'plugins', 'android.json'), 'utf8'));
