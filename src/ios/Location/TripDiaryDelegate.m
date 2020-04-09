@@ -7,7 +7,6 @@
 //
 
 #import "TripDiaryDelegate.h"
-#import <Parse/Parse.h>
 #import "BEMBuiltinUserCache.h"
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
