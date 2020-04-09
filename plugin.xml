@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="edu.berkeley.eecs.emission.cordova.datacollection"
-        version="1.4.2">
+        version="1.4.3">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -188,15 +188,10 @@
         <false/>
     </config-file>
 
-    <framework src="src/ios/frameworks/Parse.framework" custom="true" />
-    <framework src="src/ios/frameworks/Bolts.framework" custom="true" />
+    <framework src="Bolts/Tasks" type="podspec" spec="~> 1.9.0"/>
 
     <framework src="CoreLocation.framework"/>
     <framework src="Accounts.framework"/>
-    <!-- Imported by parse, can remove once we move away from Parse -->
-    <framework src="AudioToolbox.framework"/>
-    <framework src="StoreKit.framework"/>
-    <framework src="Social.framework"/>
 
     <header-file src="src/ios/BEMDataCollection.h"/>
     <header-file src="src/ios/BEMAppDelegate.h"/>
