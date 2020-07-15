@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-        id="edu.berkeley.eecs.emission.cordova.datacollection"
+        id="cordova-plugin-em-datacollection"
         version="1.4.3">
 
   <name>DataCollection</name>
