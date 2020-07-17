@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
 import android.os.Build;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;

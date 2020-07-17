@@ -3,7 +3,7 @@ package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationAvailability;

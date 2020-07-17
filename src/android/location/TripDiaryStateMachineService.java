@@ -11,7 +11,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.Batch;
