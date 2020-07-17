@@ -6,6 +6,7 @@ import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.MotionActivity;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
@@ -61,7 +62,8 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			// better.
             // if (mostProbableActivity.getConfidence() > 90) {
                 UserCache userCache = UserCacheFactory.getUserCache(this);
-                userCache.putSensorData(R.string.key_usercache_activity, mostProbableActivity);
+                MotionActivity mpma = new MotionActivity(mostProbableActivity);
+                userCache.putSensorData(R.string.key_usercache_activity, mpma);
             // }
 			/*
 			DetectedActivity currentActivity = DataUtils.getCurrentMode(this).getLastActivity();
