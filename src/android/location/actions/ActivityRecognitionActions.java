@@ -9,6 +9,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.tasks.Task;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
@@ -34,9 +35,9 @@ public class ActivityRecognitionActions {
         ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
     }
 
-    public PendingResult<Status> start() {
+    public Task<Void> start() {
         Log.d(mCtxt, TAG, "Starting activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
-        return ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient,
+        return ActivityRecognition.getClient(mCtxt).requestActivityUpdates(
                 ACTIVITY_DETECTION_INTERVAL,
                 getActivityRecognitionPendingIntent(mCtxt));
     }
@@ -50,9 +51,9 @@ public class ActivityRecognitionActions {
         return TripDiaryStateMachineForegroundService.getProperPendingIntent(ctxt, innerIntent);
     }
 
-    public PendingResult<Status> stop() {
+    public Task<Void> stop() {
         Log.d(mCtxt, TAG, "Stopping activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
-        return ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient,
+        return ActivityRecognition.getClient(mCtxt).removeActivityUpdates(
                 getActivityRecognitionPendingIntent(mCtxt));
     }
 }

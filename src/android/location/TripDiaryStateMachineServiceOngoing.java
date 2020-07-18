@@ -18,6 +18,8 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -327,10 +329,9 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
     }
 
     private void startEverything(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
-        final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-        Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-        tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).start()));
-        tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).start()));
+        final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
+        tokenList.add(new LocationTrackingActions(ctxt, apiClient).start());
+        tokenList.add(new ActivityRecognitionActions(ctxt, apiClient).start());
         // TODO: How to pass in the token list?
         // Also, the callback is currently the same for all of them, but could potentially be
         // different in the future once we add in failure handling because we may want to do
@@ -338,11 +339,9 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         // refactor the callback to a common class. and then we need to pass in the token list to it
         // since it can't use the final variable
         final Context fCtxt = ctxt;
-        resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-            @Override
-            public void onResult(BatchResult batchResult) {
+        Tasks.whenAllSuccess(tokenList).addOnCompleteListener(task -> {
                 String newState = fCtxt.getString(R.string.state_ongoing_trip);
-                if (batchResult.getStatus().isSuccess()) {
+          if (task.isSuccessful()) {
                     setNewState(newState);
                     startService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
@@ -355,22 +354,17 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                             fCtxt.getString(R.string.failed_moving_new_state,newState));
                 }
                 }
-                mApiClient.disconnect();
-            }
         });
     }
 
     private void stopEverything(final Context ctxt, final GoogleApiClient apiClient, final String targetState) {
-        final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-        Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-        tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
-        tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).stop()));
+        final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
+        tokenList.add(new LocationTrackingActions(ctxt, apiClient).stop());
+        tokenList.add(new ActivityRecognitionActions(ctxt, apiClient).stop());
         final Context fCtxt = ctxt;
-        resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-            @Override
-            public void onResult(BatchResult batchResult) {
+        Tasks.whenAllSuccess(tokenList).addOnCompleteListener(task -> {
                 String newState = targetState;
-                if (batchResult.getStatus().isSuccess()) {
+                if (task.isSuccessful()) {
                     setNewState(newState);
                     stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
@@ -384,7 +378,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                     }
                 }
                 mApiClient.disconnect();
-            }
         });
     }
 }

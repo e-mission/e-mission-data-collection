@@ -15,6 +15,7 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.Task;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.LocationChangeIntentService;
 
@@ -33,12 +34,11 @@ public class LocationTrackingActions {
         this.mGoogleApiClient = googleApiClient;
     }
 
-    public PendingResult<Status> start() {
+    public Task<Void> start() {
         try {
-        return LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+        return LocationServices.getFusedLocationProviderClient(mCtxt).requestLocationUpdates(
                 getLocationRequest(),
                 getLocationTrackingPendingIntent(mCtxt));
-                // .setResultCallback(startCallback);
         } catch (SecurityException e) {
             Log.e(mCtxt, TAG, "Found security error "+e.getMessage()+" while creating geofence");
             return null;
@@ -56,30 +56,16 @@ public class LocationTrackingActions {
         return modifiedRequest;
     }
 
-    ResultCallback<Status> startCallback = new ResultCallback<Status>() {
-        @Override
-        public void onResult(Status status) {
-
-        }
-    };
-
-    public PendingResult<Status> stop() {
-        return LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,
+    public Task<Void> stop() {
+        return LocationServices.getFusedLocationProviderClient(mCtxt).removeLocationUpdates(
                 getLocationTrackingPendingIntent(mCtxt));
-                // .setResultCallback(stopCallback);
-    }
-
-    ResultCallback<Status> stopCallback = new ResultCallback<Status>() {
-        @Override
-        public void onResult(Status status) {
         }
-    };
 
     public static PendingIntent getLocationTrackingPendingIntent(Context ctxt) {
         Intent innerIntent = new Intent(ctxt, LocationChangeIntentService.class);
 		/*
 		 * Setting FLAG_UPDATE_CURRENT so that sending the PendingIntent again updates the original.
-		 * We only want to have one geofence active at one point of time.
+		 * We only want to receive one location at one point of time.
 		 */
 		return TripDiaryStateMachineForegroundService.getProperPendingIntent(ctxt, innerIntent);
     }
