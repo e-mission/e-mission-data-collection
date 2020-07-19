@@ -4,20 +4,9 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.Batch;
-import com.google.android.gms.common.api.BatchResult;
-import com.google.android.gms.common.api.BatchResultToken;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.ActivityRecognition;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 
@@ -25,10 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
-import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
-
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
@@ -41,8 +28,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
  * Created by shankari on 10/20/15.
  */
 
-public class TripDiaryStateMachineServiceOngoing extends Service implements
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class TripDiaryStateMachineServiceOngoing extends Service {
     public static String TAG = "TripDiaryStateMachineService";
 
     private static int STATE_IN_NUMBERS = 78283;
@@ -58,7 +44,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
      * in instance variables.
     */
 
-    private GoogleApiClient mApiClient = null;
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
@@ -70,21 +55,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
     @Override
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
-        /*
-         * Need to initialize once per create.
-         * http://stackoverflow.com/questions/29343922/googleapiclient-is-throwing-googleapiclient-is-not-connected-yet-after-onconne
-         * https://github.com/e-mission/e-mission-data-collection/issues/132
-         */
-        // We create this here because for the activity lifecycle, we are supposed to
-        // create the client in create, connect in start and disconnect in stop.
-        // so the equivalent for us is to create in the onCreate method,
-        mApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .addApi(ActivityRecognition.API)
-                .build();
-
     }
 
     @Override
@@ -113,20 +83,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         Log.d(this, TAG, "after reading from the prefs, the current state is "+mCurrState);
         UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_transition,
                 new Transition(mCurrState, mTransition, ((double)System.currentTimeMillis())/1000));
-
-        // And then connect to the client. All subsequent processing will be in the onConnected
-        // method
-        // TODO: Also figure out whether it is best to create it here or in the constructor.
-        // If it in the constructor, where do we get the context from?
-
-        if (mApiClient.isConnected()) {
-            Log.d(this, TAG, "client is already connected, can directly handle the action");
-            handleAction(this, mApiClient, mCurrState, mTransition);
-        } else {
-            // And then connect to the client. All subsequent processing will be in the onConnected
-            // method
-        mApiClient.connect();
-        }
+        handleAction(this, mCurrState, mTransition);
         /*
          We are returning with START_REDELIVER_INTENT, so the process will be restarted with the
          same intent if it is killed. We need to think through the implications of this. If the
@@ -140,43 +97,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
          */
         Log.d(this, TAG, "Launched connect to the google API client, returning from onStartCommand");
         return START_REDELIVER_INTENT;
-    }
-
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        Log.d(this, TAG, "onConnected("+connectionHint+") called");
-
-        ConnectionResult locResult = mApiClient.getConnectionResult(LocationServices.API);
-        ConnectionResult activityResult = mApiClient.getConnectionResult(ActivityRecognition.API);
-        if (!locResult.isSuccess()) {
-            if (locResult.hasResolution()) {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage(),
-                        locResult.getResolution());
-            } else {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage());
-            }
-        }
-        if (!activityResult.isSuccess()) {
-            if (activityResult.hasResolution()) {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage(),
-                        activityResult.getResolution());
-            } else {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage());
-            }
-        }
-
-        handleAction(this, mApiClient, mCurrState, mTransition);
-
-        // Note that it does NOT work to disconnect from here because the actions in the state
-        // might happen asynchronously, and we disconnect too early, then the async callbacks
-        // are never invoked. In particular, anything called from the "main/UI" thread, such as
-        // the geofence creation, will FAIL if not invoked asynchronously (i.e. if await() is called).
-        // It is the responsibility of the state handler to disconnect correctly.
-        // If the state handler does not disconnect properly, the state machine will fail because
-        // onConnect() is not invoked when connect() is invoked on an already connected client
-        // TODO: This lead to missed messages if we receive a message while an async operation is ongoing!
-        // Should really check isConnected() and handle it!
-        // mApiClient.disconnect();
     }
 
     public static String getState(Context ctxt) {
@@ -196,25 +116,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         stopSelf();
     }
 
-    @Override
-    public void onConnectionSuspended(int cause) {
-        String causeStr = "unknown";
-        if (cause == GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST) {
-            causeStr = "network lost";
-        } else if (cause == GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED) {
-            causeStr = "network disconnected";
-        }
-        NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                this.getString(R.string.google_connection_suspended,causeStr));
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult cr) {
-        NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                this.getString(R.string.google_connection_failed,cr.toString()));
-
-    }
-
     private Intent getForegroundServiceIntent() {
         return new Intent(this, TripDiaryStateMachineForegroundService.class);
     }
@@ -227,7 +128,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
      * to write a generic action that takes the google API call and the broadcast intent
      * as parameters, makes the call, and issues the broadcast in the callback
      */
-    private void handleAction(Context ctxt, GoogleApiClient apiClient, String currState, String actionString) {
+    private void handleAction(Context ctxt, String currState, String actionString) {
         Log.d(this, TAG, "handleAction("+currState+", "+actionString+") called");
         assert(currState != null);
         // The current state is stored in the shared preferences, so on reboot, for example, we would
@@ -243,24 +144,24 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
                 BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
-            handleStart(ctxt, apiClient, actionString);
+            handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
-            handleStart(ctxt, apiClient, actionString);
+            handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
-            handleWaitingForTripStart(ctxt, apiClient, actionString);
+            handleWaitingForTripStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
-            handleOngoing(ctxt, apiClient, actionString);
+            handleOngoing(ctxt, actionString);
         } if (currState.equals(getString(R.string.state_tracking_stopped))) {
-            handleTrackingStopped(ctxt, apiClient, actionString);
+            handleTrackingStopped(ctxt, actionString);
         }
     }
 
-    private void handleStart(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void handleStart(Context ctxt, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleStarted(" + actionString + ") called");
         // Get current location
         if (actionString.equals(ctxt.getString(R.string.transition_initialize)) &&
                 !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
-            startEverything(ctxt, apiClient, actionString);
+            startEverything(ctxt, actionString);
                     }
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Haven't started anything yet (that's why we are in the start state).
@@ -285,53 +186,53 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
     // If we start tracking, we start everything
     // If we stop tracking, we stop everything
     // For everything else, go to the ongoing state :)
-    private void handleWaitingForTripStart(final Context ctxt, final GoogleApiClient apiClient, final String actionString) {
+    private void handleWaitingForTripStart(final Context ctxt, final String actionString) {
         if (actionString.equals(getString(R.string.transition_exited_geofence))) {
-            startEverything(ctxt, apiClient, actionString);
+            startEverything(ctxt, actionString);
         } else if (actionString.equals(getString(R.string.transition_start_tracking))) {
-            startEverything(ctxt, apiClient, actionString);
+            startEverything(ctxt, actionString);
         } else if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Haven't started anything yet (that's why we are in the start state).
             // just move to the stop tracking state
-            stopEverything(ctxt, apiClient, getString(R.string.state_tracking_stopped));
+            stopEverything(ctxt, getString(R.string.state_tracking_stopped));
         } else if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
                     */
-            stopEverything(ctxt, apiClient, getString(R.string.state_start));
+            stopEverything(ctxt, getString(R.string.state_start));
         } else {
-            stopEverything(ctxt, apiClient, getString(R.string.state_tracking_stopped));
+            stopEverything(ctxt, getString(R.string.state_tracking_stopped));
         }
     }
 
-    private void handleOngoing(Context ctxt, GoogleApiClient apiClient, String actionString) {
+    private void handleOngoing(Context ctxt, String actionString) {
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
-            stopEverything(ctxt, apiClient, getString(R.string.state_tracking_stopped));
+            stopEverything(ctxt, getString(R.string.state_tracking_stopped));
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             /*
             NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                     "Location tracking turned off. Please turn on for emission to work properly");
                     */
-            stopEverything(ctxt, mApiClient, getString(R.string.state_start));
+            stopEverything(ctxt, getString(R.string.state_start));
         }
     }
 
-    private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+    private void handleTrackingStopped(final Context ctxt, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
-            startEverything(ctxt, apiClient, actionString);
+            startEverything(ctxt, actionString);
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
         }
     }
 
-    private void startEverything(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+    private void startEverything(final Context ctxt, String actionString) {
         final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
-        tokenList.add(new LocationTrackingActions(ctxt, apiClient).start());
-        tokenList.add(new ActivityRecognitionActions(ctxt, apiClient).start());
+        tokenList.add(new LocationTrackingActions(ctxt).start());
+        tokenList.add(new ActivityRecognitionActions(ctxt).start());
         // TODO: How to pass in the token list?
         // Also, the callback is currently the same for all of them, but could potentially be
         // different in the future once we add in failure handling because we may want to do
@@ -357,10 +258,10 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
         });
     }
 
-    private void stopEverything(final Context ctxt, final GoogleApiClient apiClient, final String targetState) {
+    private void stopEverything(final Context ctxt, final String targetState) {
         final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
-        tokenList.add(new LocationTrackingActions(ctxt, apiClient).stop());
-        tokenList.add(new ActivityRecognitionActions(ctxt, apiClient).stop());
+        tokenList.add(new LocationTrackingActions(ctxt).stop());
+        tokenList.add(new ActivityRecognitionActions(ctxt).stop());
         final Context fCtxt = ctxt;
         Tasks.whenAllSuccess(tokenList).addOnCompleteListener(task -> {
                 String newState = targetState;
@@ -377,7 +278,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service implements
                                 fCtxt.getString(R.string.failed_moving_new_state,newState));
                     }
                 }
-                mApiClient.disconnect();
         });
     }
 }

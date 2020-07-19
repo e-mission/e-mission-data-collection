@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
-import android.os.Build;
+
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
@@ -19,7 +19,6 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationRequest;
@@ -56,15 +55,13 @@ public class GeofenceActions {
     private static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
 
     private Context mCtxt;
-    private GoogleApiClient mGoogleApiClient;
     private UserCache uc;
     // Used only when the last location from the manager is null, or invalid and so we have
     // to read a new one. This is a private variable for synchronization
     private Location newLastLocation;
 
-    public GeofenceActions(Context ctxt, GoogleApiClient googleApiClient) {
+    public GeofenceActions(Context ctxt) {
         this.mCtxt = ctxt;
-        this.mGoogleApiClient = googleApiClient;
         this.uc = UserCacheFactory.getUserCache(ctxt);
     }
 

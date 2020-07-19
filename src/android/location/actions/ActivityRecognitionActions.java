@@ -3,17 +3,12 @@ package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.tasks.Task;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
-import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService;
 
@@ -27,11 +22,9 @@ public class ActivityRecognitionActions {
     private static final String TAG = "ActivityRecognitionHandler";
 
     private Context mCtxt;
-    private GoogleApiClient mGoogleApiClient;
 
-    public ActivityRecognitionActions(Context context, GoogleApiClient apiClient) {
+    public ActivityRecognitionActions(Context context) {
         this.mCtxt = context;
-        this.mGoogleApiClient = apiClient;
         ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
     }
 

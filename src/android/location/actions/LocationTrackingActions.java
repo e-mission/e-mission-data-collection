@@ -9,10 +9,6 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.Task;
@@ -27,11 +23,9 @@ public class LocationTrackingActions {
     private static final int LOCATION_IN_NUMBERS = 56228466;
 
     private Context mCtxt;
-    private GoogleApiClient mGoogleApiClient;
 
-    public LocationTrackingActions(Context ctxt, GoogleApiClient googleApiClient) {
+  public LocationTrackingActions(Context ctxt) {
         this.mCtxt = ctxt;
-        this.mGoogleApiClient = googleApiClient;
     }
 
     public Task<Void> start() {
