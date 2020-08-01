@@ -3,16 +3,12 @@ package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.tasks.Task;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
-import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService;
 
@@ -26,17 +22,15 @@ public class ActivityRecognitionActions {
     private static final String TAG = "ActivityRecognitionHandler";
 
     private Context mCtxt;
-    private GoogleApiClient mGoogleApiClient;
 
-    public ActivityRecognitionActions(Context context, GoogleApiClient apiClient) {
+    public ActivityRecognitionActions(Context context) {
         this.mCtxt = context;
-        this.mGoogleApiClient = apiClient;
         ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
     }
 
-    public PendingResult<Status> start() {
+    public Task<Void> start() {
         Log.d(mCtxt, TAG, "Starting activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
-        return ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient,
+        return ActivityRecognition.getClient(mCtxt).requestActivityUpdates(
                 ACTIVITY_DETECTION_INTERVAL,
                 getActivityRecognitionPendingIntent(mCtxt));
     }
@@ -50,9 +44,9 @@ public class ActivityRecognitionActions {
         return TripDiaryStateMachineForegroundService.getProperPendingIntent(ctxt, innerIntent);
     }
 
-    public PendingResult<Status> stop() {
+    public Task<Void> stop() {
         Log.d(mCtxt, TAG, "Stopping activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
-        return ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient,
+        return ActivityRecognition.getClient(mCtxt).removeActivityUpdates(
                 getActivityRecognitionPendingIntent(mCtxt));
     }
 }

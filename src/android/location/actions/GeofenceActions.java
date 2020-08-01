@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
-import android.os.Build;
-import android.support.v4.content.LocalBroadcastManager;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
@@ -19,18 +19,18 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 
-import com.google.android.gms.common.api.CommonStatusCodes;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,15 +55,13 @@ public class GeofenceActions {
     private static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
 
     private Context mCtxt;
-    private GoogleApiClient mGoogleApiClient;
     private UserCache uc;
     // Used only when the last location from the manager is null, or invalid and so we have
     // to read a new one. This is a private variable for synchronization
     private Location newLastLocation;
 
-    public GeofenceActions(Context ctxt, GoogleApiClient googleApiClient) {
+    public GeofenceActions(Context ctxt) {
         this.mCtxt = ctxt;
-        this.mGoogleApiClient = googleApiClient;
         this.uc = UserCacheFactory.getUserCache(ctxt);
     }
 
@@ -74,10 +72,9 @@ public class GeofenceActions {
      *
      * see @GeofenceActions.createGeofenceRequest
      */
-    public PendingResult<Status> create() {
+    public Task<Void> create() {
         try {
-        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient);
+        Location mLastLocation = Tasks.await(LocationServices.getFusedLocationProviderClient(mCtxt).getLastLocation(), 30, TimeUnit.SECONDS);
         Log.d(mCtxt, TAG, "Last location would have been " + mLastLocation +" if we hadn't reset it");
         if (isValidLocation(mCtxt, mLastLocation)) {
             Log.d(mCtxt, TAG, "Last location is " + mLastLocation + " using it");
@@ -97,10 +94,13 @@ public class GeofenceActions {
         } catch (SecurityException e) {
             Log.e(mCtxt, TAG, "Found security error "+e.getMessage()+" while creating geofence");
             return null;
+        } catch (InterruptedException | TimeoutException | ExecutionException e) {
+          Log.e(mCtxt, TAG, "Reading last location failed with error "+e.getMessage()+" while creating geofence");
+          return null;
         }
     }
 
-    private PendingResult<Status> createGeofenceAtLocation(Location currLoc)  throws SecurityException {
+    private Task<Void> createGeofenceAtLocation(Location currLoc)  throws SecurityException {
         Log.d(mCtxt, TAG, "creating geofence at location " + currLoc);
         try {
             JSONObject jo = new JSONObject();
@@ -114,7 +114,7 @@ public class GeofenceActions {
             // This is also an asynchronous call. We can either wait for the result,
             // or we can provide a callback. Let's provide a callback to keep the async
             // logic in place
-            return LocationServices.GeofencingApi.addGeofences(mGoogleApiClient,
+            return LocationServices.getGeofencingClient(mCtxt).addGeofences(
                 createGeofenceRequest(currLoc.getLatitude(), currLoc.getLongitude()),
                         getGeofenceExitPendingIntent(mCtxt));
     }
@@ -135,14 +135,16 @@ public class GeofenceActions {
             }
         }, new IntentFilter(GeofenceLocationIntentService.INTENT_NAME));
 
-        PendingResult<Status> locationReadingResult =
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+        Task<Void> locationReadingTask =
+                LocationServices.getFusedLocationProviderClient(mCtxt).requestLocationUpdates(
                 getHighAccuracyHighFrequencyRequest(), geofenceLocationIntent);
-        Status result = locationReadingResult.await(1L, TimeUnit.MINUTES);
-        if (result.getStatusCode() == CommonStatusCodes.SUCCESS) {
+
+        try {
+            Tasks.await(locationReadingTask, 1L, TimeUnit.MINUTES);
+            // no exception means this call was successful
             Log.d(mCtxt, TAG, "Successfully started tracking location, about to start waiting for location update");
-        } else {
-            Log.w(mCtxt, TAG, "Error "+result+"while getting location, returning null ");
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Log.w(mCtxt, TAG, "Error "+e.getLocalizedMessage()+"while getting location, returning null ");
             return null;
         }
         synchronized (this) {
@@ -153,11 +155,11 @@ public class GeofenceActions {
                 // in which the notify has happened before we start waiting, which means that we wait forever.
                 // Putting the stop in here means that we will continue to notify until the message is received
                 // which should be safe.
-                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, geofenceLocationIntent);
+                LocationServices.getFusedLocationProviderClient(mCtxt).removeLocationUpdates(geofenceLocationIntent);
                 Log.d(mCtxt, TAG, "After waiting for location reading result, location is " + this.newLastLocation);
                 return this.newLastLocation;
             } catch (InterruptedException e) {
-                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, geofenceLocationIntent);
+                LocationServices.getFusedLocationProviderClient(mCtxt).removeLocationUpdates(geofenceLocationIntent);
                 Log.w(mCtxt, TAG, "Timed out waiting for location result, returning null ");
                 return null;
             }
@@ -177,8 +179,10 @@ public class GeofenceActions {
             return false; // too inaccurate. Note that a high accuracy number means a larger radius
             // of validity which effectively means a low accuracy
         }
+
         int fiveMins = 5 * 60 * 1000;
-        if ((testLoc.getTime() - System.currentTimeMillis()) > fiveMins * 60) {
+        // testLoc is before now, so now - testLoc will be positive, and we check it against 5 mins
+        if ((System.currentTimeMillis() - testLoc.getTime()) > fiveMins) {
             Log.i(mCtxt, TAG, "testLoc.getTime() = "+ new Date(testLoc.getTime()) +
                     " testLoc.oldness "+(testLoc.getTime() - System.currentTimeMillis()) +
                     " > " + fiveMins * 60 + " isValidLocation = false");
@@ -221,9 +225,9 @@ public class GeofenceActions {
                 .build();
     }
 
-    public PendingResult<Status> remove() {
+    public Task<Void> remove() {
         Log.d(mCtxt, TAG, "Removing geofence with ID = "+GEOFENCE_REQUEST_ID);
-        return LocationServices.GeofencingApi.removeGeofences(mGoogleApiClient,
+        return LocationServices.getGeofencingClient(mCtxt).removeGeofences(
                 Arrays.asList(GEOFENCE_REQUEST_ID));
     }
 

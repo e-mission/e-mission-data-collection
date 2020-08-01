@@ -3,21 +3,18 @@ package edu.berkeley.eecs.emission.cordova.tracker.location.actions;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationResult;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
-import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
-import edu.berkeley.eecs.emission.cordova.tracker.sensors.PollSensorManager;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
-import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 /**
  * Specialized intent service used for determining the location at which to create a geofence.
@@ -58,7 +55,7 @@ public class GeofenceLocationIntentService extends IntentService {
 		 * The intent is called when we get a location update.
 		 */
         Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
-        Log.d(this, TAG, "Extras bundle = "+intent.getExtras().toString());
+        Log.d(this, TAG, "Extras bundle = "+ Objects.requireNonNull(intent.getExtras()).toString());
 
         Object[] extraKeys = intent.getExtras().keySet().toArray();
         Log.d(this, TAG, "Extras keys are "+ Arrays.toString(extraKeys));
@@ -68,17 +65,22 @@ public class GeofenceLocationIntentService extends IntentService {
         }
         Log.d(this, TAG, "Extras values are "+ Arrays.toString(extraValues));
 
+        Location loc = null;
 
-        /*
-         * For the sensors that are not managed by the android sensor manager, but instead, require
-         * polling us to poll them, let us do so at the time that we get location updates. We will
-         * always have location updates, since that is our goal, and piggybacking
-         * in this fashion will avoid the overhead of building a scheduler, launching a new process
-         * for the polling, and the power drain of waking up the CPU.
-         */
-        PollSensorManager.getAndSaveAllValues(this);
+        if (LocationResult.hasResult(intent)) {
+          List<Location> locList = LocationResult.extractResult(intent).getLocations();
+          // flip to be newest to oldest
+          Collections.reverse(locList);
 
-        Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+          for (Location currLoc : locList) {
+            if (GeofenceActions.isValidLocation(this, currLoc)) {
+              Log.d(this, TAG, "Found most recent valid location = "+loc);
+              loc = currLoc;
+              break;
+            }
+          }
+        }
+
         Log.d(this, TAG, "Read location "+loc+" from intent");
 
 		/*
@@ -103,6 +105,7 @@ public class GeofenceLocationIntentService extends IntentService {
             }
         }
 
+        // TODO: Remove this if statement since we have already checked for validity earlier
         if (GeofenceActions.isValidLocation(this, loc)) {
             // notify something
             Log.d(this, TAG, "location is valid, broadcast it "+loc);

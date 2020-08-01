@@ -1,20 +1,12 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
 
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.location.LocationManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-
-import org.apache.cordova.ConfigXmlParser;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -140,13 +132,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
     }
 
     public static void checkLocationStillAvailable(Context ctxt) {
-        GoogleApiClient mApiClient = new GoogleApiClient.Builder(ctxt)
-                .addApi(LocationServices.API)
-                .build();
-        // This runs as part of the service thread and not the UI thread, so can block
-        // can switch to Tasks later anyway
-        mApiClient.blockingConnect();
-        TripDiaryStateMachineService.checkLocationSettingsAndPermissions(ctxt, mApiClient);
+        TripDiaryStateMachineService.checkLocationSettingsAndPermissions(ctxt);
     }
 
     public static void validateAndCleanupState(Context ctxt) {

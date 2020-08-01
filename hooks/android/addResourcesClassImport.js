@@ -4,25 +4,14 @@
  * A hook to add resources class (R.java) import to Android classes which uses it.
  */
 
-function getRegexGroupMatches(string, regex, index) {
-    index || (index = 1)
+const fs = require('fs'),
+    path = require('path');
 
-    var matches = [];
-    var match;
-    if (regex.global) {
-        while (match = regex.exec(string)) {
-            matches.push(match[index]);
-            console.log('Match:', match);
-        }
-    }
-    else {
-        if (match = regex.exec(string)) {
-            matches.push(match[index]);
-        }
-    }
+const PACKAGE_RE = /package ([^;]+);/;
+const R_RE = /[^\.\w]R\./;
+const BUILDCONFIG_RE = /[^\.\w]BuildConfig\./;
+const MAINACT_RE = /[^\.\w]MainActivity\./;
 
-    return matches;
-}
 
 // Adapted from 
 // https://stackoverflow.com/a/5827895
@@ -31,10 +20,7 @@ function getRegexGroupMatches(string, regex, index) {
 // javascript modules using plugin.xml, and this uses only standard modules
 
 var walk = function(ctx, dir, done) {
-  var results = [];
-
-  var fs = ctx.requireCordovaModule('fs'),
-      path = ctx.requireCordovaModule('path');
+  let results = [];
 
   fs.readdir(dir, function(err, list) {
     if (err) return done(err);
@@ -62,15 +48,11 @@ module.exports = function (ctx) {
     if (ctx.opts.cordova.platforms.indexOf('android') < 0)
         return;
 
-    var fs = ctx.requireCordovaModule('fs'),
-        path = ctx.requireCordovaModule('path'),
-        Q = ctx.requireCordovaModule('q');
+    const platformSourcesRoot = path.join(ctx.opts.projectRoot, 'platforms/android/app/src/main/java/');
+    const pluginSourcesRoot = path.join(ctx.opts.plugin.dir, 'src/android');
 
-    var platformSourcesRoot = path.join(ctx.opts.projectRoot, 'platforms/android/app/src/main/java/');
-    var pluginSourcesRoot = path.join(ctx.opts.plugin.dir, 'src/android');
-
-    var androidPluginsData = JSON.parse(fs.readFileSync(path.join(ctx.opts.projectRoot, 'plugins', 'android.json'), 'utf8'));
-    var appPackage = androidPluginsData.installed_plugins[ctx.opts.plugin.id]['PACKAGE_NAME'];
+    const androidPluginsData = JSON.parse(fs.readFileSync(path.join(ctx.opts.projectRoot, 'plugins', 'android.json'), 'utf8'));
+    const appPackage = androidPluginsData.installed_plugins[ctx.opts.plugin.id]['PACKAGE_NAME'];
 
     walk(ctx, pluginSourcesRoot, function (err, files) {
         console.log("walk callback with files = "+files);
@@ -83,73 +65,86 @@ module.exports = function (ctx) {
 
         files.filter(function (file) { return path.extname(file) === '.java'; })
             .forEach(function (file) {
-                var deferral = Q.defer();
+                const cp = new Promise(function(resolve, reject) {
+                    // console.log("Considering file "+file);
+                    const filename = path.basename(file);
+                    // console.log("basename "+filename);
+                    // var file = path.join(pluginSourcesRoot, filename);
+                    // console.log("newfile"+file);
+                    fs.readFile(file, 'utf-8', function (err, contents) {
+                        if (err) {
+                            console.error('Error when reading file:', err)
+                            reject();
+                        }
 
-                // console.log("Considering file "+file);
-                var filename = path.basename(file);
-                // console.log("basename "+filename);
-                // var file = path.join(pluginSourcesRoot, filename);
-                // console.log("newfile"+file);
-                fs.readFile(file, 'utf-8', function (err, contents) {
-                    if (err) {
-                        console.error('Error when reading file:', err)
-                        deferral.reject();
-                        return
-                    }
+                        if (contents.match(R_RE) || contents.match(BUILDCONFIG_RE) || contents.match(MAINACT_RE)) {
+                            console.log('file '+filename+' needs to be rewritten, checking package');
+                            const packages = contents.match(PACKAGE_RE);
+                            if (packages.length > 2) {
+                                console.error('Java source files must have only one package, found ', packages.length);
+                                reject();
+                            }
 
-                    if (contents.match(/[^\.\w]R\./) || contents.match(/[^\.\w]BuildConfig\./) || contents.match(/[^\.\w]MainActivity\./)) {
-                        console.log('Trying to get packages from file:', filename);
-                        var packages = getRegexGroupMatches(contents, /package ([^;]+);/);
-                        for (var p = 0; p < packages.length; p++) {
+                            const pkg = packages[1];
+                            console.log('Handling package:', pkg);
                             try {
-                                var package = packages[p];
-                                console.log('Handling package:', package);
-
-                                var sourceFile = path.join(platformSourcesRoot, package.replace(/\./g, '/'), filename)
+                                const sourceFile = path.join(platformSourcesRoot, pkg.replace(/\./g, '/'), filename)
                                 console.log('sourceFile:', sourceFile);
                                 if (!fs.existsSync(sourceFile)) 
                                     throw 'Can\'t find file in installed platform directory: "' + sourceFile + '".';
 
-                                var sourceFileContents = fs.readFileSync(sourceFile, 'utf8');
+                                const sourceFileContents = fs.readFileSync(sourceFile, 'utf8');
                                 if (!sourceFileContents) 
                                     throw 'Can\'t read file contents.';
 
-                                var newContents = sourceFileContents;
+                                let newContents = sourceFileContents;
 
-                                if (contents.match(/[^\.\w]R\./)) {
+                                if (contents.match(R_RE)) {
                                     newContents = sourceFileContents
                                         .replace(/(import ([^;]+).R;)/g, '')
                                         .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.R;');
                                 }
 
                                 // replace BuildConfig as well
-                                if (contents.match(/[^\.\w]BuildConfig\./)) {
+                                if (contents.match(BUILDCONFIG_RE)) {
                                     newContents = newContents
                                         .replace(/(import ([^;]+).BuildConfig;)/g, '')
                                         .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.BuildConfig;');
                                 }
 
                                 // replace MainActivity as well
-                                if (contents.match(/[^\.\w]MainActivity\./)) {
+                                if (contents.match(MAINACT_RE)) {
                                     newContents = newContents
                                         .replace(/(import ([^;]+).MainActivity;)/g, '')
                                         .replace(/(package ([^;]+);)/g, '$1 \n// Auto fixed by post-plugin hook \nimport ' + appPackage + '.MainActivity;');
                                 }
 
                                 fs.writeFileSync(sourceFile, newContents, 'utf8');
-                                break;
+                                resolve();
                             }
                             catch (ex) {
                                 console.log('Could not add import to "' +  filename + '" using package "' + package + '". ' + ex);
+                                reject();
                             }
+                            // we should never really get here because we return
+                            // from both the try and the catch blocks. But in case we do,
+                            // let's reject so we can debug
+                            reject();
+                        } else {
+                            // the file had no BuildConfig or R dependencies, no need
+                            // to rewrite it. We can potentially get rid of this check
+                            // since we re-check for the imports before re-writing them
+                            // but it avoid unnecessary file rewrites, so we retain
+                            // it for now
+                            resolve();
                         }
-                    }
+                    });
                 });
 
-                deferrals.push(deferral.promise);
+                deferrals.push(cp);
             });
 
-        Q.all(deferrals)
+        Promise.all(deferrals)
             .then(function() {
                 console.log('Done with the hook!');
             })

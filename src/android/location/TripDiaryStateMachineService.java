@@ -1,32 +1,25 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
 
-import android.Manifest;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.content.ContextCompat;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.Batch;
-import com.google.android.gms.common.api.BatchResult;
-import com.google.android.gms.common.api.BatchResultToken;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.ActivityRecognition;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -53,8 +46,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
  * Created by shankari on 9/12/15.
  */
 
-public class TripDiaryStateMachineService extends Service implements
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class TripDiaryStateMachineService extends Service {
     public static String TAG = "TripDiaryStateMachineService";
 
     private static int STATE_IN_NUMBERS = 78283;
@@ -70,13 +62,9 @@ public class TripDiaryStateMachineService extends Service implements
      * in instance variables.
     */
 
-    private GoogleApiClient mApiClient = null;
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
-    // List of actions being currently processed
-    private List<String> currActions = null;
-    private int ongoingOperations;
 
     public TripDiaryStateMachineService() {
         super();
@@ -87,25 +75,11 @@ public class TripDiaryStateMachineService extends Service implements
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
         /*
          * Need to initialize once per create.
-         * http://stackoverflow.com/questions/29343922/googleapiclient-is-throwing-googleapiclient-is-not-connected-yet-after-onconne
-         * https://github.com/e-mission/e-mission-data-collection/issues/132
          */
-        // We create this here because for the activity lifecycle, we are supposed to
-        // create the client in create, connect in start and disconnect in stop.
-        // so the equivalent for us is to create in the onCreate method,
-        mApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .addApi(ActivityRecognition.API)
-                .build();
-        currActions = new LinkedList<String>();
     }
 
     @Override
     public void onDestroy() {
-        Log.d(this, TAG, "About to disconnect the api client");
-        mApiClient.disconnect();
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
         TripDiaryStateMachineForegroundService.handleDestroy(this);
     }
@@ -124,29 +98,14 @@ public class TripDiaryStateMachineService extends Service implements
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
         mTransition = intent.getAction();
-        synchronized (this) {
-            ongoingOperations = ongoingOperations + 1;
-            Log.i(this, TAG,"after increment, ongoingOperations = "+ongoingOperations);
-        }
-        Log.i(this, TAG, "Handling new action "+mTransition+
-                " existing actions are "+currActions+" adding it to list");
-        currActions.add(mTransition);
+
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
             this.getString(R.string.state_start));
         Log.d(this, TAG, "after reading from the prefs, the current state is "+mCurrState);
         UserCacheFactory.getUserCache(this).putMessage(R.string.key_usercache_transition,
                 new Transition(mCurrState, mTransition, ((double)System.currentTimeMillis())/1000));
-
-        if (mApiClient.isConnected()) {
-            Log.d(this, TAG, "client is already connected, can directly handle the action");
-            handleAction(this, mApiClient, mCurrState, mTransition);
-        } else {
-        // And then connect to the client. All subsequent processing will be in the onConnected
-        // method
-            Log.d(this, TAG, "Launched connect to the google API client, returning from onStartCommand");
-        mApiClient.connect();
-        }
+        handleAction(this, mCurrState, mTransition);
 
         /*
          We are returning with START_REDELIVER_INTENT, so the process will be restarted with the
@@ -160,53 +119,6 @@ public class TripDiaryStateMachineService extends Service implements
          idempotent, but that requires some careful work. TODO: Need to think through this carefully.
          */
         return START_REDELIVER_INTENT;
-    }
-
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        Log.d(this, TAG, "onConnected("+connectionHint+") called");
-        ConnectionResult locResult = mApiClient.getConnectionResult(LocationServices.API);
-        ConnectionResult activityResult = mApiClient.getConnectionResult(ActivityRecognition.API);
-        if (locResult.isSuccess() && activityResult.isSuccess()) {
-            // we go ahead and handle the original issue
-            for (String transition: currActions) {
-                mCurrState = getState(this);
-                Log.i(this, TAG, "in onConnected, dealing with pending action "+transition
-                    +" from currstate "+mCurrState);
-                handleAction(this, mApiClient, mCurrState, transition);
-            }
-        }
-        if (!locResult.isSuccess()) {
-            if (locResult.hasResolution()) {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage(),
-                        locResult.getResolution());
-            } else {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, locResult.getErrorMessage());
-            }
-            // we have generated a notification, and we are not going to handle the action, so we can stop the service now
-            setNewState(mCurrState);
-        }
-        if (!activityResult.isSuccess()) {
-            if (activityResult.hasResolution()) {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage(),
-                        activityResult.getResolution());
-            } else {
-                NotificationHelper.createNotification(this, Constants.TRACKING_ERROR_ID, activityResult.getErrorMessage());
-            }
-            // we have generated a notification, and we are not going to handle the action, so we can stop the service now
-            setNewState(mCurrState);
-        }
-
-        // Note that it does NOT work to disconnect from here because the actions in the state
-        // might happen asynchronously, and we disconnect too early, then the async callbacks
-        // are never invoked. In particular, anything called from the "main/UI" thread, such as
-        // the geofence creation, will FAIL if not invoked asynchronously (i.e. if await() is called).
-        // It is the responsibility of the state handler to disconnect correctly.
-        // If the state handler does not disconnect properly, the state machine will fail because
-        // onConnect() is not invoked when connect() is invoked on an already connected client
-        // TODO: This lead to missed messages if we receive a message while an async operation is ongoing!
-        // Should really check isConnected() and handle it!
-        // mApiClient.disconnect();
     }
 
     public static String getState(Context ctxt) {
@@ -224,13 +136,6 @@ public class TripDiaryStateMachineService extends Service implements
         }
     }
 
-    private void markOngoingOperationFinished() {
-        synchronized (this) {
-            ongoingOperations = ongoingOperations - 1;
-            Log.i(this, TAG,"after decrement, ongoingOperations = "+ongoingOperations);
-        }
-    }
-
     public void setNewState(String newState) {
         Log.d(this, TAG, "newState after handling action is "+newState);
         SharedPreferences.Editor prefsEditor =
@@ -240,36 +145,11 @@ public class TripDiaryStateMachineService extends Service implements
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
-        synchronized (this) {
-            ongoingOperations = ongoingOperations - 1;
-            Log.i(this, TAG,"after decrement, ongoingOperations = "+ongoingOperations);
-            if (ongoingOperations == 0) {
-                Log.i(this, TAG, "About to stop service after handling "+currActions);
+        // Let's check the location settings every time we change the state instead of only on failure
+        // This makes the rest of the code much simpler, allows us to catch issues as quickly as possible,
+        // and
+        checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                 stopSelf();
-            } else {
-                Log.i(this, TAG, ongoingOperations + " ongoingOperations pending, waiting to stop");
-            }
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int cause) {
-        String causeStr = "unknown";
-        if (cause == GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST) {
-            causeStr = "network lost";
-        } else if (cause == GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED) {
-            causeStr = "network disconnected";
-        }
-        NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                this.getString(R.string.google_connection_suspended,causeStr));
-        // let's leave this here in case the connection is restored
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult cr) {
-        NotificationHelper.createNotification(this, STATE_IN_NUMBERS,
-                this.getString(R.string.google_connection_failed,cr.toString()));
-        setNewState(this.getString(R.string.state_start));
     }
 
     private Intent getForegroundServiceIntent() {
@@ -284,7 +164,7 @@ public class TripDiaryStateMachineService extends Service implements
      * to write a generic action that takes the google API call and the broadcast intent
      * as parameters, makes the call, and issues the broadcast in the callback
      */
-    private void handleAction(Context ctxt, GoogleApiClient apiClient, String currState, String actionString) {
+    private void handleAction(Context ctxt, String currState, String actionString) {
         Log.d(this, TAG, "handleAction("+currState+", "+actionString+") called");
         assert(currState != null);
         // The current state is stored in the shared preferences, so on reboot, for example, we would
@@ -300,26 +180,26 @@ public class TripDiaryStateMachineService extends Service implements
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
                 BatteryUtils.getBatteryInfo(ctxt));
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
-            handleStart(ctxt, apiClient, actionString);
+            handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
-            handleStart(ctxt, apiClient, actionString);
+            handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_waiting_for_trip_start))) {
-            handleTripStart(ctxt, apiClient, actionString);
+            handleTripStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
-            handleTripEnd(ctxt, apiClient, actionString);
+            handleTripEnd(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
-            handleTrackingStopped(ctxt, apiClient, actionString);
+            handleTrackingStopped(ctxt, actionString);
         }
         Log.d(this, TAG, "handleAction("+currState+", "+actionString+") completed, waiting for async operations to complete");
     }
 
-    private void handleStart(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+    private void handleStart(final Context ctxt, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleStarted(" + actionString + ") called");
 
         // Get current location
         if (actionString.equals(ctxt.getString(R.string.transition_initialize)) &&
                 !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
-            createGeofenceInThread(ctxt, apiClient, actionString);
+            createGeofenceInThread(ctxt, actionString);
             return;
             // we will wait for async geofence creation to complete
         }
@@ -350,7 +230,7 @@ public class TripDiaryStateMachineService extends Service implements
         setNewState(mCurrState);
     }
 
-    public void handleTripStart(Context ctxt, final GoogleApiClient apiClient, final String actionString) {
+    public void handleTripStart(Context ctxt, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripStart(" + actionString + ") called");
 
         if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
@@ -358,13 +238,12 @@ public class TripDiaryStateMachineService extends Service implements
             // we cannot add null elements to the token list.
             // the LocationTracking start action can now return null
             // so we need to handle it similar to the createGeofence in handleTripEnd
-            final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-            Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-            tokenList.add(resultBarrier.add(new GeofenceActions(ctxt, apiClient).remove()));
-            tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).start()));
-            PendingResult<Status> locationTrackingResult = new LocationTrackingActions(ctxt, apiClient).start();
+            final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
+            tokenList.add(new GeofenceActions(ctxt).remove());
+            tokenList.add(new ActivityRecognitionActions(ctxt).start());
+            Task<Void> locationTrackingResult = new LocationTrackingActions(ctxt).start();
             if (locationTrackingResult != null) {
-                tokenList.add(resultBarrier.add(locationTrackingResult));
+              tokenList.add(locationTrackingResult);
             } else {
                 // if we can't turn on the location tracking, we may as well not start the activity
                 // recognition
@@ -379,9 +258,8 @@ public class TripDiaryStateMachineService extends Service implements
             // refactor the callback to a common class. and then we need to pass in the token list to it
             // since it can't use the final variable
             final Context fCtxt = ctxt;
-            resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-                @Override
-                public void onResult(BatchResult batchResult) {
+            Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
+              List<Task<?>> resultList = task.getResult();
                     String newState;
                     if (locationTrackingPossible) {
                         newState = fCtxt.getString(R.string.state_ongoing_trip);
@@ -392,8 +270,7 @@ public class TripDiaryStateMachineService extends Service implements
                         // out of it at every sync.
                         newState = fCtxt.getString(R.string.state_start);
                     }
-
-                    if (batchResult.getStatus().isSuccess()) {
+              if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                         if (locationTrackingPossible) {
                         startService(getForegroundServiceIntent());
                         }
@@ -403,41 +280,27 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                         setNewState(newState);
                     } else {
-                        if (batchResult.getStatus().hasResolution()) {
-                            NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                    fCtxt.getResources().getString(R.string.error_creating_geofence, batchResult.getStatus().getStatusCode()),
-                                    batchResult.getStatus().getResolution());
-                            // we should set something here to stop the service since our async call
-                            // is complete and since we already have a resolution, we are not going to do anything more
-                            // but the set value depends on the result if the geofence deletion failed but the tracking started, we want
-                            // to go to the ongoing_trip state anyway...
-                            if (locationTrackingPossible && batchResult.take(tokenList.get(2)).isSuccess()) {
+                if (locationTrackingPossible && resultList.get(2).isSuccessful()) {
                                 // the location tracking started successfully
                                 setNewState(fCtxt.getString(R.string.state_ongoing_trip));
                             } else {
                                 setNewState(fCtxt.getString(R.string.state_start));
                             }
-                        } else {
                             // NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                             //         "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
                             // this will perform some additional checks which we should wait for
-                            // let's mark this operation as done since the other one is static
-                            markOngoingOperationFinished();
-                            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.failed_moving_new_state,newState));
-                    }
-                    } // all three branches have called setState or are waiting for sth else
-                } // onResult function end
-            }); // result callback inner class end
+              } // both branches have called setState or are waiting for sth else
+            }); // listener end
             return; // handled the transition, returning
         }
 
         if(actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Delete geofence
-            deleteGeofence(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
+            deleteGeofence(ctxt, ctxt.getString(R.string.state_tracking_stopped));
             return;
             // when this completes, it should generate transitions and move to the final state
         }
@@ -448,7 +311,7 @@ public class TripDiaryStateMachineService extends Service implements
                     "Location tracking turned off. Please turn on for emission to work properly");
                     */
             Log.i(this, TAG, "Got tracking_error moving to start state");
-            deleteGeofence(ctxt, mApiClient, ctxt.getString(R.string.state_start));
+            deleteGeofence(ctxt, ctxt.getString(R.string.state_start));
             return;
             // when this completes, it should generate transitions and move to the final state
         }
@@ -458,7 +321,7 @@ public class TripDiaryStateMachineService extends Service implements
         setNewState(mCurrState);
     }
 
-    public void handleTripEnd(final Context ctxt, final GoogleApiClient apiClient, final String actionString) {
+    public void handleTripEnd(final Context ctxt, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripEnd(" + actionString + ") called");
 
         if (actionString.equals(ctxt.getString(R.string.transition_stopped_moving))) {
@@ -467,20 +330,18 @@ public class TripDiaryStateMachineService extends Service implements
                 @Override
                 public void run() {
                     System.out.println("Running in new thread!!");
-            final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-            Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-            tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
-            tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).stop()));
+            final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
+            tokenList.add(new LocationTrackingActions(ctxt).stop());
+            tokenList.add(new ActivityRecognitionActions(ctxt).stop());
                     // TODO: change once we move to chained promises
-            PendingResult<Status> createGeofenceResult = new GeofenceActions(ctxt, apiClient).create();
+            Task<Void> createGeofenceResult = new GeofenceActions(ctxt).create();
             if (createGeofenceResult != null) {
-                tokenList.add(resultBarrier.add(createGeofenceResult));
+                tokenList.add(createGeofenceResult);
             }
                     final boolean geofenceCreationPossible = createGeofenceResult != null;
             final Context fCtxt = ctxt;
-            resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-                @Override
-                public void onResult(BatchResult batchResult) {
+            Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
+                List<Task<?>> resultList = task.getResult();
                             String newState;
                             if (geofenceCreationPossible) {
                                 newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
@@ -491,7 +352,7 @@ public class TripDiaryStateMachineService extends Service implements
                                 // out of it at every sync.
                                 newState = fCtxt.getString(R.string.state_start);
                             }
-                    if (batchResult.getStatus().isSuccess()) {
+                if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                         stopService(getForegroundServiceIntent());
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -499,40 +360,28 @@ public class TripDiaryStateMachineService extends Service implements
                         }
                         setNewState(newState);
                     } else {
-                        if (batchResult.getStatus().hasResolution()) {
-                            NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                    fCtxt.getResources().getString(R.string.error_creating_geofence, batchResult.getStatus().getStatusCode()),
-                                    batchResult.getStatus().getResolution());
-                            // we should set something here to stop the service since our async call
-                            // is complete and since we already have a resolution, we are not going to do anything more
-                            // but the set value depends on the result if the geofence creation failed, we
-                            // want to go to the start state, but if the location tracking stop failed,
-                            // we want to stay in the ongoing trip state
-                            if (!batchResult.take(tokenList.get(0)).isSuccess()) {
+                        if (!resultList.get(0).isSuccessful()) {
                                 // the location tracking stop failed
                                 setNewState(fCtxt.getString(R.string.state_ongoing_trip));
                             } else if (geofenceCreationPossible &&
-                                    batchResult.take(tokenList.get(2)).isSuccess()) {
+                            resultList.get(2).isSuccessful()) {
                                 setNewState(fCtxt.getString(R.string.state_waiting_for_trip_start));
                             } else {
                                 // geofence creation is not possible or it failed but location tracking
                                 // did successfully stop. Let's go to the start state
                                 setNewState(fCtxt.getString(R.string.state_start));
                             }
-                        } else {
                             // NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                             //        "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
                             // let's mark this operation as done since the other one is static
-                            markOngoingOperationFinished();
-                            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
+                        // markOngoingOperationFinished();
+                            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                             // will wait for async call to complete
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
-                    }
-                }
             });
         }
             }).start();
@@ -540,7 +389,7 @@ public class TripDiaryStateMachineService extends Service implements
         }
 
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
-            stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
+            stopAll(ctxt, ctxt.getString(R.string.state_tracking_stopped));
             return;
             // will wait for stopAll to set the state
         }
@@ -552,7 +401,7 @@ public class TripDiaryStateMachineService extends Service implements
                     */
             Log.i(this, TAG, "Got tracking_error moving to start state");
             // should I stop everything? maybe to be consistent with the start state
-            stopAll(this, mApiClient, ctxt.getString(R.string.state_start));
+            stopAll(this, ctxt.getString(R.string.state_start));
             return;
             // ditto
         }
@@ -562,7 +411,7 @@ public class TripDiaryStateMachineService extends Service implements
         setNewState(mCurrState);
     }
 
-    private void handleTrackingStopped(final Context ctxt, final GoogleApiClient apiClient, String actionString) {
+    private void handleTrackingStopped(final Context ctxt, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
@@ -574,7 +423,7 @@ public class TripDiaryStateMachineService extends Service implements
             // but let's just stop them all again anyway to make sure that
             // they are really stopped and to provide a backstop for any
             // error conditions
-            stopAll(ctxt, apiClient, ctxt.getString(R.string.state_tracking_stopped));
+            stopAll(ctxt, ctxt.getString(R.string.state_tracking_stopped));
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
             }
@@ -589,14 +438,13 @@ public class TripDiaryStateMachineService extends Service implements
       *
      */
 
-    private void createGeofenceInThread(final Context ctxt, final GoogleApiClient apiClient,
+    private void createGeofenceInThread(final Context ctxt,
                                         String actionString) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 System.out.println("Running in new thread!!");
                 final Context fCtxt = ctxt;
-                final GoogleApiClient fApiClient = apiClient;
                 // TODO: Ideally, new GeofenceActions would return a chained pending result.
                 // Then, we would just wait for the combined result callback and all would be well
                 // But it looks like the pending result chaining is not supported in the current
@@ -606,102 +454,78 @@ public class TripDiaryStateMachineService extends Service implements
                 // one callback for the first and two for the second.
                 // So for now, we punt and simply start the geofence creation in a separate
                 // (non-UI thread). Revisit this later once chaining is supported.
-                com.google.android.gms.common.api.PendingResult<Status> createGeofenceResult =
-                        new GeofenceActions(ctxt, apiClient).create();
+                Task<Void> createGeofenceResult =
+                        new GeofenceActions(ctxt).create();
                 if (createGeofenceResult != null) {
-                    createGeofenceResult.setResultCallback(new ResultCallback<Status>() {
-                        @Override
-                        public void onResult(Status status) {
+                    createGeofenceResult.addOnCompleteListener(task -> {
                             String newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
-                            if (status.isSuccess()) {
+                            if (task.isSuccessful()) {
                                 setNewState(newState);
                                 if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                                 fCtxt.getString(R.string.success_moving_new_state, newState));
                                 }
                             } else {
-                                if (status.hasResolution()) {
-                                    NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                            fCtxt.getResources().getString(R.string.error_creating_geofence, status.getStatusCode()), 
-                                            status.getResolution());
-                                    // we have a resolution so we will exit the service now
                                     setNewState(mCurrState);
-                                } else {
                                     // NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     //        "Error " + status.getStatusCode()+" while creating geofence");
                                     // let's mark this operation as done since the other one is static
-                                    markOngoingOperationFinished();
-                                    checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
+                                    // markOngoingOperationFinished();
+                                    checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                             fCtxt.getString(R.string.failed_moving_new_state, newState));
                                 }
-                            }
-                        }
                     });
                 } else {
                     // Geofence was not created properly. let's make an async call that will generate its
                     // own state change
                     // let's mark this operation as done since the other one is static
-                    markOngoingOperationFinished();
-                    checkLocationSettingsAndPermissions(fCtxt, fApiClient);
+                    // markOngoingOperationFinished();
+                    checkLocationSettingsAndPermissions(fCtxt);
                 }
             }
         }).start();
     }
 
-    private void deleteGeofence(Context ctxt, GoogleApiClient apiClient, final String targetState) {
-            final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-            Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-        tokenList.add(resultBarrier.add(new GeofenceActions(ctxt, apiClient).remove()));
+    private void deleteGeofence(Context ctxt, final String targetState) {
+        final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
+        tokenList.add(new GeofenceActions(ctxt).remove());
             final Context fCtxt = ctxt;
-            resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-                @Override
-                public void onResult(BatchResult batchResult) {
+            Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
+              List<Task<?>> resultList = task.getResult();
                     String newState = targetState;
-                    if (batchResult.getStatus().isSuccess()) {
+                    if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                         setNewState(newState);
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                     } else {
-                    if (batchResult.getStatus().hasResolution()) {
-                        NotificationHelper.createResolveNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getResources().getString(R.string.error_creating_geofence, batchResult.getStatus().getStatusCode()),
-                                batchResult.getStatus().getResolution());
                             setNewState(mCurrState);
-                    } else {
-                        // NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                        //         "Error " + batchResult.getStatus().getStatusCode() + " while creating geofence");
-                        // let's mark this operation as done since the other one is static
-                        markOngoingOperationFinished();
-                        checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this, mApiClient);
+                        // markOngoingOperationFinished();
+                        checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
-                    }
-                }
             });
     }
 
-    private void stopAll(Context ctxt, GoogleApiClient apiClient, final String targetState) {
+    private void stopAll(Context ctxt, final String targetState) {
             // We don't really care about any other transitions, but if we are getting random transitions
             // in this state, may be good to turn everything off
-            final List<BatchResultToken<Status>> tokenList = new LinkedList<BatchResultToken<Status>>();
-            Batch.Builder resultBarrier = new Batch.Builder(apiClient);
-            tokenList.add(resultBarrier.add(new GeofenceActions(ctxt, apiClient).remove()));
-            tokenList.add(resultBarrier.add(new LocationTrackingActions(ctxt, apiClient).stop()));
-            tokenList.add(resultBarrier.add(new ActivityRecognitionActions(ctxt, apiClient).stop()));
+            final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
+            tokenList.add(new GeofenceActions(ctxt).remove());
+            tokenList.add(new LocationTrackingActions(ctxt).stop());
+            tokenList.add(new ActivityRecognitionActions(ctxt).stop());
             final Context fCtxt = ctxt;
-            resultBarrier.build().setResultCallback(new ResultCallback<BatchResult>() {
-                @Override
-                public void onResult(BatchResult batchResult) {
+            Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
+              List<Task<?>> resultList = task.getResult();
                     String newState = targetState;
-                    if (batchResult.getStatus().isSuccess()) {
+                    if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                         stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -714,24 +538,23 @@ public class TripDiaryStateMachineService extends Service implements
                                 fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
 
-                        if (!batchResult.take(tokenList.get(1)).isSuccess()) {
+                        if (!resultList.get(1).isSuccessful()) {
                             // the location tracking stop failed
                             setNewState(fCtxt.getString(R.string.state_ongoing_trip));
                         } else {
                             setNewState(newState);
                         }
                     }
-                }
             });
         }
 
-        public static void checkLocationSettingsAndPermissions(final Context ctxt, final GoogleApiClient apiClient) {
-        LocationRequest request = new LocationTrackingActions(ctxt, apiClient).getLocationRequest();
+        public static void checkLocationSettingsAndPermissions(final Context ctxt) {
+        LocationRequest request = new LocationTrackingActions(ctxt).getLocationRequest();
             Log.d(ctxt, TAG, "Checking location settings and permissions for request "+request);
             // let's do the permission check first since it is synchronous
-            if (checkLocationPermissions(ctxt, apiClient, request)) {
+            if (checkLocationPermissions(ctxt, request)) {
                 Log.d(ctxt, TAG, "checkPermissions returned true, checking settings");
-                checkLocationSettings(ctxt, apiClient, request);
+                checkLocationSettings(ctxt, request);
                 // final state will be set in this async call
             } else {
                 Log.d(ctxt, TAG, "checkPermissions returned false, no point checking settings");
@@ -740,7 +563,6 @@ public class TripDiaryStateMachineService extends Service implements
         }
 
         public static boolean checkLocationPermissions(final Context ctxt,
-                                                       final GoogleApiClient apiClient,
                                                        final LocationRequest request) {
             // Ideally, we would use the request accuracy to figure out the permissions requested
             // but I can't find an authoritative mapping, and I'm running out of time for
@@ -765,52 +587,60 @@ public class TripDiaryStateMachineService extends Service implements
                         pi);
         }
 
+    protected static boolean isAllSuccessful(List<Task<?>> taskList) {
+      boolean result = true;
+      for (Task t:taskList) {
+        result = result & t.isSuccessful();
+      }
+      return result;
+    }
+
     public static void checkLocationSettings(final Context ctxt,
-                                             final GoogleApiClient apiClient,
                                              final LocationRequest request) {
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
                 .addLocationRequest(request);
 
-        PendingResult<LocationSettingsResult> result =
-                LocationServices.SettingsApi.checkLocationSettings(apiClient, builder.build());
-        Log.d(ctxt, TAG, "Got back result "+result);
-        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
-            @Override
-            public void onResult(LocationSettingsResult result) {
-                Log.d(ctxt, TAG, "isLocationUsable() "+result.getLocationSettingsStates().isLocationUsable());
-                final Status status = result.getStatus();
-                switch (status.getStatusCode()) {
-                    case LocationSettingsStatusCodes.SUCCESS:
+        Task<LocationSettingsResponse> task =
+                LocationServices.getSettingsClient(ctxt).checkLocationSettings(builder.build());
+        Log.d(ctxt, TAG, "Got back result "+task);
+        task.addOnCompleteListener(resultTask -> {
+          try {
+            LocationSettingsResponse response = task.getResult(ApiException.class);
                         // All location settings are satisfied. The client can initialize location
                         // requests here.
                         Log.i(ctxt, TAG, "All settings are valid, checking current state");
+            Log.i(ctxt, TAG, "Current location settings are "+response);
                         NotificationHelper.cancelNotification(ctxt, Constants.TRACKING_ERROR_ID);
                         restartFSMIfStartState(ctxt);
-                        break;
+          } catch (ApiException exception) {
+            switch (exception.getStatusCode()) {
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                        // Location settings are not satisfied. But could be fixed by showing the user
-                        // a dialog.
-                        if (status.hasResolution()) {
+                // Location settings are not satisfied. But could be fixed by showing the
+                // user a dialog.
+                try {
+                  // Cast to a resolvable exception.
+                  ResolvableApiException resolvable = (ResolvableApiException) exception;
+                  // Show the dialog by calling startResolutionForResult(),
+                  // and check the result in onActivityResult().
                             NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    ctxt.getString(R.string.error_location_settings, status.getStatusCode()),
-                                    status.getResolution());
-                        } else {
-                            NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    ctxt.getString(R.string.error_location_settings, status.getStatusCode()));
+                    ctxt.getString(R.string.error_location_settings, exception.getStatusCode()),
+                    resolvable.getResolution());
+                } catch (ClassCastException e) {
+                  // Ignore, should be an impossible error.
                         }
-                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    ctxt.getString(R.string.error_location_settings, status.getStatusCode()));
+                  ctxt.getString(R.string.error_location_settings, exception.getStatusCode()));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         break;
                     default:
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     ctxt.getString(R.string.unknown_error_location_settings));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
+
                 }
             }
         });

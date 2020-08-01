@@ -2,6 +2,8 @@ package edu.berkeley.eecs.emission.cordova.tracker.location;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 // import com.google.android.gms.location.LocationClient;
 
@@ -26,6 +28,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
 
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationAvailability;
+import com.google.android.gms.location.LocationResult;
 
 public class LocationChangeIntentService extends IntentService {
 	private static final String TAG = "LocationChangeIntentService";
@@ -75,9 +78,9 @@ public class LocationChangeIntentService extends IntentService {
          */
         PollSensorManager.getAndSaveAllValues(this);
 
-		Location loc = (Location)intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+		List<Location> locList = LocationResult.hasResult(intent)? LocationResult.extractResult(intent).getLocations() : null;
 		LocationAvailability locationAvailability = LocationAvailability.extractLocationAvailability(intent);
-        Log.d(this, TAG, "Read location "+loc+" from intent");
+		Log.d(this, TAG, "Read locations "+locList+" from intent");
 		if (locationAvailability != null) {
 			Log.d(this, TAG, "availability = "+locationAvailability.isLocationAvailable());
 			if (!locationAvailability.isLocationAvailable()) {
@@ -94,10 +97,12 @@ public class LocationChangeIntentService extends IntentService {
 		see http://stackoverflow.com/questions/29960981/why-does-android-fusedlocationproviderapi-requestlocationupdates-send-updates-wi
 		 */
 
-		if (loc == null) return;
+		if (locList == null) return;
 
+		for (Location loc: locList) {
         SimpleLocation simpleLoc = new SimpleLocation(loc);
         uc.putSensorData(R.string.key_usercache_location, simpleLoc);
+    }
 
 		/*
 		 * If we are going to read data continuously and never stop, then we don't need to read any
@@ -137,8 +142,12 @@ public class LocationChangeIntentService extends IntentService {
         SimpleLocation[] points5MinsAgo = uc.getSensorDataForInterval(R.string.key_usercache_filtered_location,
                 tq, SimpleLocation.class);
 
-        boolean validPoint = false;
+        List<Location> validLocList = new LinkedList<Location>();
+        List<SimpleLocation> validSimpleLocList = new ArrayList<SimpleLocation>();
 
+        for (Location loc: locList) {
+          boolean validPoint = false;
+          SimpleLocation simpleLoc = new SimpleLocation(loc);
         if (loc.getAccuracy() < ACCURACY_THRESHOLD) {
             if (last10Points.length == 0) {
                 // Insert at least one entry before we can start comparing for duplicates
@@ -159,6 +168,9 @@ public class LocationChangeIntentService extends IntentService {
 
         if (validPoint) {
             uc.putSensorData(R.string.key_usercache_filtered_location, simpleLoc);
+            validLocList.add(loc);
+            validSimpleLocList.add(simpleLoc);
+          }
         }
 
 		double lastTransitionTs = ((BuiltinUserCache)uc).getTsOfLastTransition();
@@ -167,11 +179,11 @@ public class LocationChangeIntentService extends IntentService {
 
         // We will check whether the trip ended only when the point is valid.
         // Otherwise, we might end up with the duplicates triggering trip ends.
-		if (validPoint && isTripEnded(last10Points, points5MinsAgo, tripEndSecs)) {
+		if (validLocList.size() > 0 && isTripEnded(last10Points, points5MinsAgo, tripEndSecs)) {
 			// Stop listening to more updates
 			Intent stopMonitoringIntent = new Intent();
 			stopMonitoringIntent.setAction(getString(R.string.transition_stopped_moving));
-			stopMonitoringIntent.putExtra(FusedLocationProviderApi.KEY_LOCATION_CHANGED, loc);
+			// stopMonitoringIntent.putExtra(FusedLocationProviderApi.KEY_LOCATION_CHANGED, validLocList.get(0));
 			sendBroadcast(new ExplicitIntent(this, stopMonitoringIntent));
             Log.d(this, TAG, "Finished broadcasting state change to receiver, ending trip now");
             // DataUtils.endTrip(this);
