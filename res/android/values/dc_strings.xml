@@ -27,6 +27,7 @@
     <string name="error_creating_geofence">Error %1$d while creating geofence</string>
     <string name="failed_moving_new_state">Failed moving to %1$s</string>
     <string name="location_permission_off_enable">Location permission off, click to enable</string>
+    <string name="background_loc_permission_off_enable">Background location permission off, click to enable</string>
     <string name="error_location_settings">Error %1$d in location settings</string>
     <string name="unknown_error_location_settings">Unknown error while reading location, please check your settings</string>
     <!-- ConfigManager -->
