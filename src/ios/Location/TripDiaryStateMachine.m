@@ -353,6 +353,9 @@ static NSString * const kCurrState = @"CURR_STATE";
             [self syncAndNotify];
         }
     } else if ([transition isEqualToString:CFCTransitionVisitStarted]) {
+        if ([self isInvalidVisitStart]) {
+            return;
+        }
         if ([ConfigManager instance].is_duty_cycling) {
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             [self forceRefreshToken];
@@ -460,6 +463,40 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                showUI:TRUE];
         }
     }];
+}
+
+/*
+ Check to see if this is a spurious entry that is within one minute of a
+ VISIT_ENDED notification
+ More details: https://github.com/e-mission/e-mission-docs/issues/372
+ and Figure 7.3 (top) and Table 7.4 of Shankari's thesis
+ */
+- (bool) isInvalidVisitStart
+{
+    NSArray* lastTwoTransitions = [[BuiltinUserCache database]
+                               getLastMessage:@"key.usercache.transition" nEntries:2
+                               wrapperClass:[ Transition class]];
+    long transCount = [lastTwoTransitions count];
+    if (transCount < 2) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Checking invalid visit started transition: found %lu prior transitions, returning false", transCount]];
+        return false;
+    }
+    Transition *visitStartT = lastTwoTransitions[0];
+    Transition *visitEndT = lastTwoTransitions[1];
+    
+    if ([visitStartT.transition isEqualToString:CFCTransitionVisitStarted] &&
+        [visitEndT.transition isEqualToString:CFCTransitionVisitEnded]) {
+        // Now let's check the timestamps
+        double deltaTs = visitStartT.ts - visitEndT.ts;
+        if (deltaTs < 60) { // 60 secs = 1 minute
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Invalid visit started transition: visitStartT.transition = %@, visitEndT.transition = %@,deltaTs = %f", visitStartT.transition, visitEndT.transition, deltaTs]
+                                               showUI:FALSE];
+            return true;
+        }
+    }
+    return false;
 }
 
 /*
