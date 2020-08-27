@@ -421,8 +421,8 @@ public class TripDiaryStateMachineService extends Service {
             // they are really stopped and to provide a backstop for any
             // error conditions
             stopAll(ctxt, ctxt.getString(R.string.state_tracking_stopped));
-        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
-            Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
+            if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+                Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
             }
             return;
         }
@@ -643,18 +643,18 @@ public class TripDiaryStateMachineService extends Service {
             switch (exception.getStatusCode()) {
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                       Log.i(ctxt, TAG, "location settings are not valid, but could be fixed by showing the user a dialog");
-                // Location settings are not satisfied. But could be fixed by showing the
-                // user a dialog.
-                try {
-                  // Cast to a resolvable exception.
-                  ResolvableApiException resolvable = (ResolvableApiException) exception;
-                  // Show the dialog by calling startResolutionForResult(),
-                  // and check the result in onActivityResult().
-                            NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                    ctxt.getString(R.string.error_location_settings, exception.getStatusCode()),
-                    resolvable.getResolution());
-                } catch (ClassCastException e) {
-                  // Ignore, should be an impossible error.
+                      // Location settings are not satisfied. But could be fixed by showing the
+                      // user a dialog.
+                      try {
+                          // Cast to a resolvable exception.
+                          ResolvableApiException resolvable = (ResolvableApiException) exception;
+                          // Show the dialog by calling startResolutionForResult(),
+                          // and check the result in onActivityResult().
+                                    NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                            ctxt.getString(R.string.error_location_settings, exception.getStatusCode()),
+                            resolvable.getResolution());
+                        } catch (ClassCastException e) {
+                          // Ignore, should be an impossible error.
                         }
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
