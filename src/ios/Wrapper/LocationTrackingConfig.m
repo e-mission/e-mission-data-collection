@@ -10,7 +10,7 @@
 #import "BEMBuiltinUserCache.h"
 #import <CoreLocation/CoreLocation.h>
 
-#define kFiveMeters 1 // in meters
+#define kOneMeter 1 // in meters
 #define kFiveMeters 5 // in meters
 #define kFifty_Meters 50 // in meters
 #define kHundred_Meters 100 // in meters
