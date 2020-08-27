@@ -30,14 +30,12 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(this, TAG, "onStartCommand called with intent "+intent+" flags "+flags+" startId "+startId);
-		TripDiaryStateMachineForegroundService.handleStart(this, this.getString(R.string.recording_activity), intent, flags, startId);
 		return super.onStartCommand(intent, flags, startId);
 	}
 
 	@Override
 	public void onDestroy() {
 		Log.d(this, TAG, "onDestroy called");
-		TripDiaryStateMachineForegroundService.handleDestroy(this);
 		super.onDestroy();
 	}
 

@@ -31,6 +31,7 @@ import java.util.Map;
 
 import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
@@ -59,7 +60,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 new StatsEvent(myActivity, R.string.app_launched));
 
         TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
-        TripDiaryStateMachineReceiver.startForegroundIfNeeded(myActivity);
     }
 
     @Override
@@ -74,6 +74,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             JSONObject newConsent = data.getJSONObject(0);
             ConsentConfig cfg = new Gson().fromJson(newConsent.toString(), ConsentConfig.class);
             ConfigManager.setConsented(ctxt, cfg);
+            TripDiaryStateMachineForegroundService.startProperly(cordova.getActivity().getApplication());
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
             // user deleted the consent and re-consented, but didn't upgrade the app
@@ -290,5 +291,4 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
         }
     }
-
 }

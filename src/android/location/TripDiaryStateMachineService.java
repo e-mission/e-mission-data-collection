@@ -66,6 +66,7 @@ public class TripDiaryStateMachineService extends Service {
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
+    private ForegroundServiceComm mComm = null;
 
     public TripDiaryStateMachineService() {
         super();
@@ -74,6 +75,7 @@ public class TripDiaryStateMachineService extends Service {
     @Override
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
+        mComm = new ForegroundServiceComm(this);
         /*
          * Need to initialize once per create.
          */
@@ -82,7 +84,7 @@ public class TripDiaryStateMachineService extends Service {
     @Override
     public void onDestroy() {
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
-        TripDiaryStateMachineForegroundService.handleDestroy(this);
+        mComm.unbind();
     }
 
     @Override
@@ -94,7 +96,6 @@ public class TripDiaryStateMachineService extends Service {
     public int onStartCommand(Intent intent,  int flags, int startId) {
         Log.d(this, TAG, "service started with flags = "+flags+" startId = "+startId
                 +" action = "+intent.getAction());
-        TripDiaryStateMachineForegroundService.handleStart(this, "Controlling trip finite state machine (FSM)", intent, flags, startId);
         if (flags == Service.START_FLAG_REDELIVERY) {
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
@@ -146,6 +147,7 @@ public class TripDiaryStateMachineService extends Service {
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
+        mComm.setMessage(this.getString(R.string.notify_curr_state, newState));
         // Let's check the location settings every time we change the state instead of only on failure
         // This makes the rest of the code much simpler, allows us to catch issues as quickly as possible,
         // and
@@ -153,10 +155,6 @@ public class TripDiaryStateMachineService extends Service {
             checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
         }
         stopSelf();
-    }
-
-    private Intent getForegroundServiceIntent() {
-        return new Intent(this, TripDiaryStateMachineForegroundService.class);
     }
 
     /*
@@ -274,9 +272,6 @@ public class TripDiaryStateMachineService extends Service {
                         newState = fCtxt.getString(R.string.state_start);
                     }
               if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
-                        if (locationTrackingPossible) {
-                        startService(getForegroundServiceIntent());
-                        }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
@@ -356,7 +351,6 @@ public class TripDiaryStateMachineService extends Service {
                                 newState = fCtxt.getString(R.string.state_start);
                             }
                 if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
-                        stopService(getForegroundServiceIntent());
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
@@ -469,12 +463,14 @@ public class TripDiaryStateMachineService extends Service {
                                                 fCtxt.getString(R.string.success_moving_new_state, newState));
                                 }
                             } else {
+                                    Log.e(fCtxt, TAG, "error while creating geofence, staying in the current state");
+                                    Log.exception(fCtxt, TAG, task.getException());
                                     setNewState(mCurrState, true);
+
                                     // NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     //        "Error " + status.getStatusCode()+" while creating geofence");
                                     // let's mark this operation as done since the other one is static
                                     // markOngoingOperationFinished();
-                                    checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -529,7 +525,6 @@ public class TripDiaryStateMachineService extends Service {
               List<Task<?>> resultList = task.getResult();
                     String newState = targetState;
                     if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
-                        stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
@@ -545,7 +540,7 @@ public class TripDiaryStateMachineService extends Service {
                             // the location tracking stop failed
                             setNewState(fCtxt.getString(R.string.state_ongoing_trip), true);
                         } else {
-                            setNewState(newState, true);
+                            setNewState(newState, false);
                         }
                     }
             });
@@ -647,6 +642,7 @@ public class TripDiaryStateMachineService extends Service {
           } catch (ApiException exception) {
             switch (exception.getStatusCode()) {
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                      Log.i(ctxt, TAG, "location settings are not valid, but could be fixed by showing the user a dialog");
                 // Location settings are not satisfied. But could be fixed by showing the
                 // user a dialog.
                 try {
@@ -664,11 +660,13 @@ public class TripDiaryStateMachineService extends Service {
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way to fix the
                         // settings so we won't show the dialog.
+                        Log.i(ctxt, TAG, "location settings are not valid, but cannot be fixed by showing a dialog");
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                   ctxt.getString(R.string.error_location_settings, exception.getStatusCode()));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         break;
                     default:
+                        Log.i(ctxt, TAG, "unkown error reading location");
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
                                     ctxt.getString(R.string.unknown_error_location_settings));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
@@ -677,4 +675,5 @@ public class TripDiaryStateMachineService extends Service {
             }
         });
     }
+
 }

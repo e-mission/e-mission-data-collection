@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.Nullable;
@@ -20,64 +21,96 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
  * Created by shankari on 1/30/18
  * as a hopefully short-to-medium term workaround for
  * https://github.com/e-mission/e-mission-data-collection/issues/164
+ *
+ * As background restrictions grow, this service is gaining in importance.
+ * It is now created from user interaction components only:
+ * - on consent
+ * - on tracking on/off
+ * - for the rest of the time, it receives messages from the FSM that it reflects in the notification message
  */
 
 public class TripDiaryStateMachineForegroundService extends Service {
     private static String TAG = "TripDiaryStateMachineForegroundService";
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    private static final int ONGOING_TRIP_ID = 6646464;
+    private final IBinder mBinder = new LocalBinder();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(this, TAG, "onStartCommand called with flags = " + flags +
-                " and startId = " + startId);
-        handleStart(this, this.getString(R.string.trip_tracking_started), intent, flags, startId);
-
+        Log.d(this, TAG, "onStartCommand called with intent = "+intent+
+          " flags = " + flags +  " and startId = " + startId);
+        String message  = this.getString(R.string.trip_tracking_started);
+        if (intent == null) {
+          message = this.getString(R.string.error_location_settings, -1);
+          TripDiaryStateMachineService.checkLocationSettingsAndPermissions(this);
+        }
+        handleStart(message, intent, flags, startId);
         // We want this service to continue running until it is explicitly
         // stopped, so return sticky.
         return START_STICKY;
     }
 
-    public static void handleStart(Service srv, String msg, Intent intent, int flags, int startId) {
+    /*
+     * This is currently the only foreground service in the app and will remain running until
+     * the user turns tracking off.
+     */
+    private void handleStart(String msg, Intent intent, int flags, int startId) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(srv, TAG, "onStartCommand called on oreo+, starting foreground service");
+            Log.d(this, TAG, "onStartCommand called on oreo+, with msg "+ msg + " starting foreground service");
             // Go to the foreground with a dummy notification
-            NotificationManager nMgr = (NotificationManager)srv.getSystemService(Context.NOTIFICATION_SERVICE);
-            Notification.Builder builder = NotificationHelper.getNotificationBuilderForApp(srv,
-                    nMgr, msg);
-            builder.setOngoing(true);
-
-            Intent activityIntent = new Intent(srv, MainActivity.class);
-            activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-            PendingIntent activityPendingIntent = PendingIntent.getActivity(srv, 0,
-                    activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            builder.setContentIntent(activityPendingIntent);
-
-
-            int ONGOING_TRIP_ID = 6646464;
-            srv.startForeground(ONGOING_TRIP_ID, builder.build());
+            this.startForeground(ONGOING_TRIP_ID, getNotification(msg));
         } else {
-            Log.d(srv, TAG, "onStartCommand called on pre-oreo, ignoring");
+            Log.d(this, TAG, "onStartCommand called on pre-oreo, ignoring");
         }
     }
 
     @Override
     public void onDestroy() {
+        Log.d(this, TAG, "onDestroy called for foreground service");
         handleDestroy(this);
     }
 
-    public static void handleDestroy(Service srv) {
+    private void handleDestroy(Service srv) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(srv, TAG, "onDestroy called, removing notification");
             srv.stopForeground(true);
         } else {
             Log.d(srv, TAG, "onDestroy called on pre-oreo, ignoring");
         }
+    }
+
+  public class LocalBinder extends Binder {
+    TripDiaryStateMachineForegroundService getService() {
+      return TripDiaryStateMachineForegroundService.this;
+    }
+  }
+
+  @Nullable
+  @Override
+  public IBinder onBind(Intent intent) {
+    Log.d(this, TAG, "onBind called with intent "+intent);
+    return mBinder;
+  }
+
+  public void setStateMessage(String message) {
+    NotificationManager nMgr = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
+    nMgr.notify(ONGOING_TRIP_ID, getNotification(message));
+  }
+
+
+
+  private Notification getNotification(String msg) {
+      NotificationManager nMgr = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
+      Notification.Builder builder = NotificationHelper.getNotificationBuilderForApp(this,
+        nMgr, msg);
+      builder.setOngoing(true);
+
+      Intent activityIntent = new Intent(this, MainActivity.class);
+      activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+      PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
+        activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      builder.setContentIntent(activityPendingIntent);
+      return builder.build();
     }
 
     /*
@@ -89,10 +122,18 @@ public class TripDiaryStateMachineForegroundService extends Service {
      */
 
     public static PendingIntent getProperPendingIntent(Context ctxt, Intent innerIntent) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return PendingIntent.getForegroundService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        } else {
-            return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        }
+        return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    public static void startProperly(Context ctxt) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ctxt.startForegroundService(getForegroundServiceIntent(ctxt));
+      } else {
+        ctxt.startService(getForegroundServiceIntent(ctxt));
+      }
+    }
+
+    private static Intent getForegroundServiceIntent(Context ctxt) {
+      return new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.4.5">
+        version="1.5.0">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -127,6 +127,7 @@
     <source-file src="src/android/GooglePlayChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/ConfigManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/location/ActivityRecognitionChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/ForegroundServiceComm.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/GeofenceExitIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/LocationChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/TripDiaryStateMachineReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>

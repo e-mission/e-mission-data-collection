@@ -103,18 +103,13 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                     return;
                 }
             }
+            TripDiaryStateMachineForegroundService.startProperly(context);
         }
 
         // we should only get here if the user has consented
         Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.i(context, TAG, "build is O+, using startForegroundService");
-            context.startForegroundService(serviceStartIntent);
-        } else {
-            Log.i(context, TAG, "build is < 0, using startService");
         context.startService(serviceStartIntent);
-    }
     }
 
     public static void performPeriodicActivity(Context ctxt) {
@@ -184,15 +179,6 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             prefsEditor.commit();
         } else {
             Log.d(ctxt, TAG, "Setup complete, skipping initialize");
-        }
-    }
-
-    public static void startForegroundIfNeeded(Context ctxt) {
-        Log.d(ctxt, TAG, "checking to see whether to start foreground service");
-        if(TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_ongoing_trip))) {
-           Log.d(ctxt, TAG, "app restarted while in the ongoing state, starting foreground service ASAP");
-           Intent foregroundServiceIntent = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
-           ctxt.startService(foregroundServiceIntent);
         }
     }
 
