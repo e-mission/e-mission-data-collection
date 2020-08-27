@@ -228,7 +228,9 @@ public class TripDiaryStateMachineService extends Service {
 
         // if we got here, this must be a transition that we don't handle
         Log.i(this, TAG, "Found unhandled transition "+actionString+" staying in current state ");
-        setNewState(mCurrState, true);
+        boolean checkSettings = !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped));
+        Log.i(this, TAG, "curr state = "+mCurrState+" checkSettings = "+checkSettings);
+        setNewState(mCurrState, checkSettings);
     }
 
     public void handleTripStart(Context ctxt, final String actionString) {
@@ -653,6 +655,7 @@ public class TripDiaryStateMachineService extends Service {
                                     NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
                             ctxt.getString(R.string.error_location_settings, exception.getStatusCode()),
                             resolvable.getResolution());
+                            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         } catch (ClassCastException e) {
                           // Ignore, should be an impossible error.
                         }
