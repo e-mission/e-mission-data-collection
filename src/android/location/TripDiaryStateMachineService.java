@@ -529,7 +529,7 @@ public class TripDiaryStateMachineService extends Service {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
-                        setNewState(newState, true);
+                        setNewState(newState, false);
                     } else {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -538,7 +538,7 @@ public class TripDiaryStateMachineService extends Service {
 
                         if (!resultList.get(1).isSuccessful()) {
                             // the location tracking stop failed
-                            setNewState(fCtxt.getString(R.string.state_ongoing_trip), true);
+                            setNewState(fCtxt.getString(R.string.state_ongoing_trip), false);
                         } else {
                             setNewState(newState, false);
                         }
