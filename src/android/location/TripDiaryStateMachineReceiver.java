@@ -22,6 +22,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
@@ -127,7 +128,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
     }
 
     public static void checkLocationStillAvailable(Context ctxt) {
-        TripDiaryStateMachineService.checkLocationSettingsAndPermissions(ctxt);
+        SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(ctxt);
     }
 
     public static void validateAndCleanupState(Context ctxt) {

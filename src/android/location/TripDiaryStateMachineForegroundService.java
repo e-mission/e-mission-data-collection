@@ -12,7 +12,7 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 
 import edu.berkeley.eecs.emission.MainActivity;
-
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
@@ -41,7 +41,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
         String message  = this.getString(R.string.trip_tracking_started);
         if (intent == null) {
           message = this.getString(R.string.error_location_settings, -1);
-          TripDiaryStateMachineService.checkLocationSettingsAndPermissions(this);
+          SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(this);
         }
         handleStart(message, intent, flags, startId);
         // We want this service to continue running until it is explicitly

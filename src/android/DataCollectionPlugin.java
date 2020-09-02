@@ -1,16 +1,14 @@
 package edu.berkeley.eecs.emission.cordova.tracker;
 
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CallbackContext;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -20,9 +18,7 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationSettingsStates;
 import com.google.gson.Gson;
 
 import java.util.Arrays;
@@ -32,29 +28,21 @@ import java.util.Map;
 import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
-import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlForegroundDelegate;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 public class DataCollectionPlugin extends CordovaPlugin {
     public static final String TAG = "DataCollectionPlugin";
-    public static String LOCATION_PERMISSION = Manifest.permission.ACCESS_FINE_LOCATION;
-    public static String BACKGROUND_LOC_PERMISSION = Manifest.permission.ACCESS_BACKGROUND_LOCATION;
-
-    public static final int ENABLE_LOCATION_SETTINGS = 362253738;
-    public static final int ENABLE_LOCATION_PERMISSION = 362253737;
-    public static final int ENABLE_BACKGROUND_LOC_PERMISSION = 362253739;
-    public static final int ENABLE_BOTH_PERMISSION = 362253740;
-
-    public static final String ENABLE_LOCATION_PERMISSION_ACTION = "ENABLE_LOCATION_PERMISSION";
-    public static final String ENABLE_BACKGROUND_LOC_PERMISSION_ACTION = "ENABLE_BACKGROUND_LOC_PERMISSION";
+    private SensorControlForegroundDelegate mControlDelegate = null;
 
     @Override
     public void pluginInitialize() {
+        mControlDelegate = new SensorControlForegroundDelegate(this, cordova);
         final Activity myActivity = cordova.getActivity();
         BuiltinUserCache.getDatabase(myActivity).putMessage(R.string.key_usercache_client_nav_event,
                 new StatsEvent(myActivity, R.string.app_launched));
@@ -78,7 +66,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
             // user deleted the consent and re-consented, but didn't upgrade the app
-            checkAndPromptPermissions();
+            mControlDelegate.checkAndPromptPermissions();
             // ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
@@ -150,42 +138,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
         return retVal;
     }
 
-    private void checkAndPromptPermissions() {
-        if(cordova.hasPermission(LOCATION_PERMISSION) && cordova.hasPermission(BACKGROUND_LOC_PERMISSION)) {
-            TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
-            return;
-        }
-        if(!cordova.hasPermission(LOCATION_PERMISSION) &&
-          (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) &&
-          !cordova.hasPermission(BACKGROUND_LOC_PERMISSION)) {
-          Log.i(cordova.getActivity(), TAG, "Both permissions missing, requesting both");
-          cordova.requestPermissions(this, ENABLE_BOTH_PERMISSION,
-            new String[]{LOCATION_PERMISSION, BACKGROUND_LOC_PERMISSION});
-          return;
-        }
-        if(!cordova.hasPermission(LOCATION_PERMISSION)) {
-            Log.i(cordova.getActivity(), TAG, "Only location permission missing, requesting it");
-            cordova.requestPermission(this, ENABLE_LOCATION_PERMISSION, LOCATION_PERMISSION);
-            return;
-        }
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(BACKGROUND_LOC_PERMISSION)) {
-            Log.i(cordova.getActivity(), TAG, "Only background permission missing, requesting it");
-            cordova.requestPermission(this, ENABLE_BACKGROUND_LOC_PERMISSION, BACKGROUND_LOC_PERMISSION);
-            return;
-        }
-    }
-
-    private void displayResolution(PendingIntent resolution) {
-        if (resolution != null) {
-            try {
-                cordova.setActivityResultCallback(this);
-                cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
-            } catch (IntentSender.SendIntentException e) {
-                Context mAct = cordova.getActivity();
-                NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, mAct.getString(R.string.unable_resolve_issue));
-            }
-        }
-    }
 
     @Override
     public void onNewIntent(Intent intent) {
@@ -193,102 +145,32 @@ public class DataCollectionPlugin extends CordovaPlugin {
         Log.d(mAct, TAG, "onNewIntent(" + intent.getAction() + ")");
         Log.d(mAct, TAG, "Found extras " + intent.getExtras());
 
-        if(ENABLE_LOCATION_PERMISSION_ACTION.equals(intent.getAction()) ||
-           ENABLE_BACKGROUND_LOC_PERMISSION_ACTION.equals(intent.getAction())) {
-            checkAndPromptPermissions();
-            return;
-        }
-        if (NotificationHelper.DISPLAY_RESOLUTION_ACTION.equals(intent.getAction())) {
-            PendingIntent piFromIntent = intent.getParcelableExtra(
-                    NotificationHelper.RESOLUTION_PENDING_INTENT_KEY);
-            displayResolution(piFromIntent);
-            return;
-        }
-        Log.i(mAct, TAG, "Action "+intent.getAction()+" unknown, ignoring ");
+        // this is will be NOP if we are not handling the right intent
+        mControlDelegate.onNewIntent(intent);
+        // This is where we can add other intent handlers
     }
 
     @Override
     public void onRequestPermissionResult(int requestCode, String[] permissions,
                                           int[] grantResults) throws JSONException
     {
-        Log.i(cordova.getActivity(), TAG, "onRequestPermissionResult called with "+requestCode);
-        Log.i(cordova.getActivity(), TAG, "permissions are "+ Arrays.toString(permissions));
-        Log.i(cordova.getActivity(), TAG, "grantResults are "+Arrays.toString(grantResults));
-        /*
-         Let us figure out if we want to sent a javascript callback with the error.
-         This is currently only called from markConsented, and I don't think we listen to failures there
-        for(int r:grantResults)
-        {
-            if(r == PackageManager.PERMISSION_DENIED)
-            {
-                this.callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, PERMISSION_DENIED_ERROR));
-                return;
-            }
-        }
-         */
-        switch(requestCode)
-        {
-          case ENABLE_BOTH_PERMISSION:
-            if ((grantResults[0] == PackageManager.PERMISSION_GRANTED) &&
-              (grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
-              NotificationHelper.cancelNotification(cordova.getActivity(), ENABLE_BOTH_PERMISSION);
-              TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
-            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-              TripDiaryStateMachineService.generateLocationEnableNotification(cordova.getActivity());
-            } else if (grantResults[1] == PackageManager.PERMISSION_DENIED) {
-              TripDiaryStateMachineService.generateBackgroundLocEnableNotification(cordova.getActivity());
-            }
-            break;
-            case ENABLE_LOCATION_PERMISSION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    NotificationHelper.cancelNotification(cordova.getActivity(), ENABLE_LOCATION_PERMISSION);
-                    TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
-                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                    TripDiaryStateMachineService.generateLocationEnableNotification(cordova.getActivity());
-                }
-                break;
-            case ENABLE_BACKGROUND_LOC_PERMISSION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    NotificationHelper.cancelNotification(cordova.getActivity(), ENABLE_BACKGROUND_LOC_PERMISSION);
-                    TripDiaryStateMachineService.restartFSMIfStartState(cordova.getActivity());
-                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                    TripDiaryStateMachineService.generateBackgroundLocEnableNotification(cordova.getActivity());
-                }
-                break;
-            default:
-                Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
-        }
+        // This will be a NOP if we are not requesting the right permission
+        mControlDelegate.onRequestPermissionResult(requestCode, permissions, grantResults);
+        // This is where we can add other permission callbacks
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(cordova.getActivity(), TAG, "received onActivityResult("+requestCode+","+
                 resultCode+","+data.getDataString()+")");
+        // This will be a NOP if we are not handling the correct activity intent
+                mControlDelegate.onActivityResult(requestCode, resultCode, data);
+        /*
+         This is where we would handle other cases for activity results
         switch (requestCode) {
-            case ENABLE_LOCATION_SETTINGS:
-                Activity mAct = cordova.getActivity();
-                Log.d(mAct, TAG, requestCode + " is our code, handling callback");
-                cordova.setActivityResultCallback(null);
-                final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
-                Log.d(cordova.getActivity(), TAG, "at this point, isLocationUsable = "+states.isLocationUsable());
-                switch (resultCode) {
-                    case Activity.RESULT_OK:
-                        // All required changes were successfully made
-                        Log.i(cordova.getActivity(), TAG, "All changes successfully made, reinitializing");
-                        NotificationHelper.cancelNotification(mAct, Constants.TRACKING_ERROR_ID);
-                        TripDiaryStateMachineService.restartFSMIfStartState(mAct);
-                        break;
-                    case Activity.RESULT_CANCELED:
-                        // The user was asked to change settings, but chose not to
-                        Log.e(cordova.getActivity(), TAG, "User chose not to change settings, dunno what to do");
-                        break;
-                    default:
-                        Log.e(cordova.getActivity(), TAG, "Unknown result code while enabling location "+resultCode);
-                        break;
-                }
-                break;
             default:
                 Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
         }
+         */
     }
 }

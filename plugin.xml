@@ -142,6 +142,9 @@
     <source-file src="src/android/sensors/BatteryUtils.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
     <source-file src="src/android/sensors/PollSensor.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
     <source-file src="src/android/sensors/PollSensorManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
+    <source-file src="src/android/verification/SensorControlConstants.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
+    <source-file src="src/android/verification/SensorControlBackgroundChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
+    <source-file src="src/android/verification/SensorControlForegroundDelegate.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
     <source-file src="src/android/wrapper/Metadata.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/SimpleLocation.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/MotionActivity.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
