@@ -40,8 +40,8 @@ public class TripDiaryStateMachineForegroundService extends Service {
           " flags = " + flags +  " and startId = " + startId);
         String message  = this.getString(R.string.trip_tracking_started);
         if (intent == null) {
-          message = this.getString(R.string.error_location_settings, -1);
           SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(this);
+          message = this.getString(R.string.notify_curr_state, TripDiaryStateMachineService.getState(this));
         }
         handleStart(message, intent, flags, startId);
         // We want this service to continue running until it is explicitly
