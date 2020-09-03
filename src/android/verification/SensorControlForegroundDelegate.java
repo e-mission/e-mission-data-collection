@@ -31,10 +31,6 @@ import java.util.Arrays;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
-import static edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlConstants.BACKGROUND_LOC_PERMISSION;
-import static edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlConstants.ENABLE_LOCATION_SETTINGS;
-import static edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlConstants.LOCATION_PERMISSION;
-
 public class SensorControlForegroundDelegate {
     public static final String TAG = "SensorPermissionsAndSettingsForegroundDelegate";
 
@@ -47,26 +43,39 @@ public class SensorControlForegroundDelegate {
     }
 
     public void checkAndPromptPermissions() {
-        if(cordova.hasPermission(LOCATION_PERMISSION) && cordova.hasPermission(BACKGROUND_LOC_PERMISSION)) {
+        checkAndPromptLocationPermissions();
+        checkAndPromptMotionActivityPermissions();
+    }
+
+    private void checkAndPromptLocationPermissions() {
+        if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) && cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
             return;
         }
-        if(!cordova.hasPermission(LOCATION_PERMISSION) &&
+        if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) &&
-          !cordova.hasPermission(BACKGROUND_LOC_PERMISSION)) {
+          !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
           Log.i(cordova.getActivity(), TAG, "Both permissions missing, requesting both");
           cordova.requestPermissions(plugin, SensorControlConstants.ENABLE_BOTH_PERMISSION,
-            new String[]{LOCATION_PERMISSION, BACKGROUND_LOC_PERMISSION});
+            new String[]{SensorControlConstants.LOCATION_PERMISSION, SensorControlConstants.BACKGROUND_LOC_PERMISSION});
           return;
         }
-        if(!cordova.hasPermission(LOCATION_PERMISSION)) {
+        if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)) {
             Log.i(cordova.getActivity(), TAG, "Only location permission missing, requesting it");
-            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_LOCATION_PERMISSION, LOCATION_PERMISSION);
+            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_LOCATION_PERMISSION, SensorControlConstants.LOCATION_PERMISSION);
             return;
         }
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(BACKGROUND_LOC_PERMISSION)) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             Log.i(cordova.getActivity(), TAG, "Only background permission missing, requesting it");
-            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION, BACKGROUND_LOC_PERMISSION);
+            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION, SensorControlConstants.BACKGROUND_LOC_PERMISSION);
+            return;
+        }
+    }
+
+    private void checkAndPromptMotionActivityPermissions() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(SensorControlConstants.MOTION_ACTIVITY_PERMISSION)) {
+            Log.i(cordova.getActivity(), TAG, "Only motion activity permission missing, requesting it");
+            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION, SensorControlConstants.MOTION_ACTIVITY_PERMISSION);
             return;
         }
     }
@@ -75,7 +84,7 @@ public class SensorControlForegroundDelegate {
         if (resolution != null) {
             try {
                 cordova.setActivityResultCallback(plugin);
-                cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
+                cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), SensorControlConstants.ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
             } catch (IntentSender.SendIntentException e) {
                 Context mAct = cordova.getActivity();
                 NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, mAct.getString(R.string.unable_resolve_issue));
@@ -86,7 +95,12 @@ public class SensorControlForegroundDelegate {
     public void onNewIntent(Intent intent) {
         if(SensorControlConstants.ENABLE_LOCATION_PERMISSION_ACTION.equals(intent.getAction()) ||
            SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION_ACTION.equals(intent.getAction())) {
-            checkAndPromptPermissions();
+            checkAndPromptLocationPermissions();
+            return;
+        }
+
+        if(SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION_ACTION.equals(intent.getAction())) {
+            checkAndPromptMotionActivityPermissions();
             return;
         }
         if (NotificationHelper.DISPLAY_RESOLUTION_ACTION.equals(intent.getAction())) {
@@ -145,6 +159,14 @@ public class SensorControlForegroundDelegate {
                     SensorControlBackgroundChecker.generateBackgroundLocEnableNotification(cordova.getActivity());
                 }
                 break;
+            case SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    NotificationHelper.cancelNotification(cordova.getActivity(), SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION);
+                    // motion activity does not affect the FSM
+                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                    SensorControlBackgroundChecker.generateMotionActivityEnableNotification(cordova.getActivity());
+                }
+                break;
             default:
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
@@ -153,7 +175,7 @@ public class SensorControlForegroundDelegate {
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     switch (requestCode) {
-      case ENABLE_LOCATION_SETTINGS:
+      case SensorControlConstants.ENABLE_LOCATION_SETTINGS:
         Activity mAct = cordova.getActivity();
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         cordova.setActivityResultCallback(null);

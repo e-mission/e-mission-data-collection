@@ -68,6 +68,12 @@ public class SensorControlBackgroundChecker {
             Log.d(ctxt, TAG, "check location permissions returned false, no point checking settings");
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
         }
+
+        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) && checkMotionActivityPermissions(ctxt)) {
+            Log.d(ctxt, TAG, "checkMotionActivityPermissions returned true, nothing more yet");
+        } else {
+            Log.d(ctxt, TAG, "checkMotionActivityPermissions returned false, but that's not a tracking error");
+        }
     }
 
     private static boolean checkLocationPermissions(final Context ctxt,
@@ -114,6 +120,27 @@ public class SensorControlBackgroundChecker {
                     activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             NotificationHelper.createNotification(ctxt, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION,
                     ctxt.getString(R.string.background_loc_permission_off_enable), 
+                    pi);
+    }
+
+    private static boolean checkMotionActivityPermissions(final Context ctxt) {
+        int result = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.MOTION_ACTIVITY_PERMISSION);
+        Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
+        if (PackageManager.PERMISSION_GRANTED == result) {
+            return true;
+        } else {
+            generateMotionActivityEnableNotification(ctxt);
+            return false;
+        }
+    }
+
+    public static void generateMotionActivityEnableNotification(Context ctxt) {
+            Intent activityIntent = new Intent(ctxt, MainActivity.class);
+            activityIntent.setAction(SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION_ACTION);
+            PendingIntent pi = PendingIntent.getActivity(ctxt, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION,
+                    activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            NotificationHelper.createNotification(ctxt, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION,
+                    ctxt.getString(R.string.activity_permission_off_enable), 
                     pi);
     }
 
