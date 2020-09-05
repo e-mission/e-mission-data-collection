@@ -353,7 +353,7 @@ static NSString * const kCurrState = @"CURR_STATE";
             [self syncAndNotify];
         }
     } else if ([transition isEqualToString:CFCTransitionVisitStarted]) {
-        if ([self isInvalidVisitStart]) {
+        if ([self isProblematicVisitStart]) {
             return;
         }
         if ([ConfigManager instance].is_duty_cycling) {
@@ -471,8 +471,10 @@ static NSString * const kCurrState = @"CURR_STATE";
  More details: https://github.com/e-mission/e-mission-docs/issues/372
  and Figure 7.3 (top) and Table 7.4 of Shankari's thesis
  */
-- (bool) isInvalidVisitStart
+- (bool) isProblematicVisitStart
 {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Checking invalid visit started transition..."]];
     NSArray* lastTwoTransitions = [[BuiltinUserCache database]
                                getLastMessage:@"key.usercache.transition" nEntries:2
                                wrapperClass:[ Transition class]];
@@ -491,12 +493,47 @@ static NSString * const kCurrState = @"CURR_STATE";
         double deltaTs = visitStartT.ts - visitEndT.ts;
         if (deltaTs < 60) { // 60 secs = 1 minute
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Invalid visit started transition: visitStartT.transition = %@, visitEndT.transition = %@,deltaTs = %f", visitStartT.transition, visitEndT.transition, deltaTs]
+                                                       @"Potentially invalid visit started transition: visitStartT.transition = %@, visitEndT.transition = %@,deltaTs = %f", visitStartT.transition, visitEndT.transition, deltaTs]
                                                showUI:FALSE];
+            int trip_end_mins = [ConfigManager instance].trip_end_stationary_mins;
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"Scheduling check in %d mins", trip_end_mins]
+                                               showUI:TRUE];
+            [NSTimer scheduledTimerWithTimeInterval:trip_end_mins
+                                                    target:self
+                                                    selector:@selector(checkValidVisitStart:)
+                                                    userInfo:NULL
+                                                    repeats:YES];
             return true;
         }
     }
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"visit started transition is not invalid, returning false"]];
     return false;
+}
+
+/*
+ * Checking the validity of a visit start `trip_end_stationary_mins` after we received it
+ * The visit detection is invalid if we have travelled significantly after we
+ * received it
+ * The visit detection is valid if we have not
+ * We use the `hasTripEnded` call to determine whether we have travelled a lot
+ * or not, given that we have done a significant amount of debugging
+ */
+
+- (void)checkValidVisitStart:(NSTimer*)theTimer
+{
+    if ([TripDiaryActions hasTripEnded]) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                           @"checkValidVisitStart: Trip end detected, generating notification %@", CFCTransitionTripEndDetected]
+                                           showUI:TRUE];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionTripEndDetected];
+    } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                           @"checkValidVisitStart: Trip end not detected, continuing tracking..."]
+                                           showUI:TRUE];
+    }
 }
 
 /*
