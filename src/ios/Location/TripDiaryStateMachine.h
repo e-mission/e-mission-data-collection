@@ -23,6 +23,7 @@
 
 #define CFCTransitionInitialize @"T_INITIALIZE"
 #define CFCTransitionInitComplete @"T_INIT_COMPLETE"
+#define CFCTransitionGeofenceCreationError @"T_GEOFENCE_CREATION_ERROR"
 #define CFCTransitionExitedGeofence @"T_EXITED_GEOFENCE"
 #define CFCTransitionTripStarted @"T_TRIP_STARTED"
 #define CFCTransitionRecievedSilentPush @"T_RECEIVED_SILENT_PUSH"

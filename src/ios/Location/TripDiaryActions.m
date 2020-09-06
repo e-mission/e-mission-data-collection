@@ -84,9 +84,16 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
         [LocalNotificationManager addNotification:[NSString
                                                    stringWithFormat:@"currLoc = %@, which is stale, need to read a new location", currLoc]];
         [locator getLocationForGeofence:manager withCallback:^(CLLocation *locationToUse) {
-            [LocalNotificationManager addNotification:[NSString
-                                                       stringWithFormat:@"received new location %@, using it", locationToUse]];
-            [TripDiaryActions createGeofenceAtLocation:manager atLocation:locationToUse];
+            if (locationToUse == nil) {
+                [LocalNotificationManager addNotification:[NSString
+                                                           stringWithFormat:@"received location %@, generating GEOFENCE_CREATION_ERROR", locationToUse]];
+                [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                    object:CFCTransitionGeofenceCreationError];
+            } else {
+                [LocalNotificationManager addNotification:[NSString
+                                                           stringWithFormat:@"received new location %@, using it", locationToUse]];
+                [TripDiaryActions createGeofenceAtLocation:manager atLocation:locationToUse];
+            }
         }];
     } else {
         [LocalNotificationManager addNotification:[NSString

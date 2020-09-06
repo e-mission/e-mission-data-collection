@@ -4,3 +4,4 @@
 "travel-mode-unavailable" = "Travel mode detection may be unavailable.";
 "activity-detection-unsupported" = "Activity detection unsupported";
 "travel-mode-unknown" = "Travel mode detection unavailable - all trips will be UNKNOWN.";
+"bad-loc-tracking-problem" = "Background location accuracy is consistently poor - trip tracking may not work. Try to resolve the problem by turning location services, WiFi and cellular data off and on. To check the resolution, turn app-level tracking off and on. If this message persists, report an issue (Email Log)";

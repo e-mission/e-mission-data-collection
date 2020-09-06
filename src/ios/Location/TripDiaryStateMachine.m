@@ -247,6 +247,10 @@ static NSString * const kCurrState = @"CURR_STATE";
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
         [self setState:kWaitingForTripStartState];
+    } else if ([transition isEqualToString:CFCTransitionGeofenceCreationError]) {
+        // if we get a geofence creation error, we can still go to
+        // WAITING_FOR_TRIP_START and see if the visit notifications work.
+        [self setState:kWaitingForTripStartState];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
@@ -376,9 +380,15 @@ static NSString * const kCurrState = @"CURR_STATE";
         // [TripDiaryActions pushTripToServer];
         [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
         // stopTracking automatically generates TripEnded so we don't need this here.
-    } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
+    } else if ([transition isEqualToString:CFCTransitionTripEnded] || 
+        ([transition isEqualToString:CFCTransitionGeofenceCreationError] &&
+            [ConfigManager instance].ios_use_visit_notifications_for_detection)) {
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
+        // OR
+        // we got an error while creating the Geofence, but we do use_visit_notifications enabled
+        // so we can use visits for the trip start detection, so we are also
+        // about to move to the WAITING_FOR_TRIP_START state
         // TODO: Should this be here, or in EndTripTracking
         [self setState:kWaitingForTripStartState];
         [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
