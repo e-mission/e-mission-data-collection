@@ -513,7 +513,7 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                     target:self
                                                     selector:@selector(checkValidVisitStart:)
                                                     userInfo:NULL
-                                                    repeats:YES];
+                                                    repeats:NO];
             return true;
         }
     }
