@@ -132,21 +132,29 @@ static int const GIVE_UP_AFTER_SECS = 30 * 60; // 30 mins
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"invalid points = %@, existingErrors = %@", existingInvalidPoint, existingErrors]];
 
-    if (existingInvalidPoint != NULL || existingErrors != NULL) {
+    NSString* errorDescription = NULL;
+
+    if (existingInvalidPoint != NULL) {
+        errorDescription = NSLocalizedStringFromTable(@"bad-loc-tracking-problem", @"DCLocalizable", nil);
+    }
+    if (existingErrors != NULL) {
+        errorDescription = NSLocalizedStringFromTable(@"location-turned-off-problem", @"DCLocalizable", nil);
+    }
+
+    if (errorDescription != NULL) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Found error in geofence creation, generating user notification"]];
         NSDictionary* notifyOptions = @{@"id": @223562, // BADLOC on a phone keypad,
-                                        @"title": NSLocalizedStringFromTable(@"bad-loc-tracking-problem", @"DCLocalizable", nil),
+                                        @"title": errorDescription,
                                         @"autoclear": @TRUE,
                                         @"at": @([NSDate date].timeIntervalSince1970 + 60), // now + 60 secs
                                         @"data": @{@"redirectTo": @"root.main.control"}
                                         };
-        [LocalNotificationManager showNotificationAfterSecs:NSLocalizedStringFromTable(@"bad-loc-tracking-problem", @"DCLocalizable", nil)
+        [LocalNotificationManager showNotificationAfterSecs:errorDescription
                                                withUserInfo:notifyOptions secsLater:60];
         
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                    @"Found error in geofence creation, stopping updates and creating callback"]];
-
         [_locMgr stopUpdatingLocation];
         // Retain this local storage (remove the next two lines) if we want to
         // distinguish between errors and invalid points later.
