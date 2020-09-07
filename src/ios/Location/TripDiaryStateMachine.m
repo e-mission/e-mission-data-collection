@@ -381,7 +381,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         // [TripDiaryActions pushTripToServer];
         [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
         // stopTracking automatically generates TripEnded so we don't need this here.
-    } else if ([transition isEqualToString:CFCTransitionTripEnded])
+    } else if ([transition isEqualToString:CFCTransitionTripEnded]) {
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
         // OR
