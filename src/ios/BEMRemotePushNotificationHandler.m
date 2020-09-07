@@ -1,5 +1,6 @@
 #import "BEMRemotePushNotificationHandler.h"
 #import "TripDiaryStateMachine.h"
+#import "TripDiarySettingsCheck.h"
 #import "LocalNotificationManager.h"
 
 @implementation BEMRemotePushNotificationHandler
@@ -39,12 +40,16 @@
 
 - (void)handleNotifications:(NSNotification*)note {
     @synchronized([BEMRemotePushNotificationHandler instance]) {
-            if ([note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
-            // We are the silent push handler, so we store the handler block, but don't do anything else.
+        if ([note.object isEqualToString:CFCTransitionRecievedSilentPush]) {
+            // We are the silent push handler, so we store the handler block, and run the
+            // periodic tasks, but don't do anything else
+            [BEMRemotePushNotificationHandler performPeriodicActivity];
             NSDictionary* userInfo = note.userInfo;
             SilentPushCompletionHandler newHandler = [userInfo objectForKey:@"handler"];
-            [self.silentPushHandlerList addObject:newHandler];
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Added SILENT_PUSH handler block %@ to list, new size = %lu", newHandler, (unsigned long)[self.silentPushHandlerList count]]];
+            if (newHandler != NULL) {
+                [self.silentPushHandlerList addObject:newHandler];
+                [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Added SILENT_PUSH handler block %@ to list, new size = %lu", newHandler, (unsigned long)[self.silentPushHandlerList count]]];
+            }
         }
     }
     if ([self.silentPushHandlerList count] > 0) {
@@ -90,6 +95,26 @@
     } else {
         // Not processing a silent remote push notification
         NSLog(@"Ignoring silent push notification");
+    }
+}
+
++ (void) performPeriodicActivity
+{
+    [TripDiarySettingsCheck checkSettingsAndPermission];
+    [BEMRemotePushNotificationHandler validateAndCleanupState];
+}
+
++ (void) validateAndCleanupState
+{
+    NSUInteger currState = [TripDiaryStateMachine instance].currState;
+    if (currState == kStartState) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"Still in start state, sending initialize..."] showUI:TRUE];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionInitialize];
+    } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                   @"In valid state %@, nothing to do...", [TripDiaryStateMachine getStateName:currState]] showUI:FALSE];
     }
 }
 

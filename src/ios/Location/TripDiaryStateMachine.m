@@ -9,6 +9,7 @@
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
 #import "TripDiaryDelegate.h"
+#import "TripDiarySettingsCheck.h"
 
 #import "LocalNotificationManager.h"
 
@@ -251,7 +252,9 @@ static NSString * const kCurrState = @"CURR_STATE";
         // if we get a geofence creation error, we stay in the start state.
         NSLog(@"Got transition %@ in state %@, staying in %@ state",
               transition,
+              [TripDiaryStateMachine getStateName:self.currState],
               [TripDiaryStateMachine getStateName:self.currState]);
+        [TripDiarySettingsCheck checkSettingsAndPermission];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
@@ -401,6 +404,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         }];
     } else if ([transition isEqualToString:CFCTransitionGeofenceCreationError]) {
         [self setState:kStartState];
+        [TripDiarySettingsCheck checkSettingsAndPermission];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {

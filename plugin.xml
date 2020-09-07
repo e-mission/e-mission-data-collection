@@ -209,6 +209,7 @@
     <header-file src="src/ios/Location/TripDiaryActions.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryDelegate.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryStateMachine.h" target-dir="Location"/>
+    <header-file src="src/ios/Location/TripDiarySettingsCheck.h" target-dir="Location"/>
     <header-file src="src/ios/Wrapper/Metadata.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/MotionActivity.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/SimpleLocation.h" target-dir="Wrapper"/>
@@ -228,6 +229,7 @@
     <source-file src="src/ios/Location/TripDiaryActions.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryDelegate.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryStateMachine.m" target-dir="Location"/>
+    <header-file src="src/ios/Location/TripDiarySettingsCheck.m" target-dir="Location"/>
     <source-file src="src/ios/Wrapper/Metadata.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/MotionActivity.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/SimpleLocation.m" target-dir="Wrapper"/>
