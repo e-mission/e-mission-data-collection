@@ -157,7 +157,7 @@ public class SensorControlBackgroundChecker {
             LocationSettingsResponse response = task.getResult(ApiException.class);
                         // All location settings are satisfied. The client can initialize location
                         // requests here.
-                        Log.i(ctxt, TAG, "All settings are valid, checking current state");
+            Log.i(ctxt, TAG, "All settings are valid, checking current state");
             Log.i(ctxt, TAG, "Current location settings are "+response);
                         NotificationHelper.cancelNotification(ctxt, Constants.TRACKING_ERROR_ID);
                         restartFSMIfStartState(ctxt);
