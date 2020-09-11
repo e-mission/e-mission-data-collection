@@ -38,7 +38,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(this, TAG, "onStartCommand called with intent = "+intent+
           " flags = " + flags +  " and startId = " + startId);
-        String message  = this.getString(R.string.trip_tracking_started);
+        String message  = this.getString(R.string.notify_curr_state, TripDiaryStateMachineService.getState(this));
         if (intent == null) {
           SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(this);
           message = this.getString(R.string.notify_curr_state, TripDiaryStateMachineService.getState(this));
