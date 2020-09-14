@@ -50,6 +50,7 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest">
         <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+        <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
         <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
         <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
         <!-- COARSE_LOCATION obfuscates the location to a city block, change to FINE_LOCATION for accuracy -->
@@ -229,7 +230,7 @@
     <source-file src="src/ios/Location/TripDiaryActions.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryDelegate.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryStateMachine.m" target-dir="Location"/>
-    <header-file src="src/ios/Location/TripDiarySettingsCheck.m" target-dir="Location"/>
+    <source-file src="src/ios/Location/TripDiarySettingsCheck.m" target-dir="Location"/>
     <source-file src="src/ios/Wrapper/Metadata.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/MotionActivity.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/SimpleLocation.m" target-dir="Wrapper"/>
