@@ -160,7 +160,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
         }
       }
       Log.d(ctxt, TAG, "Did not find foreground notification with ID " + TripDiaryStateMachineForegroundService.ONGOING_TRIP_ID + " in list " + Arrays.stream(activeNotifications).map(n -> n.getId()).collect(Collectors.toList()));
-      NotificationHelper.createNotification(ctxt, ONGOING_TRIP_ID + 1, ctxt.getString(R.string.email_log));
+      NotificationHelper.createNotification(ctxt, ONGOING_TRIP_ID + 1, ctxt.getString(R.string.foreground_killed_email_log));
       TripDiaryStateMachineForegroundService.startProperly(ctxt);
     } else {
       Log.d(ctxt, TAG, "Pre-Oreo, no foreground service, no need to check for notification");
