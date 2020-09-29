@@ -124,6 +124,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         validateAndCleanupState(ctxt);
         initOnUpgrade(ctxt);
         saveBatteryAndSimulateUser(ctxt);
+        checkForegroundNotification(ctxt);
         Log.i(ctxt, TAG, "END PERIODIC ACTIVITY");
     }
 
@@ -181,6 +182,10 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         } else {
             Log.d(ctxt, TAG, "Setup complete, skipping initialize");
         }
+    }
+
+    public static void checkForegroundNotification(Context ctxt) {
+      TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
     }
 
     public static void restartCollection(Context ctxt) {

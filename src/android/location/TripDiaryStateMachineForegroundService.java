@@ -9,9 +9,15 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.service.notification.StatusBarNotification;
+
 import androidx.annotation.Nullable;
 
 import edu.berkeley.eecs.emission.MainActivity;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -33,6 +39,11 @@ public class TripDiaryStateMachineForegroundService extends Service {
     private static String TAG = "TripDiaryStateMachineForegroundService";
     private static final int ONGOING_TRIP_ID = 6646464;
     private final IBinder mBinder = new LocalBinder();
+
+    @Override
+    public void onCreate() {
+        Log.d(this, TAG, "onCreate called");
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -97,7 +108,6 @@ public class TripDiaryStateMachineForegroundService extends Service {
   }
 
 
-
   private Notification getNotification(String msg) {
       NotificationManager nMgr = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
       Notification.Builder builder = NotificationHelper.getNotificationBuilderForApp(this,
@@ -126,6 +136,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
     }
 
     public static void startProperly(Context ctxt) {
+    Log.d(ctxt, TAG, "startProperly called with context = "+ctxt);
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         ctxt.startForegroundService(getForegroundServiceIntent(ctxt));
       } else {
@@ -136,4 +147,23 @@ public class TripDiaryStateMachineForegroundService extends Service {
     private static Intent getForegroundServiceIntent(Context ctxt) {
       return new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
     }
+
+  public static void checkForegroundNotification(Context ctxt) {
+    if(Build.VERSION.SDK_INT >Build.VERSION_CODES.O) {
+      NotificationManager mgr = (NotificationManager) ctxt.getSystemService(Context.NOTIFICATION_SERVICE);
+      StatusBarNotification[] activeNotifications = mgr.getActiveNotifications();
+      Log.d(ctxt, TAG, "In checkForegroundNotification, found " + activeNotifications.length + " active notifications");
+      for (StatusBarNotification notification : activeNotifications) {
+        if (notification.getId() == TripDiaryStateMachineForegroundService.ONGOING_TRIP_ID) {
+          Log.d(ctxt, TAG, "Found foreground notification with ID " + TripDiaryStateMachineForegroundService.ONGOING_TRIP_ID + " nothing to do");
+          return;
+        }
+      }
+      Log.d(ctxt, TAG, "Did not find foreground notification with ID " + TripDiaryStateMachineForegroundService.ONGOING_TRIP_ID + " in list " + Arrays.stream(activeNotifications).map(n -> n.getId()).collect(Collectors.toList()));
+      NotificationHelper.createNotification(ctxt, ONGOING_TRIP_ID + 1, ctxt.getString(R.string.email_log));
+      TripDiaryStateMachineForegroundService.startProperly(ctxt);
+    } else {
+      Log.d(ctxt, TAG, "Pre-Oreo, no foreground service, no need to check for notification");
+    }
+  }
 }
