@@ -21,7 +21,8 @@ import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
-import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.SimpleLocation;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
@@ -103,18 +104,13 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                     return;
                 }
             }
+            TripDiaryStateMachineForegroundService.startProperly(context);
         }
 
         // we should only get here if the user has consented
         Intent serviceStartIntent = getStateMachineServiceIntent(context);
         serviceStartIntent.setAction(intent.getAction());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.i(context, TAG, "build is O+, using startForegroundService");
-            context.startForegroundService(serviceStartIntent);
-        } else {
-            Log.i(context, TAG, "build is < 0, using startService");
         context.startService(serviceStartIntent);
-    }
     }
 
     public static void performPeriodicActivity(Context ctxt) {
@@ -124,6 +120,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
          * geofences are never exited.
          */
         Log.i(ctxt, TAG, "START PERIODIC ACTIVITY");
+        checkForegroundNotification(ctxt);
         checkLocationStillAvailable(ctxt);
         validateAndCleanupState(ctxt);
         initOnUpgrade(ctxt);
@@ -132,7 +129,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
     }
 
     public static void checkLocationStillAvailable(Context ctxt) {
-        TripDiaryStateMachineService.checkLocationSettingsAndPermissions(ctxt);
+        SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(ctxt);
     }
 
     public static void validateAndCleanupState(Context ctxt) {
@@ -147,6 +144,28 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             // We cannot check to see whether there is an existing geofence and whether we are in it.
             // In particular, there is no method to get a geofence given an ID, and no method to get the status of a geofence
             // even if we did have it. So this is not a check that we can do.
+        } else if (TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_ongoing_trip))) {
+            Log.d(ctxt, TAG, "In ongoing trip, checking for ongoing data collection");
+            // Get the last recorded point
+            SimpleLocation[] lastPoints = UserCacheFactory.getUserCache(ctxt).getLastSensorData(R.string.key_usercache_location, 1, SimpleLocation.class);
+            if (lastPoints.length == 0) {
+                Log.d(ctxt, TAG, "Found zero points while in 'ongoing_trip' state, re-initializing");
+                ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
+            } else {
+                SimpleLocation lastPoint = lastPoints[0];
+                double nowSecs = ((double)System.currentTimeMillis())/1000;
+                double filterTimeSecs = ((double)ConfigManager.getConfig(ctxt).getFilterTime())/1000;
+                double threshold = filterTimeSecs * 100;
+                // 100 * time filter
+                // https://github.com/e-mission/e-mission-docs/issues/580#issuecomment-700791309
+                double lastPointAgo = nowSecs - lastPoint.getTs();
+                if (lastPointAgo > threshold) {
+                    Log.d(ctxt, TAG, "Last point read was "+lastPoint+", "+lastPointAgo+" secs ago, beyond threshold, "+threshold+" re-initializing");
+                    ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
+                } else {
+                    Log.d(ctxt, TAG, "Last point read was "+lastPoint+", "+lastPointAgo+" secs ago, within threshold, "+threshold+" all is well");
+                }
+            }
         }
     }
 
@@ -187,13 +206,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         }
     }
 
-    public static void startForegroundIfNeeded(Context ctxt) {
-        Log.d(ctxt, TAG, "checking to see whether to start foreground service");
-        if(TripDiaryStateMachineService.getState(ctxt).equals(ctxt.getString(R.string.state_ongoing_trip))) {
-           Log.d(ctxt, TAG, "app restarted while in the ongoing state, starting foreground service ASAP");
-           Intent foregroundServiceIntent = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
-           ctxt.startService(foregroundServiceIntent);
-        }
+    public static void checkForegroundNotification(Context ctxt) {
+      TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
     }
 
     public static void restartCollection(Context ctxt) {

@@ -47,6 +47,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
+    private ForegroundServiceComm mComm = null;
 
     public TripDiaryStateMachineServiceOngoing() {
         super();
@@ -55,12 +56,13 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     @Override
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
+        mComm = new ForegroundServiceComm(this);
     }
 
     @Override
     public void onDestroy() {
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
-        TripDiaryStateMachineForegroundService.handleDestroy(this);
+        mComm.unbind();
     }
 
     @Override
@@ -72,7 +74,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     public int onStartCommand(Intent intent,  int flags, int startId) {
         Log.d(this, TAG, "service started with flags = "+flags+" startId = "+startId
                 +" action = "+intent.getAction());
-        TripDiaryStateMachineForegroundService.handleStart(this, "Controlling trip finite state machine (FSM)", intent, flags, startId);
         if (flags == Service.START_FLAG_REDELIVERY) {
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
@@ -113,11 +114,8 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
+        mComm.setMessage(this.getString(R.string.notify_curr_state, newState));
         stopSelf();
-    }
-
-    private Intent getForegroundServiceIntent() {
-        return new Intent(this, TripDiaryStateMachineForegroundService.class);
     }
 
     /*
@@ -244,7 +242,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
                 String newState = fCtxt.getString(R.string.state_ongoing_trip);
           if (task.isSuccessful()) {
                     setNewState(newState);
-                    startService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                             fCtxt.getString(R.string.success_moving_new_state, newState));
@@ -267,7 +264,6 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
                 String newState = targetState;
                 if (task.isSuccessful()) {
                     setNewState(newState);
-                    stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));

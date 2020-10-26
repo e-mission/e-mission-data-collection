@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 /**
@@ -38,14 +37,12 @@ public class GeofenceLocationIntentService extends IntentService {
     @Override
     public int onStartCommand(Intent i, int flags, int startId) {
         Log.d(this, TAG, "onStart called with "+i+" startId "+startId);
-        TripDiaryStateMachineForegroundService.handleStart(this, "Handling geofence creation", i, flags, startId);
         return super.onStartCommand(i, flags, startId);
     }
 
     @Override
     public void onDestroy() {
         Log.d(this, TAG, "onDestroy called");
-        TripDiaryStateMachineForegroundService.handleDestroy(this);
         super.onDestroy();
     }
 

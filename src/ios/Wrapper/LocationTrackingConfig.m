@@ -10,6 +10,7 @@
 #import "BEMBuiltinUserCache.h"
 #import <CoreLocation/CoreLocation.h>
 
+#define kOneMeter 1 // in meters
 #define kFiveMeters 5 // in meters
 #define kFifty_Meters 50 // in meters
 #define kHundred_Meters 100 // in meters
@@ -22,7 +23,7 @@
     self.simulate_user_interaction = NO;
     self.accuracy = kCLLocationAccuracyBest;
     self.accuracy_threshold = 200;
-    self.filter_distance = kFifty_Meters;
+    self.filter_distance = kOneMeter;
     self.filter_time = -1; // unused
     self.geofence_radius = kHundred_Meters;
     self.trip_end_stationary_mins = kTripEndStationaryMins;

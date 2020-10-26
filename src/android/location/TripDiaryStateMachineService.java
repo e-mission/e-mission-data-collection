@@ -1,24 +1,12 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
 
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 
-import androidx.core.content.ContextCompat;
-
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.ResolvableApiException;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 
@@ -26,15 +14,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
-import edu.berkeley.eecs.emission.cordova.tracker.Constants;
-import edu.berkeley.eecs.emission.cordova.tracker.DataCollectionPlugin;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
-import edu.berkeley.eecs.emission.MainActivity;
-
-
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
@@ -52,20 +36,10 @@ public class TripDiaryStateMachineService extends Service {
 
     private static int STATE_IN_NUMBERS = 78283;
 
-    /*
-     * Unfortunately, due to the structure of the google API client, with callbacks
-     * and everything, we are unable to do handle the intent statelessly. For example,
-     * when the client is connected, the onConnected() method is invoked asynchronously
-     * with a service specific connection hint. We have to make further calls
-     * (to get the current location, to register a geofence) after we are connected,
-     * using the client. But there is no way to pass in a reference to the client or
-     * to the current state or to the intent action. So all of those need to be stored
-     * in instance variables.
-    */
-
     private String mCurrState = null;
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
+    private ForegroundServiceComm mComm = null;
 
     public TripDiaryStateMachineService() {
         super();
@@ -74,6 +48,7 @@ public class TripDiaryStateMachineService extends Service {
     @Override
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
+        mComm = new ForegroundServiceComm(this);
         /*
          * Need to initialize once per create.
          */
@@ -82,7 +57,7 @@ public class TripDiaryStateMachineService extends Service {
     @Override
     public void onDestroy() {
         Log.i(this, TAG, "Service destroyed. So long, suckers!");
-        TripDiaryStateMachineForegroundService.handleDestroy(this);
+        mComm.unbind();
     }
 
     @Override
@@ -94,7 +69,6 @@ public class TripDiaryStateMachineService extends Service {
     public int onStartCommand(Intent intent,  int flags, int startId) {
         Log.d(this, TAG, "service started with flags = "+flags+" startId = "+startId
                 +" action = "+intent.getAction());
-        TripDiaryStateMachineForegroundService.handleStart(this, "Controlling trip finite state machine (FSM)", intent, flags, startId);
         if (flags == Service.START_FLAG_REDELIVERY) {
             Log.d(this, TAG, "service restarted! need to check idempotency!");
         }
@@ -127,16 +101,6 @@ public class TripDiaryStateMachineService extends Service {
         return sPrefs.getString(ctxt.getString(R.string.curr_state_key), ctxt.getString(R.string.state_start));
     }
 
-    public static void restartFSMIfStartState(Context ctxt) {
-        String START_STATE = ctxt.getString(R.string.state_start);
-        String currState = getState(ctxt);
-        Log.i(ctxt, TAG, "in restartFSMIfStartState, currState = "+currState);
-        if (START_STATE.equals(currState)) {
-            Log.i(ctxt, TAG, "in start state, sending initialize");
-            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
-        }
-    }
-
     public void setNewState(String newState, boolean doChecks) {
         Log.d(this, TAG, "newState after handling action is "+newState);
         SharedPreferences.Editor prefsEditor =
@@ -146,17 +110,14 @@ public class TripDiaryStateMachineService extends Service {
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
+        mComm.setMessage(this.getString(R.string.notify_curr_state, newState));
         // Let's check the location settings every time we change the state instead of only on failure
         // This makes the rest of the code much simpler, allows us to catch issues as quickly as possible,
         // and
         if (doChecks) {
-            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
+            SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
         }
         stopSelf();
-    }
-
-    private Intent getForegroundServiceIntent() {
-        return new Intent(this, TripDiaryStateMachineForegroundService.class);
     }
 
     /*
@@ -230,7 +191,9 @@ public class TripDiaryStateMachineService extends Service {
 
         // if we got here, this must be a transition that we don't handle
         Log.i(this, TAG, "Found unhandled transition "+actionString+" staying in current state ");
-        setNewState(mCurrState, true);
+        boolean checkSettings = !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped));
+        Log.i(this, TAG, "curr state = "+mCurrState+" checkSettings = "+checkSettings);
+        setNewState(mCurrState, checkSettings);
     }
 
     public void handleTripStart(Context ctxt, final String actionString) {
@@ -274,9 +237,6 @@ public class TripDiaryStateMachineService extends Service {
                         newState = fCtxt.getString(R.string.state_start);
                     }
               if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
-                        if (locationTrackingPossible) {
-                        startService(getForegroundServiceIntent());
-                        }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
@@ -356,7 +316,6 @@ public class TripDiaryStateMachineService extends Service {
                                 newState = fCtxt.getString(R.string.state_start);
                             }
                 if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
-                        stopService(getForegroundServiceIntent());
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
@@ -378,7 +337,7 @@ public class TripDiaryStateMachineService extends Service {
                             //        "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
                             // let's mark this operation as done since the other one is static
                         // markOngoingOperationFinished();
-                            checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
+                            SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                             // will wait for async call to complete
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
@@ -427,8 +386,8 @@ public class TripDiaryStateMachineService extends Service {
             // they are really stopped and to provide a backstop for any
             // error conditions
             stopAll(ctxt, ctxt.getString(R.string.state_tracking_stopped));
-        if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
-            Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
+            if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
+                Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
             }
             return;
         }
@@ -469,12 +428,14 @@ public class TripDiaryStateMachineService extends Service {
                                                 fCtxt.getString(R.string.success_moving_new_state, newState));
                                 }
                             } else {
+                                    Log.e(fCtxt, TAG, "error while creating geofence, staying in the current state");
+                                    Log.exception(fCtxt, TAG, task.getException());
                                     setNewState(mCurrState, true);
+
                                     // NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                     //        "Error " + status.getStatusCode()+" while creating geofence");
                                     // let's mark this operation as done since the other one is static
                                     // markOngoingOperationFinished();
-                                    checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -486,7 +447,7 @@ public class TripDiaryStateMachineService extends Service {
                     // own state change
                     // let's mark this operation as done since the other one is static
                     // markOngoingOperationFinished();
-                    checkLocationSettingsAndPermissions(fCtxt);
+                    SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(fCtxt);
                 }
             }
         }).start();
@@ -508,7 +469,7 @@ public class TripDiaryStateMachineService extends Service {
                     } else {
                             setNewState(mCurrState, true);
                         // markOngoingOperationFinished();
-                        checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
+                        SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -529,12 +490,11 @@ public class TripDiaryStateMachineService extends Service {
               List<Task<?>> resultList = task.getResult();
                     String newState = targetState;
                     if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
-                        stopService(getForegroundServiceIntent());
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
-                        setNewState(newState, true);
+                        setNewState(newState, false);
                     } else {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
@@ -543,80 +503,12 @@ public class TripDiaryStateMachineService extends Service {
 
                         if (!resultList.get(1).isSuccessful()) {
                             // the location tracking stop failed
-                            setNewState(fCtxt.getString(R.string.state_ongoing_trip), true);
+                            setNewState(fCtxt.getString(R.string.state_ongoing_trip), false);
                         } else {
-                            setNewState(newState, true);
+                            setNewState(newState, false);
                         }
                     }
             });
-        }
-
-        public static void checkLocationSettingsAndPermissions(final Context ctxt) {
-        LocationRequest request = new LocationTrackingActions(ctxt).getLocationRequest();
-            Log.d(ctxt, TAG, "Checking location settings and permissions for request "+request);
-            // let's do the permission check first since it is synchronous
-            if (checkLocationPermissions(ctxt, request)) {
-                Log.d(ctxt, TAG, "checkLocationPermissions returned true, checking background permission");
-                if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) ||
-                  checkBackgroundLocPermissions(ctxt, request)) {
-                  Log.d(ctxt, TAG, "checkBackgroundLocPermissions returned true, checking location settings");
-                checkLocationSettings(ctxt, request);
-                } else {
-                  Log.d(ctxt, TAG, "check background permissions returned false, no point checking settings");
-                  ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-                }
-                // final state will be set in this async call
-            } else {
-                Log.d(ctxt, TAG, "check location permissions returned false, no point checking settings");
-                ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-            }
-        }
-
-        public static boolean checkLocationPermissions(final Context ctxt,
-                                                       final LocationRequest request) {
-            // Ideally, we would use the request accuracy to figure out the permissions requested
-            // but I can't find an authoritative mapping, and I'm running out of time for
-            // fancy stuff
-            int result = ContextCompat.checkSelfPermission(ctxt, DataCollectionPlugin.LOCATION_PERMISSION);
-            Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
-            if (PackageManager.PERMISSION_GRANTED == result) {
-                return true;
-            } else {
-                generateLocationEnableNotification(ctxt);
-                return false;
-            }
-        }
-
-        public static void generateLocationEnableNotification(Context ctxt) {
-                Intent activityIntent = new Intent(ctxt, MainActivity.class);
-                activityIntent.setAction(DataCollectionPlugin.ENABLE_LOCATION_PERMISSION_ACTION);
-                PendingIntent pi = PendingIntent.getActivity(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
-                        activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                NotificationHelper.createNotification(ctxt, DataCollectionPlugin.ENABLE_LOCATION_PERMISSION,
-                        ctxt.getString(R.string.location_permission_off_enable), 
-                        pi);
-        }
-
-        public static boolean checkBackgroundLocPermissions(final Context ctxt,
-                                                            final LocationRequest request) {
-            int result = ContextCompat.checkSelfPermission(ctxt, DataCollectionPlugin.BACKGROUND_LOC_PERMISSION);
-            Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
-            if (PackageManager.PERMISSION_GRANTED == result) {
-                return true;
-            } else {
-                generateBackgroundLocEnableNotification(ctxt);
-                return false;
-            }
-        }
-
-        public static void generateBackgroundLocEnableNotification(Context ctxt) {
-                Intent activityIntent = new Intent(ctxt, MainActivity.class);
-                activityIntent.setAction(DataCollectionPlugin.ENABLE_BACKGROUND_LOC_PERMISSION_ACTION);
-                PendingIntent pi = PendingIntent.getActivity(ctxt, DataCollectionPlugin.ENABLE_BACKGROUND_LOC_PERMISSION,
-                        activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                NotificationHelper.createNotification(ctxt, DataCollectionPlugin.ENABLE_BACKGROUND_LOC_PERMISSION,
-                        ctxt.getString(R.string.background_loc_permission_off_enable), 
-                        pi);
         }
 
     protected static boolean isAllSuccessful(List<Task<?>> taskList) {
@@ -625,56 +517,5 @@ public class TripDiaryStateMachineService extends Service {
         result = result & t.isSuccessful();
       }
       return result;
-    }
-
-    public static void checkLocationSettings(final Context ctxt,
-                                             final LocationRequest request) {
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(request);
-
-        Task<LocationSettingsResponse> task =
-                LocationServices.getSettingsClient(ctxt).checkLocationSettings(builder.build());
-        Log.d(ctxt, TAG, "Got back result "+task);
-        task.addOnCompleteListener(resultTask -> {
-          try {
-            LocationSettingsResponse response = task.getResult(ApiException.class);
-                        // All location settings are satisfied. The client can initialize location
-                        // requests here.
-                        Log.i(ctxt, TAG, "All settings are valid, checking current state");
-            Log.i(ctxt, TAG, "Current location settings are "+response);
-                        NotificationHelper.cancelNotification(ctxt, Constants.TRACKING_ERROR_ID);
-                        restartFSMIfStartState(ctxt);
-          } catch (ApiException exception) {
-            switch (exception.getStatusCode()) {
-                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                // Location settings are not satisfied. But could be fixed by showing the
-                // user a dialog.
-                try {
-                  // Cast to a resolvable exception.
-                  ResolvableApiException resolvable = (ResolvableApiException) exception;
-                  // Show the dialog by calling startResolutionForResult(),
-                  // and check the result in onActivityResult().
-                            NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                    ctxt.getString(R.string.error_location_settings, exception.getStatusCode()),
-                    resolvable.getResolution());
-                } catch (ClassCastException e) {
-                  // Ignore, should be an impossible error.
-                        }
-                        break;
-                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                        // Location settings are not satisfied. However, we have no way to fix the
-                        // settings so we won't show the dialog.
-                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                  ctxt.getString(R.string.error_location_settings, exception.getStatusCode()));
-                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-                        break;
-                    default:
-                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    ctxt.getString(R.string.unknown_error_location_settings));
-                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-
-                }
-            }
-        });
     }
 }
