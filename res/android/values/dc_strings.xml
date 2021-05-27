@@ -20,7 +20,7 @@
     <string name="location_permission_off_enable">Location permission off, click to enable</string>
     <string name="background_loc_permission_off_enable">Background location permission off, click to enable</string>
     <string name="activity_permission_off_enable">Activity permission off, click to enable</string>
-    <string name="error_location_settings">Error %1$d in location settings</string>
+    <string name="error_location_settings">Error in location settings, click to resolve</string>
     <string name="unknown_error_location_settings">Unknown error while reading location, please check your settings</string>
     <string name="notify_curr_state">In state %1$s</string>
     <!-- TripDiaryStateMachineForegroundService -->
