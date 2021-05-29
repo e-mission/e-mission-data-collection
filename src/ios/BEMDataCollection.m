@@ -6,6 +6,7 @@
 #import "DataUtils.h"
 #import "StatsEvent.h"
 #import "BEMBuiltinUserCache.h"
+#import "TripDiarySettingsCheck.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
@@ -80,22 +81,34 @@
                     [LocalNotificationManager addNotification:@"activity recognition works fine"];
                 } else {
                     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Error %@ while reading activities, travel mode detection may be unavailable", error]];
-                    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedStringFromTable(@"error-reading-activities", @"DCLocalizable", nil)
-                                                                    message:NSLocalizedStringFromTable(@"travel-mode-unavailable", @"DCLocalizable", nil)
-                                                                   delegate:nil
-                                                          cancelButtonTitle:@"OK"
-                                                          otherButtonTitles:nil];
-                    [alert show];
+                    NSString* title = NSLocalizedStringFromTable(@"error-reading-activities", @"DCLocalizable", nil);
+                    NSString* message = NSLocalizedStringFromTable(@"travel-mode-unavailable", @"DCLocalizable", nil);
+
+                    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                               message:message
+                                               preferredStyle:UIAlertControllerStyleAlert];
+
+                    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                        handler:^(UIAlertAction * action) {
+                    }];
+                    [alert addAction:defaultAction];
+                    [TripDiarySettingsCheck showSettingsAlert:alert];
                 }
             }];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Activity detection unsupported, all trips will be UNKNOWN"]];
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedStringFromTable(@"activity-detection-unsupported", @"DCLocalizable", nil)
-                                                            message:NSLocalizedStringFromTable(@"travel-mode-unknown", @"DCLocalizable", nil)
-                                                           delegate:nil
-                                                  cancelButtonTitle:@"OK"
-                                                  otherButtonTitles:nil];
-            [alert show];
+            NSString* title = NSLocalizedStringFromTable(@"activity-detection-unsupported", @"DCLocalizable", nil);
+            NSString* message = NSLocalizedStringFromTable(@"travel-mode-unknown", @"DCLocalizable", nil);
+
+            UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                       message:message
+                                       preferredStyle:UIAlertControllerStyleAlert];
+
+            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                handler:^(UIAlertAction * action) {
+            }];
+            [alert addAction:defaultAction];
+            [TripDiarySettingsCheck showSettingsAlert:alert];
         }
 
         CDVPluginResult* result = [CDVPluginResult

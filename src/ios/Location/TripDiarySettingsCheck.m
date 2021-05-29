@@ -1,5 +1,6 @@
 #import "TripDiarySettingsCheck.h"
 #import "LocalNotificationManager.h"
+#import "BEMAppDelegate.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -22,4 +23,20 @@
         }
     }
 }
+
++(void) openAppSettings {
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString] options:@{} completionHandler:^(BOOL success) {
+    if (success) {
+        NSLog(@"Opened url");
+    } else {
+        NSLog(@"Failed open");
+    }}];
+}
+
++(void) showSettingsAlert:(UIAlertController*)alert {
+    CDVAppDelegate *ad = [[UIApplication sharedApplication] delegate];
+    CDVViewController *vc = ad.viewController;
+    [vc presentViewController:alert animated:YES completion:nil];
+}
+
 @end

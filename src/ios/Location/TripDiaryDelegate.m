@@ -15,6 +15,7 @@
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
 #import "BEMAppDelegate.h"
+#import "TripDiarySettingsCheck.h"
 
 #define ACCURACY_THRESHOLD 200
 
@@ -220,6 +221,23 @@
             didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"New authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways]];
 
+    if (status != kCLAuthorizationStatusAuthorizedAlways) {
+        NSString* errorTitle = NSLocalizedStringFromTable(@"location-permission-problem-title", @"DCLocalizable", nil);
+
+        NSString* errorDescription = NSLocalizedStringFromTable(@"location-permission-problem", @"DCLocalizable", nil);
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:errorTitle
+                                   message:errorDescription
+                                   preferredStyle:UIAlertControllerStyleAlert];
+        NSString* errorAction = NSLocalizedStringFromTable(@"fix-permission-action-button", @"DCLocalizable", nil);
+
+        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:errorAction style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction * action) {
+            [TripDiarySettingsCheck openAppSettings];
+        }];
+
+        [alert addAction:defaultAction];
+        [TripDiarySettingsCheck showSettingsAlert:alert];
+    }
     if (_tdsm.currState == kStartState) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionInitialize];

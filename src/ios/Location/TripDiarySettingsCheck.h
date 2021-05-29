@@ -6,5 +6,7 @@
 @interface TripDiarySettingsCheck: NSObject
 
 +(void)checkSettingsAndPermission;
++(void)openAppSettings;
++(void)showSettingsAlert:(UIAlertController*)alert;
 
 @end
