@@ -2,8 +2,7 @@
 <resources>
     <!-- GeofenceActions -->
     <string name="unable_detect_current_location">Unable to detect current location even after forcing, will retry at next sync</string>
-    <!-- ActivityRecognitionChangeIntentService.java -->
-    <string name="recording_activity">Recording activity </string>
+    <!-- ActivityRecognitionChangeIntentService.java (debug mode only) -->
     <string name="detected_new_activity">Detected new activity %1$s</string>
     <string name="activity_transport">transport</string>
     <string name="activity_cycling">cycling</string>
@@ -11,23 +10,17 @@
     <string name="activity_still">still</string>
     <string name="activity_unknown">unknown</string>
     <string name="activity_tilting">tilting</string>
-    <!-- GeofenceExitIntentService -->
-    <string name="handling_geofence_exit">Handling geofence exit </string>
-    <!-- LocationChangeIntentService -->
-    <string name="recording_location">Recording location </string>
     <!-- TripDiaryStateMachineReceiver -->
     <string name="new_data_collection_terms">New data collection terms - collection paused until consent</string>
+    <!-- debug mode only -->
     <string name="battery_level">Interact with me! Battery level is %1$d</string>
     <!-- TripDiaryStateMachineService and Ongoing-->
-    <string name="google_connection_suspended">google API client connection suspended %1$s</string>
-    <string name="google_connection_failed">google API client connection failed %1$s</string>
     <string name="success_moving_new_state">Success moving to %1$s</string>
-    <string name="error_creating_geofence">Error %1$d while creating geofence</string>
     <string name="failed_moving_new_state">Failed moving to %1$s</string>
     <string name="location_permission_off_enable">Location permission off, click to enable</string>
     <string name="background_loc_permission_off_enable">Background location permission off, click to enable</string>
     <string name="activity_permission_off_enable">Activity permission off, click to enable</string>
-    <string name="error_location_settings">Error %1$d in location settings</string>
+    <string name="error_location_settings">Error in location settings, click to resolve</string>
     <string name="unknown_error_location_settings">Unknown error while reading location, please check your settings</string>
     <string name="notify_curr_state">In state %1$s</string>
     <!-- TripDiaryStateMachineForegroundService -->

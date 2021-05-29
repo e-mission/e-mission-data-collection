@@ -173,7 +173,7 @@ public class SensorControlBackgroundChecker {
                           // Show the dialog by calling startResolutionForResult(),
                           // and check the result in onActivityResult().
                                     NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                            ctxt.getString(R.string.error_location_settings, exception.getStatusCode()),
+                            ctxt.getString(R.string.error_location_settings),
                             resolvable.getResolution());
                             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         } catch (ClassCastException e) {
