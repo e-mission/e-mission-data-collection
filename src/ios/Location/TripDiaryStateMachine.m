@@ -101,17 +101,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 
     
     if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
-        if (IsAtLeastiOSVersion(@"13.0")) {
-            NSLog(@"iOS 13+ detected, launching UI settings to easily enable always");
-            [TripDiarySettingsCheck openAppSettings];
-        }
-        else if ([CLLocationManager instancesRespondToSelector:@selector(requestAlwaysAuthorization)]) {
-            NSLog(@"Current location authorization = %d, always = %d, requesting always",
-                  [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-            [self.locMgr requestAlwaysAuthorization];
-        } else {
-            NSLog(@"Don't need to request authorization, system will automatically prompt for it");
-        }
+        [TripDiarySettingsCheck promptForPermission:self.locMgr];
     } else {
         NSLog(@"Current location authorization = %d, always = %d",
               [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);

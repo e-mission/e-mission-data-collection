@@ -59,58 +59,13 @@
         [DataUtils dictToWrapper:newDict wrapper:newCfg];
         [ConfigManager setConsented:newCfg];
         
+        // Refactored code for simplicity
+        // for the motion activity code, we just call checkMotionSettingsAndPermission directly
+        // but for location, there is an alternative to opening the settings, on iOS11 and iOS12,
+        // which is actually easier ("always allow")
+        // so in that case, we continue calling the init code in TripDiaryStateMachine
         [self initWithConsent];
-        
-        /*
-         * We don't strictly need to do this here since we don't use the data right now, but when we read
-         * the data to sync to the server. But doing it here allows us to notify users who don't have a sufficiently
-         * late model iPhone (https://github.com/e-mission/e-mission-phone/issues/60), and also gets all the notifications
-         * out of the way so that the user is not confronted with a random permission popup hours after installing the app.
-         * If/when we deal with users saying "no" to the permission prompts, it will make it easier to handle this in one
-         * place as well.
-         */
-        
-        if ([CMMotionActivityManager isActivityAvailable] == YES) {
-            CMMotionActivityManager* activityMgr = [[CMMotionActivityManager alloc] init];
-            NSOperationQueue* mq = [NSOperationQueue mainQueue];
-            NSDate* startDate = [NSDate new];
-            NSTimeInterval dayAgoSecs = 24 * 60 * 60;
-            NSDate* endDate = [NSDate dateWithTimeIntervalSinceNow:-(dayAgoSecs)];
-            [activityMgr queryActivityStartingFromDate:startDate toDate:endDate toQueue:mq withHandler:^(NSArray *activities, NSError *error) {
-                if (error == nil) {
-                    [LocalNotificationManager addNotification:@"activity recognition works fine"];
-                } else {
-                    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Error %@ while reading activities, travel mode detection may be unavailable", error]];
-                    NSString* title = NSLocalizedStringFromTable(@"error-reading-activities", @"DCLocalizable", nil);
-                    NSString* message = NSLocalizedStringFromTable(@"travel-mode-unavailable", @"DCLocalizable", nil);
-
-                    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
-                                               message:message
-                                               preferredStyle:UIAlertControllerStyleAlert];
-
-                    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                        handler:^(UIAlertAction * action) {
-                    }];
-                    [alert addAction:defaultAction];
-                    [TripDiarySettingsCheck showSettingsAlert:alert];
-                }
-            }];
-        } else {
-            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Activity detection unsupported, all trips will be UNKNOWN"]];
-            NSString* title = NSLocalizedStringFromTable(@"activity-detection-unsupported", @"DCLocalizable", nil);
-            NSString* message = NSLocalizedStringFromTable(@"travel-mode-unknown", @"DCLocalizable", nil);
-
-            UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
-                                       message:message
-                                       preferredStyle:UIAlertControllerStyleAlert];
-
-            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                handler:^(UIAlertAction * action) {
-            }];
-            [alert addAction:defaultAction];
-            [TripDiarySettingsCheck showSettingsAlert:alert];
-        }
-
+        [TripDiarySettingsCheck checkMotionSettingsAndPermission:FALSE];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];

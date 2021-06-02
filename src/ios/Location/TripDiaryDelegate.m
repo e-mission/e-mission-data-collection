@@ -219,25 +219,20 @@
 
 - (void)locationManager:(CLLocationManager *)manager
             didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"New authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways]];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In didChangeAuthorizationStatus, new authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways]];
 
-    if (status != kCLAuthorizationStatusAuthorizedAlways) {
-        NSString* errorTitle = NSLocalizedStringFromTable(@"location-permission-problem-title", @"DCLocalizable", nil);
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Calling TripDiarySettingsCheck from didChangeAuthorizationStatus to verify location service status and permission"]];
 
-        NSString* errorDescription = NSLocalizedStringFromTable(@"location-permission-problem", @"DCLocalizable", nil);
-        UIAlertController* alert = [UIAlertController alertControllerWithTitle:errorTitle
-                                   message:errorDescription
-                                   preferredStyle:UIAlertControllerStyleAlert];
-        NSString* errorAction = NSLocalizedStringFromTable(@"fix-permission-action-button", @"DCLocalizable", nil);
-
-        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:errorAction style:UIAlertActionStyleDefault
-            handler:^(UIAlertAction * action) {
-            [TripDiarySettingsCheck openAppSettings];
-        }];
-
-        [alert addAction:defaultAction];
-        [TripDiarySettingsCheck showSettingsAlert:alert];
+    // This is currently a separate check here instead of being folded in with checkLocationSettingsAndPermission
+    // because the pre-iOS13 option to prompt the user requires a reference to the location manager
+    // and the background call to checkLocationSettingsAndPermission from the remote push code
+    // doesn't have that reference. Can simplify this after we stop supporting iOS13.
+    if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined) {
+        [TripDiarySettingsCheck promptForPermission:manager];
+    } else {
+        [TripDiarySettingsCheck checkLocationSettingsAndPermission:FALSE];
     }
+
     if (_tdsm.currState == kStartState) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionInitialize];
