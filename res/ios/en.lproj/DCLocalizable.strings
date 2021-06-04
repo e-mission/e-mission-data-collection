@@ -1,4 +1,4 @@
-"dont-force-kill-please" = "Please don't force-kill. It actually increases battery drain because we don't get silent push notifications and can't stop tracking properly. Click to relaunch.";
+"dont-force-kill-please" = "Please don't quit the app. It can actually increases battery drain. Click to relaunch.";
 "new-data-collections-terms" = "New data collection terms - collection paused until consent";
 "error-reading-activities" = "Error while reading activities";
 "travel-mode-unavailable" = "Travel mode detection may be unavailable.";
