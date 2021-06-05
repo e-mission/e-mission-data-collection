@@ -52,6 +52,27 @@ public class SensorControlForegroundDelegate {
             SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
             return;
         }
+        // If this is android 11 (API 30), we want to launch the app settings instead of prompting for permission
+        // because the default permission prompting does not offer "always" as an option
+        // https://github.com/e-mission/e-mission-docs/issues/608
+        // we don't really care about which level of permission is missing since the prompt doesn't
+        // do anything anyway. If either permission is missing, we just open the app settings
+        // Note also that we should actually check for VERSION_CODES.R
+        // but since we are not targeting API 30 yet, we can't do that
+        // so we use Q (29) + 1 instead. I think that is more readable than 30
+        if ((Build.VERSION.SDK_INT >= (Build.VERSION_CODES.Q + 1)) &&
+          (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) ||
+           !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION))) {
+          Context mAct = cordova.getActivity();
+          String msgString = " LOC = "+cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)+
+            " BACKGROUND LOC "+ cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)+
+            " Android R+, so opening app settings anyway";
+          Log.i(cordova.getActivity(), TAG, msgString);
+          Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+          intent.setData(Uri.fromParts("package", mAct.getPackageName(), null));
+          mAct.startActivity(intent);
+          return;
+        }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) &&
           !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
