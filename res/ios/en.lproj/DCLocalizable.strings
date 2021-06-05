@@ -3,11 +3,11 @@
 "error-reading-activities" = "Error while reading activities";
 "travel-mode-unavailable" = "Travel mode detection may be unavailable.";
 "activity-detection-unsupported" = "Activity detection unsupported";
-"activity-permission-problem" = "This app does not have the 'Motion & Fitness' permission - automatic mode detection will not work";
-"activity-turned-off-problem" = "Motion & Fitness Service turned off - automatic mode detection will not work. Try to resolve the problem in Settings -> Privacy -> Motion & Fitness";
+"activity-permission-problem" = "No 'Motion & Fitness' permission - automatic mode detection will not work. Turn it on (Settings -> app)";
+"activity-turned-off-problem" = "Motion & Fitness Service disabled - automatic mode detection will not work. Turn it on (Settings -> Privacy)";
 "travel-mode-unknown" = "Travel mode detection unavailable - all trips will be UNKNOWN.";
-"bad-loc-tracking-problem" = "Background location accuracy is consistently poor - trip tracking may not work. Try to resolve the problem by turning location services, WiFi and cellular data off and on. If this message persists, please 'Email Log' for additional investigation";
-"location-turned-off-problem" = "Location Services are turned off - trip tracking will not work. Try to resolve the problem by turning on location services (Settings -> Privacy)";
+"bad-loc-tracking-problem" = "Background location accuracy is consistently poor - trip tracking may not work. Report problem.";
+"location-turned-off-problem" = "Location Services are turned off - trip tracking will not work. Turn it on (Settings -> Privacy)";
 "fix-service-action-button" = "Launch Settings";
 "permission-problem-title" = "Incorrect permission";
 "location-permission-problem" = "The app does not have the 'always' permission - background trip tracking will not work.";
