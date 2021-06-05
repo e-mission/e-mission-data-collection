@@ -46,14 +46,33 @@ public class TripDiaryStateMachineForegroundService extends Service {
         Log.d(this, TAG, "onCreate called");
     }
 
+    /*
+     * Convert the current state, which is a string (e.g.
+     * waiting_for_trip_start) into a more human-friendly string (e.g. Ready to
+     * go). Since the string mappings expect an id, we need to look up the ID
+     * first using getResources and then the string.
+     * https://stackoverflow.com/a/19093447/4040267
+     * Fallback to the old "In state XXX" if there is no mapping because
+     * otherwise the app will crash.
+     */
+    public static String humanizeState(Context ctxt, String state) {
+      try {
+        int resId = ctxt.getResources().getIdentifier(state, "string", ctxt.getPackageName());
+        return ctxt.getString(resId);
+      } catch (android.content.res.Resources.NotFoundException e) {
+        Log.e(ctxt, TAG, "ResourcesNotFoundException while humanizing message, falling back to auto-generated");
+        return ctxt.getString(R.string.notify_curr_state, state);
+      }
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(this, TAG, "onStartCommand called with intent = "+intent+
           " flags = " + flags +  " and startId = " + startId);
-        String message  = this.getString(R.string.notify_curr_state, TripDiaryStateMachineService.getState(this));
+        String message  = humanizeState(this, TripDiaryStateMachineService.getState(this));
         if (intent == null) {
           SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(this);
-          message = this.getString(R.string.notify_curr_state, TripDiaryStateMachineService.getState(this));
+          message = humanizeState(this, TripDiaryStateMachineService.getState(this));
         }
         handleStart(message, intent, flags, startId);
         // We want this service to continue running until it is explicitly
@@ -103,7 +122,8 @@ public class TripDiaryStateMachineForegroundService extends Service {
     return mBinder;
   }
 
-  public void setStateMessage(String message) {
+  public void setStateMessage(String newState) {
+      String message = humanizeState(this, newState);
     NotificationManager nMgr = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
     nMgr.notify(ONGOING_TRIP_ID, getNotification(message));
   }

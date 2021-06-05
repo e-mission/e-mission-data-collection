@@ -161,8 +161,13 @@ public class DataCollectionPlugin extends CordovaPlugin {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+      if (data == null) {
+        Log.d(cordova.getActivity(), TAG, "received onActivityResult(" + requestCode + "," +
+          resultCode + "," + "null data" + ")");
+      } else {
         Log.d(cordova.getActivity(), TAG, "received onActivityResult("+requestCode+","+
                 resultCode+","+data.getDataString()+")");
+      }
         // This will be a NOP if we are not handling the correct activity intent
                 mControlDelegate.onActivityResult(requestCode, resultCode, data);
         /*

@@ -23,7 +23,10 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
+
 
 import com.google.android.gms.location.LocationSettingsStates;
 
@@ -48,9 +51,33 @@ public class SensorControlForegroundDelegate {
     }
 
     private void checkAndPromptLocationPermissions() {
-        if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) && cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
+        if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
+          cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
             return;
+        }
+        // If this is android 11 (API 30), we want to launch the app settings instead of prompting for permission
+        // because the default permission prompting does not offer "always" as an option
+        // https://github.com/e-mission/e-mission-docs/issues/608
+        // we don't really care about which level of permission is missing since the prompt doesn't
+        // do anything anyway. If either permission is missing, we just open the app settings
+        // Note also that we should actually check for VERSION_CODES.R
+        // but since we are not targeting API 30 yet, we can't do that
+        // so we use Q (29) + 1 instead. I think that is more readable than 30
+        if ((Build.VERSION.SDK_INT >= (Build.VERSION_CODES.Q + 1)) &&
+          (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) ||
+           !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION))) {
+          Activity mAct = cordova.getActivity();
+          String msgString = " LOC = "+cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)+
+            " BACKGROUND LOC "+ cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)+
+            " Android R+, so opening app settings anyway";
+          Log.i(cordova.getActivity(), TAG, msgString);
+          // These are to hopefully help us get a callback once the settings are changed
+          Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+          intent.setData(Uri.fromParts("package", mAct.getPackageName(), null));
+          cordova.setActivityResultCallback(plugin);
+          mAct.startActivityForResult(intent, SensorControlConstants.ENABLE_BOTH_PERMISSION);
+          return;
         }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) &&
@@ -174,9 +201,9 @@ public class SensorControlForegroundDelegate {
 
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Activity mAct = cordova.getActivity();
     switch (requestCode) {
       case SensorControlConstants.ENABLE_LOCATION_SETTINGS:
-        Activity mAct = cordova.getActivity();
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         cordova.setActivityResultCallback(null);
         final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
@@ -196,6 +223,20 @@ public class SensorControlForegroundDelegate {
             Log.e(cordova.getActivity(), TAG, "Unknown result code while enabling location " + resultCode);
             break;
         }
+      case SensorControlConstants.ENABLE_BOTH_PERMISSION:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        cordova.setActivityResultCallback(null);
+        Log.d(mAct, TAG, "Got permission callback from launching app settings");
+        if (cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)) {
+          // location permission enabled, cancelling notification
+          NotificationHelper.cancelNotification(cordova.getActivity(), SensorControlConstants.ENABLE_LOCATION_PERMISSION);
+        }
+        if (cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
+          // background location permission enabled, cancelling notification
+          NotificationHelper.cancelNotification(cordova.getActivity(), SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION);
+        }
+        SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+        break;
       default:
         Log.d(cordova.getActivity(), TAG, "Got unsupported request code " + requestCode + " , ignoring...");
     }

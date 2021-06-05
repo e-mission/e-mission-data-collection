@@ -24,9 +24,14 @@
     <string name="unknown_error_location_settings">Unknown error while reading location, please check your settings</string>
     <string name="notify_curr_state">In state %1$s</string>
     <!-- TripDiaryStateMachineForegroundService -->
-    <string name="foreground_killed_email_log">Foreground service killed, Profile -> Email Log for debugging</string>
+    <string name="foreground_killed_email_log">Foreground service killed, report at Profile -> Upload Log</string>
     <!-- ConfigManager -->
     <string name="error_reading_stored_config">Error reading stored tracking config, reset to defaults</string>
     <!-- DataCollectionPlugin -->
-    <string name="unable_resolve_issue">Unrecoverable error in tracking. Profile -> Email Log for further investigation</string>
+    <string name="unable_resolve_issue">Unrecoverable error in tracking, report at Profile -> Upload Log</string>
+    <!-- State notification displays-->
+    <string name="local.state.waiting_for_trip_start">Ready for your next trip</string>
+    <string name="local.state.ongoing_trip">Yay! You are on a trip, keep going!</string>
+    <string name="local.state.start">Cannot start app, see next pop up</string>
+    <string name="local.state.tracking_stopped">Stopped tracking; remember to re-enable</string>
 </resources>

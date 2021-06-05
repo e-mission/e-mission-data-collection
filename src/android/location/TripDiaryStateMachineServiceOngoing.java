@@ -114,7 +114,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
-        mComm.setMessage(this.getString(R.string.notify_curr_state, newState));
+        mComm.setNewState(newState);
         stopSelf();
     }
 
