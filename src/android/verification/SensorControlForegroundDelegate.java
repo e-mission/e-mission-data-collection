@@ -51,7 +51,8 @@ public class SensorControlForegroundDelegate {
     }
 
     private void checkAndPromptLocationPermissions() {
-        if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) && cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
+        if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
+          cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
             return;
         }
@@ -66,14 +67,16 @@ public class SensorControlForegroundDelegate {
         if ((Build.VERSION.SDK_INT >= (Build.VERSION_CODES.Q + 1)) &&
           (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) ||
            !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION))) {
-          Context mAct = cordova.getActivity();
+          Activity mAct = cordova.getActivity();
           String msgString = " LOC = "+cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)+
             " BACKGROUND LOC "+ cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)+
             " Android R+, so opening app settings anyway";
           Log.i(cordova.getActivity(), TAG, msgString);
+          // These are to hopefully help us get a callback once the settings are changed
           Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
           intent.setData(Uri.fromParts("package", mAct.getPackageName(), null));
-          mAct.startActivity(intent);
+          cordova.setActivityResultCallback(plugin);
+          mAct.startActivityForResult(intent, SensorControlConstants.ENABLE_BOTH_PERMISSION);
           return;
         }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
@@ -198,9 +201,9 @@ public class SensorControlForegroundDelegate {
 
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Activity mAct = cordova.getActivity();
     switch (requestCode) {
       case SensorControlConstants.ENABLE_LOCATION_SETTINGS:
-        Activity mAct = cordova.getActivity();
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         cordova.setActivityResultCallback(null);
         final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
@@ -220,6 +223,20 @@ public class SensorControlForegroundDelegate {
             Log.e(cordova.getActivity(), TAG, "Unknown result code while enabling location " + resultCode);
             break;
         }
+      case SensorControlConstants.ENABLE_BOTH_PERMISSION:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        cordova.setActivityResultCallback(null);
+        Log.d(mAct, TAG, "Got permission callback from launching app settings");
+        if (cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)) {
+          // location permission enabled, cancelling notification
+          NotificationHelper.cancelNotification(cordova.getActivity(), SensorControlConstants.ENABLE_LOCATION_PERMISSION);
+        }
+        if (cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
+          // background location permission enabled, cancelling notification
+          NotificationHelper.cancelNotification(cordova.getActivity(), SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION);
+        }
+        SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+        break;
       default:
         Log.d(cordova.getActivity(), TAG, "Got unsupported request code " + requestCode + " , ignoring...");
     }
