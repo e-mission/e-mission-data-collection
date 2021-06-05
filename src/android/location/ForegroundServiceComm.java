@@ -20,27 +20,27 @@ public class ForegroundServiceComm {
   private TripDiaryStateMachineForegroundService mService;
   private boolean mBound = false;
   private int nRecursion = 0;
-  private String pendingMsg = null;
+  private String pendingMsgState = null;
 
   public ForegroundServiceComm(Context context) {
     mCtxt = context;
     mCtxt.bindService(getForegroundServiceIntent(), connection, 0);
   }
 
-  public void setMessage(String msg) {
+  public void setNewState(String newState) {
     nRecursion++;
     if (mBound) {
       Log.d(mCtxt, TAG, "Service successfully bound, setting state");
-      mService.setStateMessage(msg);
+      mService.setStateMessage(newState);
     } else {
           Intent fsi = getForegroundServiceIntent();
         if (nRecursion < 5) {
           Log.d(mCtxt, TAG, "nRecursion = "+nRecursion+" rebinding ");
-          pendingMsg = msg;
+          pendingMsgState = newState;
           mCtxt.bindService(fsi, connection, 0);
         } else if (nRecursion < 10) {
           Log.d(mCtxt, TAG, "nRecursion = "+nRecursion+" restarting before rebind ");
-          pendingMsg = msg;
+          pendingMsgState = newState;
           TripDiaryStateMachineForegroundService.startProperly(mCtxt);
           mCtxt.bindService(fsi, connection, 0);
         } else {
@@ -67,8 +67,8 @@ public class ForegroundServiceComm {
       mService = binder.getService();
       Log.e(mCtxt, TAG, "Successfully bound to service "+ mService);
       mBound = true;
-      if (pendingMsg != null) {
-        setMessage(pendingMsg);
+      if (pendingMsgState != null) {
+        setNewState(pendingMsgState);
       }
     }
 

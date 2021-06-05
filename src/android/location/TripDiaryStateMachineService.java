@@ -110,7 +110,7 @@ public class TripDiaryStateMachineService extends Service {
         Log.d(this, TAG, "newState saved in prefManager is "+
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         this.getString(R.string.curr_state_key), "not found"));
-        mComm.setMessage(this.getString(R.string.notify_curr_state, newState));
+        mComm.setNewState(newState);
         // Let's check the location settings every time we change the state instead of only on failure
         // This makes the rest of the code much simpler, allows us to catch issues as quickly as possible,
         // and
