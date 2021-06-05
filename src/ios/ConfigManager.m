@@ -68,5 +68,4 @@ static LocationTrackingConfig *_instance;
     [[BuiltinUserCache database] putReadWriteDocument:CONSENT_CONFIG_KEY value:newConsent];
 }
 
-
 @end

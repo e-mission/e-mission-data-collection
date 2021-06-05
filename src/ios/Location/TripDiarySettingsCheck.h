@@ -6,5 +6,10 @@
 @interface TripDiarySettingsCheck: NSObject
 
 +(void)checkSettingsAndPermission;
++(void)checkLocationSettingsAndPermission:(BOOL)inBackground;
++(void)checkMotionSettingsAndPermission:(BOOL)inBackground;
++(void)promptForPermission:(CLLocationManager*)locMgr;
++(void)openAppSettings;
++(void)showSettingsAlert:(UIAlertController*)alert;
 
 @end
