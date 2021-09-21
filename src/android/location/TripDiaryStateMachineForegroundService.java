@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
+import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
@@ -181,7 +183,8 @@ public class TripDiaryStateMachineForegroundService extends Service {
         }
       }
       Log.d(ctxt, TAG, "Did not find foreground notification with ID " + TripDiaryStateMachineForegroundService.ONGOING_TRIP_ID + " in list " + Arrays.stream(activeNotifications).map(n -> n.getId()).collect(Collectors.toList()));
-      NotificationHelper.createNotification(ctxt, ONGOING_TRIP_ID + 1, ctxt.getString(R.string.foreground_killed_email_log));
+      // NotificationHelper.createNotification(ctxt, ONGOING_TRIP_ID + 1, ctxt.getString(R.string.foreground_killed_email_log));
+      BuiltinUserCache.getDatabase(ctxt).putMessage(R.string.key_usercache_client_error, new StatsEvent(ctxt, R.string.killed_foreground_service_detected_restart));
       TripDiaryStateMachineForegroundService.startProperly(ctxt);
       // It is not enough to move to the foreground; you also need to reinitialize tracking
       // https://github.com/e-mission/e-mission-docs/issues/580#issuecomment-700747931
