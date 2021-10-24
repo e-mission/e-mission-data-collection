@@ -117,9 +117,9 @@
 		</service>
     </config-file>
 
-    <framework src="com.google.code.gson:gson:2.8.5"/>
+    <framework src="com.google.code.gson:gson:2.8.8"/>
     <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
-    <preference name="LOCATION_VERSION" default="17.0.0"/>
+    <preference name="LOCATION_VERSION" default="18.0.0"/>
 
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
@@ -196,10 +196,16 @@
         <false/>
     </config-file>
 
-    <framework src="Bolts/Tasks" type="podspec" spec="~> 1.9.0"/>
+    <podspec>
+      <config>
+        <source url="https://cdn.cocoapods.org/"/>
+      </config>
+      <pods use-frameworks="true">
+        <pod name="Bolts/Tasks" spec="~> 1.9.1" />
+      </pods>
+    </podspec>
 
     <framework src="CoreLocation.framework"/>
-    <framework src="Accounts.framework"/>
 
     <header-file src="src/ios/BEMDataCollection.h"/>
     <header-file src="src/ios/BEMAppDelegate.h"/>
