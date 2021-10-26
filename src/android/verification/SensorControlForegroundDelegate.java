@@ -3,7 +3,7 @@ package edu.berkeley.eecs.emission.cordova.tracker.verification;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import gov.colorado.energyoffice.emission.R;
+import edu.berkeley.eecs.emission.cordova.R;
 
 /*
  * Deals with settings and resolutions when the app activity is visible.

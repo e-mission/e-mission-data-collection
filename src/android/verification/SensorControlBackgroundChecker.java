@@ -23,9 +23,8 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
-import gov.colorado.energyoffice.emission.MainActivity;
-// Auto fixed by post-plugin hook
-import gov.colorado.energyoffice.emission.R;
+import edu.berkeley.eecs.emission.cordova.MainActivity;
+import edu.berkeley.eecs.emission.cordova.R;
 
 /*
  * Deals with settings and resolutions from the background as a service.
