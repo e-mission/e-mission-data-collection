@@ -171,9 +171,9 @@ public class SensorControlBackgroundChecker {
                           ResolvableApiException resolvable = (ResolvableApiException) exception;
                           // Show the dialog by calling startResolutionForResult(),
                           // and check the result in onActivityResult().
-                                    NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                            ctxt.getString(R.string.error_location_settings),
-                            resolvable.getResolution());
+                            NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
+                                ctxt.getString(R.string.error_location_settings),
+                                resolvable.getResolution());
                             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         } catch (ClassCastException e) {
                           // Ignore, should be an impossible error.
@@ -184,7 +184,7 @@ public class SensorControlBackgroundChecker {
                         // settings so we won't show the dialog.
                         Log.i(ctxt, TAG, "location settings are not valid, but cannot be fixed by showing a dialog");
                         NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                  ctxt.getString(R.string.error_location_settings, exception.getStatusCode()));
+                          ctxt.getString(R.string.error_location_settings));
                         ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
                         break;
                     default:
