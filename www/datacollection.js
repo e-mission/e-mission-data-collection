@@ -21,6 +21,36 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "markConsented", [newConsent]);
         });
     },
+    fixLocationSettings: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixLocationSettings", []);
+        });
+    },
+    isValidLocationSettings: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isValidLocationSettings", []);
+        });
+    },
+    fixLocationPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixLocationPermissions", []);
+        });
+    },
+    isValidLocationPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isValidLocationPermissions", []);
+        });
+    },
+    fixFitnessPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixFitnessPermissions", []);
+        });
+    },
+    isValidFitnessPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isValidFitnessPermissions", []);
+        });
+    },
     storeBatteryLevel: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "storeBatteryLevel", []);

@@ -9,6 +9,7 @@ public class SensorControlConstants {
     public static String MOTION_ACTIVITY_PERMISSION = Manifest.permission.ACTIVITY_RECOGNITION;
 
     public static final int ENABLE_LOCATION_SETTINGS = 362253738;
+    public static final int ENABLE_LOCATION_SETTINGS_MANUAL = 362253736;
     public static final int ENABLE_LOCATION_PERMISSION = 362253737;
     public static final int ENABLE_BACKGROUND_LOC_PERMISSION = 362253739;
     public static final int ENABLE_BOTH_PERMISSION = 362253740;

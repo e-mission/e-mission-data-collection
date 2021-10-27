@@ -1,9 +1,11 @@
 package edu.berkeley.eecs.emission.cordova.tracker.verification;
 // Auto fixed by post-plugin hook
+import edu.berkeley.eecs.emission.R;
+
+
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
-import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.R;
+
 
 /*
  * Deals with settings and resolutions when the app activity is visible.
@@ -13,9 +15,11 @@ import edu.berkeley.eecs.emission.cordova.R;
  * - Dealing with user responses
  */
 
+import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
@@ -28,9 +32,14 @@ import android.os.Build;
 import android.provider.Settings;
 
 
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
@@ -39,10 +48,99 @@ public class SensorControlForegroundDelegate {
 
     private CordovaPlugin plugin = null;
     private CordovaInterface cordova = null;
+    private CallbackContext cordovaCallback = null;
 
-    public SensorControlForegroundDelegate(CordovaPlugin iplugin, CordovaInterface icordova) {
-        plugin = iplugin;
-        cordova = icordova;
+    public SensorControlForegroundDelegate(CordovaPlugin inPlugin,
+                                           CordovaInterface inCordova) {
+        plugin = inPlugin;
+        cordova = inCordova;
+    }
+
+    // Invokes the callback with a boolean indicating whether
+    // the location settings are correct or not
+    public void checkLocationSettings(CallbackContext cordovaCallback) {
+      Activity currActivity = cordova.getActivity();
+      SensorControlChecks.checkLocationSettings(currActivity,
+        resultTask -> {
+          try {
+            LocationSettingsResponse response = resultTask.getResult(ApiException.class);
+            // All location settings are satisfied. The client can initialize location
+            // requests here.
+            Log.i(currActivity, TAG, "All settings are valid, checking current state");
+            Log.i(currActivity, TAG, "Current location settings are "+response.getLocationSettingsStates());
+            cordovaCallback.success(Objects.requireNonNull(response.getLocationSettingsStates()).toString());
+          } catch (ApiException exception) {
+            Log.i(currActivity, TAG, "Settings are not valid, returning "+exception.getMessage());
+            cordovaCallback.error(exception.getLocalizedMessage());
+          }
+        });
+    }
+
+    public void checkAndPromptLocationSettings(CallbackContext callbackContext) {
+      Activity currActivity = cordova.getActivity();
+      SensorControlChecks.checkLocationSettings(currActivity, resultTask -> {
+        try {
+          LocationSettingsResponse response = resultTask.getResult(ApiException.class);
+          // All location settings are satisfied. The client can initialize location
+          // requests here.
+          Log.i(currActivity, TAG, "All settings are valid, checking current state");
+          JSONObject lssJSON = statesToJSON(response.getLocationSettingsStates());
+          Log.i(currActivity, TAG, "Current location settings are "+lssJSON);
+          callbackContext.success(lssJSON);
+        } catch (ApiException exception) {
+          switch (exception.getStatusCode()) {
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+              Log.i(currActivity, TAG, "location settings are not valid, but could be fixed by showing the user a dialog");
+              // Location settings are not satisfied. But could be fixed by showing the
+              // user a dialog.
+              try {
+                // Cast to a resolvable exception.
+                ResolvableApiException resolvable = (ResolvableApiException) exception;
+                // Show the dialog by calling startResolutionForResult(),
+                // and check the result in onActivityResult().
+                // Experiment with "send" instead of this resolution code
+                this.cordovaCallback = callbackContext;
+                cordova.setActivityResultCallback(plugin);
+                resolvable.startResolutionForResult(currActivity, SensorControlConstants.ENABLE_LOCATION_SETTINGS);
+              } catch (IntentSender.SendIntentException | ClassCastException sie) {
+                callbackContext.error(sie.getLocalizedMessage());
+              }
+              break;
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+              // Location settings are not satisfied. However, we have no way to fix the
+              // settings so we won't show the dialog.
+              Log.i(currActivity, TAG, "location settings are not valid, but cannot be fixed by showing a dialog");
+              openLocationSettingsPage(callbackContext);
+              break;
+            default:
+              Log.i(currActivity, TAG, "unknown error reading location");
+              openLocationSettingsPage(callbackContext);
+          }
+        } catch (JSONException e) {
+          callbackContext.error(e.getLocalizedMessage());
+        }
+        });
+    }
+
+    private static JSONObject statesToJSON(LocationSettingsStates lss) throws JSONException {
+      // TODO: Does this need to be internationalized?
+      if (lss == null) {
+        throw new JSONException("null input");
+      }
+      JSONObject jo = new JSONObject();
+      jo.put("Bluetooth", lss.isBleUsable());
+      jo.put("GPS", lss.isGpsUsable());
+      jo.put("Network", lss.isNetworkLocationUsable());
+      jo.put("location", lss.isLocationUsable());
+      return jo;
+    }
+
+    private void openLocationSettingsPage(CallbackContext callbackContext) {
+        this.cordovaCallback = callbackContext;
+        cordova.setActivityResultCallback(plugin);
+        Intent locSettingsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        cordova.getActivity().startActivityForResult(locSettingsIntent,
+          SensorControlConstants.ENABLE_LOCATION_SETTINGS_MANUAL);
     }
 
     public void checkAndPromptPermissions() {
@@ -207,22 +305,33 @@ public class SensorControlForegroundDelegate {
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         cordova.setActivityResultCallback(null);
         final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
-        Log.d(cordova.getActivity(), TAG, "at this point, isLocationUsable = " + states.isLocationUsable());
+        Log.d(cordova.getActivity(), TAG, "at this point, isLocationUsable = " + (states != null && states.isLocationUsable()));
         switch (resultCode) {
           case Activity.RESULT_OK:
             // All required changes were successfully made
             Log.i(cordova.getActivity(), TAG, "All changes successfully made, reinitializing");
-            NotificationHelper.cancelNotification(mAct, Constants.TRACKING_ERROR_ID);
-            SensorControlBackgroundChecker.restartFSMIfStartState(mAct);
+            try {
+              cordovaCallback.success(statesToJSON(states));
+            } catch (JSONException e) {
+              cordovaCallback.error(mAct.getString(R.string.unknown_error_location_settings));
+            }
             break;
           case Activity.RESULT_CANCELED:
             // The user was asked to change settings, but chose not to
             Log.e(cordova.getActivity(), TAG, "User chose not to change settings, dunno what to do");
+            cordovaCallback.error(mAct.getString(R.string.user_rejected_setting));
             break;
           default:
+            cordovaCallback.error(mAct.getString(R.string.unable_resolve_issue));
             Log.e(cordova.getActivity(), TAG, "Unknown result code while enabling location " + resultCode);
             break;
         }
+      case SensorControlConstants.ENABLE_LOCATION_SETTINGS_MANUAL:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        cordova.setActivityResultCallback(null);
+        // this will call the callback with success or error
+        checkLocationSettings(cordovaCallback);
+        break;
       case SensorControlConstants.ENABLE_BOTH_PERMISSION:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         cordova.setActivityResultCallback(null);

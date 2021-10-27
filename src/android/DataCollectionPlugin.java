@@ -1,4 +1,6 @@
 package edu.berkeley.eecs.emission.cordova.tracker;
+// Auto fixed by post-plugin hook
+import edu.berkeley.eecs.emission.R;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaInterface;
@@ -70,6 +72,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
             // ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
+            return true;
+        } else if (action.equals("fixLocationSettings")) {
+            Log.d(cordova.getActivity(), TAG, "fixing location settings");
+            mControlDelegate.checkAndPromptLocationSettings(callbackContext);
+            return true;
+        } else if (action.equals("isValidLocationSettings")) {
+            Log.d(cordova.getActivity(), TAG, "checking location settings");
+            mControlDelegate.checkLocationSettings(callbackContext);
             return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();

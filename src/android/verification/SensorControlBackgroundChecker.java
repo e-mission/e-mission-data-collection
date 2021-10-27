@@ -57,7 +57,7 @@ public class SensorControlBackgroundChecker {
             if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) ||
               checkBackgroundLocPermissions(ctxt, request)) {
               Log.d(ctxt, TAG, "checkBackgroundLocPermissions returned true, checking location settings");
-            checkLocationSettings(ctxt, request);
+            checkLocationSettings(ctxt);
             } else {
               Log.d(ctxt, TAG, "check background permissions returned false, no point checking settings");
               ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
@@ -143,17 +143,10 @@ public class SensorControlBackgroundChecker {
                     pi);
     }
 
-    private static void checkLocationSettings(final Context ctxt,
-                                             final LocationRequest request) {
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(request);
-
-        Task<LocationSettingsResponse> task =
-                LocationServices.getSettingsClient(ctxt).checkLocationSettings(builder.build());
-        Log.d(ctxt, TAG, "Got back result "+task);
-        task.addOnCompleteListener(resultTask -> {
+    private static void checkLocationSettings(final Context ctxt) {
+      SensorControlChecks.checkLocationSettings(ctxt, resultTask -> {
           try {
-            LocationSettingsResponse response = task.getResult(ApiException.class);
+            LocationSettingsResponse response = resultTask.getResult(ApiException.class);
                         // All location settings are satisfied. The client can initialize location
                         // requests here.
             Log.i(ctxt, TAG, "All settings are valid, checking current state");

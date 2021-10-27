@@ -28,6 +28,7 @@
     <!-- ConfigManager -->
     <string name="error_reading_stored_config">Error reading stored tracking config, reset to defaults</string>
     <!-- DataCollectionPlugin -->
+    <string name="user_rejected_setting">It looks like you canceled the requested change. Please accept it instead.</string>
     <string name="unable_resolve_issue">Unrecoverable error in tracking, report at Profile -> Upload Log</string>
     <!-- State notification displays-->
     <string name="local.state.waiting_for_trip_start">Ready for your next trip</string>
