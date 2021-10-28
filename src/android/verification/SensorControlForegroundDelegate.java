@@ -152,11 +152,6 @@ public class SensorControlForegroundDelegate {
       }
     }
 
-    public void checkAndPromptPermissions() {
-        checkAndPromptLocationPermissions(null);
-        checkAndPromptMotionActivityPermissions();
-    }
-
     public void checkAndPromptLocationPermissions(CallbackContext cordovaCallback) {
         if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
@@ -210,11 +205,23 @@ public class SensorControlForegroundDelegate {
         }
     }
 
-    private void checkAndPromptMotionActivityPermissions() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(SensorControlConstants.MOTION_ACTIVITY_PERMISSION)) {
-            Log.i(cordova.getActivity(), TAG, "Only motion activity permission missing, requesting it");
+    public void checkMotionActivityPermissions(CallbackContext cordovaCallback) {
+      boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
+      if(validPerms) {
+        cordovaCallback.success();
+      } else {
+        cordovaCallback.error(cordova.getActivity().getString(R.string.activity_permission_off));
+      }
+    }
+
+    public void checkAndPromptMotionActivityPermissions(CallbackContext cordovaCallback) {
+      boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
+      if(validPerms) {
+        cordovaCallback.success();
+      } else {
+        Log.i(cordova.getActivity(), TAG, "Motion activity permission missing, requesting it");
+        this.cordovaCallback = cordovaCallback;
             cordova.requestPermission(plugin, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION, SensorControlConstants.MOTION_ACTIVITY_PERMISSION);
-            return;
         }
     }
 
@@ -238,7 +245,7 @@ public class SensorControlForegroundDelegate {
         }
 
         if(SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION_ACTION.equals(intent.getAction())) {
-            checkAndPromptMotionActivityPermissions();
+            checkAndPromptMotionActivityPermissions(null);
             return;
         }
         if (NotificationHelper.DISPLAY_RESOLUTION_ACTION.equals(intent.getAction())) {
@@ -296,10 +303,10 @@ public class SensorControlForegroundDelegate {
                 break;
             case SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    NotificationHelper.cancelNotification(cordova.getActivity(), SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION);
+                    cordovaCallback.success();
                     // motion activity does not affect the FSM
                 } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                    SensorControlBackgroundChecker.generateMotionActivityEnableNotification(cordova.getActivity());
+                    cordovaCallback.error(cordova.getActivity().getString(R.string.activity_permission_off));
                 }
                 break;
             default:

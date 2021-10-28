@@ -68,7 +68,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
             // user deleted the consent and re-consented, but didn't upgrade the app
-            mControlDelegate.checkAndPromptPermissions();
+            // mControlDelegate.checkAndPromptPermissions();
             // ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
@@ -82,12 +82,20 @@ public class DataCollectionPlugin extends CordovaPlugin {
             mControlDelegate.checkLocationSettings(callbackContext);
             return true;
         } else if (action.equals("fixLocationPermissions")) {
-          Log.d(cordova.getActivity(), TAG, "fixing location settings");
+          Log.d(cordova.getActivity(), TAG, "fixing location permissions");
           mControlDelegate.checkAndPromptLocationPermissions(callbackContext);
           return true;
         } else if (action.equals("isValidLocationPermissions")) {
-          Log.d(cordova.getActivity(), TAG, "checking location settings");
+          Log.d(cordova.getActivity(), TAG, "checking location permissions");
           mControlDelegate.checkLocationPermissions(callbackContext);
+          return true;
+        } else if (action.equals("fixFitnessPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing fitness permissions");
+          mControlDelegate.checkAndPromptMotionActivityPermissions(callbackContext);
+          return true;
+        } else if (action.equals("isValidFitnessPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "checking fitness permissions");
+          mControlDelegate.checkMotionActivityPermissions(callbackContext);
           return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();

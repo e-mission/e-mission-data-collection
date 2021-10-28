@@ -5,6 +5,7 @@ import edu.berkeley.eecs.emission.R;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.location.Location;
+import android.os.Build;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
@@ -50,5 +51,15 @@ public class SensorControlChecks {
       boolean foregroundPerm = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.LOCATION_PERMISSION) == PermissionChecker.PERMISSION_GRANTED;
       boolean backgroundPerm = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.BACKGROUND_LOC_PERMISSION) == PermissionChecker.PERMISSION_GRANTED;
       return foregroundPerm && backgroundPerm;
+    }
+
+    // TODO: Figure out how to integrate this with the background code
+    // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-953403832
+    public static boolean checkMotionActivityPermissions(final Context ctxt) {
+      // apps before version 29 did not need to prompt for dynamic permissions related
+      // to motion activity
+      boolean version29Check = Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q;
+      boolean permCheck = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.MOTION_ACTIVITY_PERMISSION) == PermissionChecker.PERMISSION_GRANTED;
+      return version29Check || permCheck;
     }
 }
