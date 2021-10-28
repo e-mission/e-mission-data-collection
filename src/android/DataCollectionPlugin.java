@@ -81,6 +81,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
             Log.d(cordova.getActivity(), TAG, "checking location settings");
             mControlDelegate.checkLocationSettings(callbackContext);
             return true;
+        } else if (action.equals("fixLocationPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing location settings");
+          mControlDelegate.checkAndPromptLocationPermissions(callbackContext);
+          return true;
+        } else if (action.equals("isValidLocationPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "checking location settings");
+          mControlDelegate.checkLocationPermissions(callbackContext);
+          return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
             TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);

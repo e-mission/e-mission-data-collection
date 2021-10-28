@@ -6,6 +6,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.location.Location;
 
+import androidx.core.content.ContextCompat;
+import androidx.core.content.PermissionChecker;
+
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;
@@ -41,7 +44,11 @@ public class SensorControlChecks {
         task.addOnCompleteListener(callback);
     }
 
-    public static void fixLocationSettings(final Context ctxt) {
-        Log.i(ctxt, TAG, "About to fix location settings, checking first...");
+    // TODO: Figure out how to integrate this with the background code
+    // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-953403832
+    public static boolean checkLocationPermissions(final Context ctxt) {
+      boolean foregroundPerm = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.LOCATION_PERMISSION) == PermissionChecker.PERMISSION_GRANTED;
+      boolean backgroundPerm = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.BACKGROUND_LOC_PERMISSION) == PermissionChecker.PERMISSION_GRANTED;
+      return foregroundPerm && backgroundPerm;
     }
 }
