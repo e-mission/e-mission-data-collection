@@ -14,6 +14,7 @@ public class SensorControlConstants {
     public static final int ENABLE_BACKGROUND_LOC_PERMISSION = 362253739;
     public static final int ENABLE_BOTH_PERMISSION = 362253740;
     public static final int ENABLE_MOTION_ACTIVITY_PERMISSION = 362253741;
+    public static final int ENABLE_NOTIFICATIONS = 362253742;
 
     public static final String ENABLE_LOCATION_PERMISSION_ACTION = "ENABLE_LOCATION_PERMISSION";
     public static final String ENABLE_BACKGROUND_LOC_PERMISSION_ACTION = "ENABLE_BACKGROUND_LOC_PERMISSION";

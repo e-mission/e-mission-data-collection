@@ -163,23 +163,14 @@ public class SensorControlForegroundDelegate {
         // https://github.com/e-mission/e-mission-docs/issues/608
         // we don't really care about which level of permission is missing since the prompt doesn't
         // do anything anyway. If either permission is missing, we just open the app settings
-        // Note also that we should actually check for VERSION_CODES.R
-        // but since we are not targeting API 30 yet, we can't do that
-        // so we use Q (29) + 1 instead. I think that is more readable than 30
-        if ((Build.VERSION.SDK_INT >= (Build.VERSION_CODES.Q + 1)) &&
+        if ((Build.VERSION.SDK_INT >= (Build.VERSION_CODES.R)) &&
           (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) ||
            !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION))) {
-          Activity mAct = cordova.getActivity();
           String msgString = " LOC = "+cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)+
             " BACKGROUND LOC "+ cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)+
             " Android R+, so opening app settings anyway";
           Log.i(cordova.getActivity(), TAG, msgString);
-          // These are to hopefully help us get a callback once the settings are changed
-          Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-          intent.setData(Uri.fromParts("package", mAct.getPackageName(), null));
-          this.cordovaCallback = cordovaCallback;
-          cordova.setActivityResultCallback(plugin);
-          mAct.startActivityForResult(intent, SensorControlConstants.ENABLE_BOTH_PERMISSION);
+          openAppSettingsPage(cordovaCallback, SensorControlConstants.ENABLE_BOTH_PERMISSION);
           return;
         }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
@@ -224,6 +215,27 @@ public class SensorControlForegroundDelegate {
             cordova.requestPermission(plugin, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION, SensorControlConstants.MOTION_ACTIVITY_PERMISSION);
         }
     }
+
+  public void checkShowNotificationsEnabled(CallbackContext cordovaCallback) {
+    boolean validPerms = SensorControlChecks.checkNotificationsEnabled(cordova.getActivity());
+    if(validPerms) {
+      cordovaCallback.success();
+    } else {
+      cordovaCallback.error(cordova.getActivity().getString(R.string.activity_permission_off));
+    }
+  }
+
+  public void checkAndPromptShowNotificationsEnabled(CallbackContext cordovaCallback) {
+    boolean validPerms = SensorControlChecks.checkNotificationsEnabled(cordova.getActivity());
+    if(validPerms) {
+      cordovaCallback.success();
+    } else {
+      Log.i(cordova.getActivity(), TAG, "Notifications not enabled, opening app page");
+      // TODO: switch to Settings.ACTION_APP_NOTIFICATION_SETTINGS instead of the app page
+      // once our min SDK goes up to oreo
+      openAppSettingsPage(cordovaCallback, SensorControlConstants.ENABLE_NOTIFICATIONS);
+    }
+  }
 
     private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
@@ -357,6 +369,16 @@ public class SensorControlForegroundDelegate {
           cordovaCallback.success();
         } else {
           cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off));
+        }
+        break;
+      case SensorControlConstants.ENABLE_NOTIFICATIONS:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        cordova.setActivityResultCallback(null);
+        Log.d(mAct, TAG, "Got notification callback from launching app settings");
+        if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
+          cordovaCallback.success();
+        } else {
+          cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
         }
         break;
       default:

@@ -51,6 +51,16 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isValidFitnessPermissions", []);
         });
     },
+    fixShowNotifications: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixShowNotifications", []);
+        });
+    },
+    isValidShowNotifications: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isValidShowNotifications", []);
+        });
+    },
     storeBatteryLevel: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "storeBatteryLevel", []);

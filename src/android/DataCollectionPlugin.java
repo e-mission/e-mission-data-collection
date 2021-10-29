@@ -1,5 +1,5 @@
 package edu.berkeley.eecs.emission.cordova.tracker;
-// Auto fixed by post-plugin hook
+
 import edu.berkeley.eecs.emission.R;
 
 import org.apache.cordova.CordovaPlugin;
@@ -96,6 +96,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
         } else if (action.equals("isValidFitnessPermissions")) {
           Log.d(cordova.getActivity(), TAG, "checking fitness permissions");
           mControlDelegate.checkMotionActivityPermissions(callbackContext);
+          return true;
+        } else if (action.equals("fixShowNotifications")) {
+          Log.d(cordova.getActivity(), TAG, "checking notification enable");
+          mControlDelegate.checkAndPromptShowNotificationsEnabled(callbackContext);
+          return true;
+        } else if (action.equals("isValidShowNotifications")) {
+          Log.d(cordova.getActivity(), TAG, "checking notification enable");
+          mControlDelegate.checkShowNotificationsEnabled(callbackContext);
           return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
