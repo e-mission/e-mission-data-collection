@@ -143,6 +143,14 @@ public class SensorControlForegroundDelegate {
           SensorControlConstants.ENABLE_LOCATION_SETTINGS_MANUAL);
     }
 
+    private void openAppSettingsPage(CallbackContext callbackContext, int requestCode) {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.fromParts("package", cordova.getActivity().getPackageName(), null));
+        this.cordovaCallback = cordovaCallback;
+        cordova.setActivityResultCallback(plugin);
+        cordova.getActivity().startActivityForResult(intent, requestCode);
+    }
+
     public void checkLocationPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkLocationPermissions(cordova.getActivity());
       if(validPerms) {
