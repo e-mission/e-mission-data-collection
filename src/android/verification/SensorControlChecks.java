@@ -88,4 +88,15 @@ public class SensorControlChecks {
       }
       return appDisabled || channelsDisabled;
     }
+
+  public static boolean checkNotificationsUnpaused(final Context ctxt) {
+    NotificationManager nMgr = (NotificationManager) ctxt.getSystemService(Context.NOTIFICATION_SERVICE);
+    boolean appUnpaused = true;
+    // app notification pausing apparently did not exist before API 29, so we return unpaused = true
+    // by default
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+      appUnpaused = !(nMgr.areNotificationsPaused());
+    }
+    return appUnpaused;
+  }
 }

@@ -61,6 +61,11 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isValidShowNotifications", []);
         });
     },
+    isNotificationsUnpaused: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isNotificationsUnpaused", []);
+        });
+    },
     storeBatteryLevel: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "storeBatteryLevel", []);

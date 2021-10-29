@@ -98,12 +98,16 @@ public class DataCollectionPlugin extends CordovaPlugin {
           mControlDelegate.checkMotionActivityPermissions(callbackContext);
           return true;
         } else if (action.equals("fixShowNotifications")) {
-          Log.d(cordova.getActivity(), TAG, "checking notification enable");
+          Log.d(cordova.getActivity(), TAG, "fixing notification enable");
           mControlDelegate.checkAndPromptShowNotificationsEnabled(callbackContext);
           return true;
         } else if (action.equals("isValidShowNotifications")) {
           Log.d(cordova.getActivity(), TAG, "checking notification enable");
           mControlDelegate.checkShowNotificationsEnabled(callbackContext);
+          return true;
+        } else if (action.equals("isNotificationsUnpaused")) {
+          Log.d(cordova.getActivity(), TAG, "checking notification unpause");
+          mControlDelegate.checkPausedNotifications(callbackContext);
           return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();

@@ -245,6 +245,16 @@ public class SensorControlForegroundDelegate {
     }
   }
 
+  public void checkPausedNotifications(CallbackContext cordovaCallback) {
+      boolean unpaused = SensorControlChecks.checkNotificationsUnpaused(cordova.getActivity());
+      if(unpaused) {
+        cordovaCallback.success();
+      } else {
+        Log.i(cordova.getActivity(), TAG, "Notifications paused, asking user to report");
+        cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_paused));
+      }
+  }
+
     private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
             try {
