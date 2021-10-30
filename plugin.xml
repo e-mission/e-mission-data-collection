@@ -120,6 +120,10 @@
     <framework src="com.google.code.gson:gson:2.8.8"/>
     <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
     <preference name="LOCATION_VERSION" default="18.0.0"/>
+    <framework src="androidx.core:core:$ANDROIDX_CORE_VERSION"/>
+    <preference name="ANDROIDX_CORE_VERSION" default="1.7.0"/>
+
+    <framework src="src/android/enable_api_31.gradle" custom="true" type="gradleReference" />
 
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
