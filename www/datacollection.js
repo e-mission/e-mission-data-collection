@@ -66,6 +66,21 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isNotificationsUnpaused", []);
         });
     },
+    fixUnusedAppRestrictions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixUnusedAppRestrictions", []);
+        });
+    },
+    isUnusedAppUnrestricted: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isUnusedAppUnrestricted", []);
+        });
+    },
+    fixOEMBackgroundRestrictions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixOEMBackgroundRestrictions", []);
+        });
+    },
     storeBatteryLevel: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "storeBatteryLevel", []);

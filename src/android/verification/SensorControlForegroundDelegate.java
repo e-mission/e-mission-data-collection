@@ -32,6 +32,8 @@ import android.os.Build;
 import android.provider.Settings;
 
 
+import androidx.core.content.IntentCompat;
+
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationSettingsResponse;
@@ -146,7 +148,7 @@ public class SensorControlForegroundDelegate {
     private void openAppSettingsPage(CallbackContext callbackContext, int requestCode) {
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.fromParts("package", cordova.getActivity().getPackageName(), null));
-        this.cordovaCallback = cordovaCallback;
+        this.cordovaCallback = callbackContext;
         cordova.setActivityResultCallback(plugin);
         cordova.getActivity().startActivityForResult(intent, requestCode);
     }
@@ -253,6 +255,30 @@ public class SensorControlForegroundDelegate {
         Log.i(cordova.getActivity(), TAG, "Notifications paused, asking user to report");
         cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_paused));
       }
+  }
+
+  public void checkUnusedAppsUnrestricted(CallbackContext cordovaCallback) {
+    boolean unrestricted = SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity());
+    if (unrestricted) {
+      cordovaCallback.success();
+    } else {
+      Log.i(cordova.getActivity(), TAG, "Unused apps restricted, asking user to unrestrict");
+      cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
+    }
+  }
+
+
+  public void checkAndPromptUnusedAppsUnrestricted(CallbackContext cordovaCallback) {
+    boolean unrestricted = SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity());
+    if (unrestricted) {
+      cordovaCallback.success();
+    } else {
+      Log.i(cordova.getActivity(), TAG, "Unused apps restricted, asking user to unrestrict");
+      this.cordovaCallback = cordovaCallback;
+      cordova.setActivityResultCallback(plugin);
+      Intent intent = IntentCompat.createManageUnusedAppRestrictionsIntent(cordova.getActivity(), cordova.getActivity().getPackageName());
+      cordova.getActivity().startActivityForResult(intent, SensorControlConstants.REMOVE_UNUSED_APP_RESTRICTIONS);
+    }
   }
 
     private void displayResolution(PendingIntent resolution) {
@@ -394,6 +420,16 @@ public class SensorControlForegroundDelegate {
         cordova.setActivityResultCallback(null);
         Log.d(mAct, TAG, "Got notification callback from launching app settings");
         if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
+          cordovaCallback.success();
+        } else {
+          cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
+        }
+        break;
+      case SensorControlConstants.REMOVE_UNUSED_APP_RESTRICTIONS:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        cordova.setActivityResultCallback(null);
+        Log.d(mAct, TAG, "Got unused app restrictions callback from launching app settings");
+        if (SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity())) {
           cordovaCallback.success();
         } else {
           cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));

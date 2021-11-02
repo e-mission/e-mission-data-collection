@@ -13,6 +13,8 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
+import androidx.core.content.PackageManagerCompat;
+import androidx.core.content.UnusedAppRestrictionsConstants;
 
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
@@ -24,9 +26,11 @@ import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.common.util.concurrent.ListenableFuture;
 
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
@@ -68,7 +72,7 @@ public class SensorControlChecks {
     public static boolean checkMotionActivityPermissions(final Context ctxt) {
       // apps before version 29 did not need to prompt for dynamic permissions related
       // to motion activity
-      boolean version29Check = Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q;
+      boolean version29Check = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q;
       boolean permCheck = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.MOTION_ACTIVITY_PERMISSION) == PermissionChecker.PERMISSION_GRANTED;
       return version29Check || permCheck;
     }
@@ -98,5 +102,24 @@ public class SensorControlChecks {
       appUnpaused = !(nMgr.areNotificationsPaused());
     }
     return appUnpaused;
+  }
+
+  public static boolean checkUnusedAppsUnrestricted(final Context ctxt) {
+      ListenableFuture<Integer> future = PackageManagerCompat.getUnusedAppRestrictionsStatus(ctxt);
+    try {
+      Integer appRestrictionStatus = future.get();
+      switch(appRestrictionStatus) {
+        case UnusedAppRestrictionsConstants.ERROR: return false;
+        case UnusedAppRestrictionsConstants.FEATURE_NOT_AVAILABLE: return true;
+        case UnusedAppRestrictionsConstants.DISABLED: return true;
+        case UnusedAppRestrictionsConstants.API_30_BACKPORT:
+        case UnusedAppRestrictionsConstants.API_30:
+        case UnusedAppRestrictionsConstants.API_31:
+          return false;
+      }
+    } catch (ExecutionException | InterruptedException e) {
+      return false;
+    }
+    return false;
   }
 }

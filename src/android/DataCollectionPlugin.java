@@ -109,6 +109,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
           Log.d(cordova.getActivity(), TAG, "checking notification unpause");
           mControlDelegate.checkPausedNotifications(callbackContext);
           return true;
+        } else if (action.equals("fixUnusedAppRestrictions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing unused app restrictions");
+          mControlDelegate.checkAndPromptUnusedAppsUnrestricted(callbackContext);
+          return true;
+        } else if (action.equals("isUnusedAppUnrestricted")) {
+          Log.d(cordova.getActivity(), TAG, "checking unused app restrictions");
+          mControlDelegate.checkUnusedAppsUnrestricted(callbackContext);
+          return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
             TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);
