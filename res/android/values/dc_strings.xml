@@ -18,9 +18,11 @@
     <string name="success_moving_new_state">Success moving to %1$s</string>
     <string name="failed_moving_new_state">Failed moving to %1$s</string>
     <string name="location_permission_off">Insufficient location permissions, please fix</string>
+    <string name="location_permission_off_app_open">Insufficient location permissions, please fix in app settings</string>
     <string name="location_permission_off_enable">Location permission off, click to enable</string>
     <string name="background_loc_permission_off_enable">Background location permission off, click to enable</string>
     <string name="activity_permission_off">Activity permission off, please fix</string>
+    <string name="activity_permission_off_app_open">Activity permission off, please fix in app settings</string>
     <string name="activity_permission_off_enable">Activity permission off, click to enable</string>
     <string name="notifications_blocked">Notifications blocked, please enable</string>
     <string name="notifications_paused">Notifications paused. This can only be fixed by the app developer. Please report to your admin.</string>

@@ -32,6 +32,7 @@ import android.os.Build;
 import android.provider.Settings;
 
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.IntentCompat;
 
 import com.google.android.gms.common.api.ApiException;
@@ -41,7 +42,11 @@ import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
@@ -51,11 +56,105 @@ public class SensorControlForegroundDelegate {
     private CordovaPlugin plugin = null;
     private CordovaInterface cordova = null;
     private CallbackContext cordovaCallback = null;
+    private PermissionPopupChecker permissionChecker = null;
+    private Map<Integer, PermissionPopupChecker> permissionCheckerMap = new HashMap<>();
+
+    class PermissionPopupChecker {
+      int permissionStatusConstant = -1;
+      boolean shouldShowRequestRationaleBefore = false;
+      String deniedString;
+      String retryString;
+      boolean openAppSettings;
+
+      String[] currPermissions;
+
+      public PermissionPopupChecker(int permissionStatusConstant,
+                                    String[] permissions,
+                                    String retryString,
+                                    String deniedString) {
+        this.permissionStatusConstant = permissionStatusConstant;
+        currPermissions = permissions;
+        this.deniedString = deniedString;
+        this.retryString = retryString;
+      }
+
+      private boolean shouldShowRequestForCurrPermissions() {
+        boolean ssrrb = false;
+        for (String cp: currPermissions){
+          boolean css = ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), cp);
+          Log.d(cordova.getActivity(), TAG, "For permission "+cp+" shouldShowRequest = " + css);
+          ssrrb |= css;
+        }
+        return ssrrb;
+      }
+
+      void requestPermission() {
+        shouldShowRequestRationaleBefore = shouldShowRequestForCurrPermissions();
+        Log.d(cordova.getActivity(), TAG,
+          String.format("After iterating over all entries in %s shouldShowRequest = %s", currPermissions, shouldShowRequestRationaleBefore));
+        if (openAppSettings) {
+          SensorControlForegroundDelegate.this.openAppSettingsPage(cordovaCallback, permissionStatusConstant);
+        } else {
+          if (currPermissions.length > 1) {
+            cordova.requestPermissions(plugin, permissionStatusConstant, currPermissions);
+          } else {
+            Log.e(cordova.getActivity(), TAG, "currPermissions.length = " + currPermissions.length);
+            cordova.requestPermission(plugin, permissionStatusConstant, currPermissions[0]);
+          }
+        }
+      }
+
+      void generateErrorCallback() {
+        boolean shouldShowRequestRationaleAfter = shouldShowRequestForCurrPermissions();
+        Log.d(cordova.getActivity(), TAG, "In permission prompt, error callback,"+
+            " before = "+shouldShowRequestRationaleBefore+" after = "+shouldShowRequestRationaleAfter);
+        // see the issue for more details
+        // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-958438153
+
+        if (!shouldShowRequestRationaleBefore && !shouldShowRequestRationaleAfter) {
+          // before = FALSE, after = FALSE => user had denied it earlier
+          openAppSettings = true;
+          cordovaCallback.error(deniedString);
+        }
+        if (!shouldShowRequestRationaleBefore && shouldShowRequestRationaleAfter) {
+          // before = FALSE, after = TRUE => first time ask
+          cordovaCallback.error(retryString);
+        }
+        if (shouldShowRequestRationaleBefore && !shouldShowRequestRationaleAfter) {
+          // before = TRUE, after = FALSE => popup was shown, user hit don't ask
+          openAppSettings = true;
+          cordovaCallback.error(deniedString);
+        }
+         if (shouldShowRequestRationaleBefore && shouldShowRequestRationaleAfter) {
+           // before = TRUE, after = TRUE => popup was shown, user hit deny ONLY
+           cordovaCallback.error(retryString);
+         }
+      }
+    }
 
     public SensorControlForegroundDelegate(CordovaPlugin inPlugin,
                                            CordovaInterface inCordova) {
         plugin = inPlugin;
         cordova = inCordova;
+    }
+
+    private PermissionPopupChecker getPermissionChecker(int permissionStatusConstant,
+                                                      String permission,
+                                                      String retryString,
+                                                      String deniedString) {
+      return getPermissionChecker(permissionStatusConstant, new String[]{permission}, retryString, deniedString);
+    }
+    private PermissionPopupChecker getPermissionChecker(int permissionStatusConstant,
+                                 String[] permissions,
+                                 String retryString,
+                                 String deniedString) {
+      PermissionPopupChecker pc = permissionCheckerMap.get(Integer.valueOf(permissionStatusConstant));
+      if (pc == null) {
+         pc = new PermissionPopupChecker(permissionStatusConstant,
+          permissions, retryString, deniedString);
+        permissionCheckerMap.put(Integer.valueOf(permissionStatusConstant), pc);
+      }
+      return pc;
     }
 
     // Invokes the callback with a boolean indicating whether
@@ -184,24 +283,39 @@ public class SensorControlForegroundDelegate {
           return;
         }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
-          (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) &&
+          (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) &&
           !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
           Log.i(cordova.getActivity(), TAG, "Both permissions missing, requesting both");
           this.cordovaCallback = cordovaCallback;
-          cordova.requestPermissions(plugin, SensorControlConstants.ENABLE_BOTH_PERMISSION,
-            new String[]{SensorControlConstants.LOCATION_PERMISSION, SensorControlConstants.BACKGROUND_LOC_PERMISSION});
+          this.permissionChecker = getPermissionChecker(
+            SensorControlConstants.ENABLE_BOTH_PERMISSION,
+            new String[]{SensorControlConstants.BACKGROUND_LOC_PERMISSION, SensorControlConstants.LOCATION_PERMISSION},
+            cordova.getActivity().getString(R.string.location_permission_off),
+            cordova.getActivity().getString(R.string.location_permission_off_app_open));
+          this.permissionChecker.requestPermission();
           return;
         }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)) {
+            Log.i(cordova.getActivity(), TAG, "before call shouldShowRequestPermissionRationale = "+ ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.LOCATION_PERMISSION));
             Log.i(cordova.getActivity(), TAG, "Only location permission missing, requesting it");
             this.cordovaCallback = cordovaCallback;
-            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_LOCATION_PERMISSION, SensorControlConstants.LOCATION_PERMISSION);
+            this.permissionChecker = getPermissionChecker(
+              SensorControlConstants.ENABLE_LOCATION_PERMISSION,
+              SensorControlConstants.LOCATION_PERMISSION,
+              cordova.getActivity().getString(R.string.location_permission_off),
+              cordova.getActivity().getString(R.string.location_permission_off_app_open));
+            this.permissionChecker.requestPermission();
             return;
         }
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             Log.i(cordova.getActivity(), TAG, "Only background permission missing, requesting it");
             this.cordovaCallback = cordovaCallback;
-            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION, SensorControlConstants.BACKGROUND_LOC_PERMISSION);
+            this.permissionChecker = getPermissionChecker(
+              SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION,
+              SensorControlConstants.BACKGROUND_LOC_PERMISSION,
+              cordova.getActivity().getString(R.string.location_permission_off),
+              cordova.getActivity().getString(R.string.location_permission_off_app_open));
+            this.permissionChecker.requestPermission();
             return;
         }
     }
@@ -220,9 +334,15 @@ public class SensorControlForegroundDelegate {
       if(validPerms) {
         cordovaCallback.success();
       } else {
+        Log.i(cordova.getActivity(), TAG, "before call shouldShowRequestPermissionRationale = "+ ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.MOTION_ACTIVITY_PERMISSION));
         Log.i(cordova.getActivity(), TAG, "Motion activity permission missing, requesting it");
         this.cordovaCallback = cordovaCallback;
-            cordova.requestPermission(plugin, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION, SensorControlConstants.MOTION_ACTIVITY_PERMISSION);
+        this.permissionChecker = getPermissionChecker(
+          SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION,
+          SensorControlConstants.MOTION_ACTIVITY_PERMISSION,
+          cordova.getActivity().getString(R.string.activity_permission_off),
+          cordova.getActivity().getString(R.string.activity_permission_off_app_open));
+        this.permissionChecker.requestPermission();
         }
     }
 
@@ -334,36 +454,27 @@ public class SensorControlForegroundDelegate {
         switch(requestCode)
         {
           case SensorControlConstants.ENABLE_BOTH_PERMISSION:
+            Log.i(cordova.getActivity(), TAG, "in callback shouldShowRequestPermissionRationale = "+ ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.LOCATION_PERMISSION));
             if ((grantResults[0] == PackageManager.PERMISSION_GRANTED) &&
               (grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
               cordovaCallback.success();
-            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-              cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off));
-            } else if (grantResults[1] == PackageManager.PERMISSION_DENIED) {
-              cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off));
+            } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
+              this.permissionChecker.generateErrorCallback();
             }
+            this.permissionChecker = null;
             break;
             case SensorControlConstants.ENABLE_LOCATION_PERMISSION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                  cordovaCallback.success();
-                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                  cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off));
-                }
-                break;
             case SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                  cordovaCallback.success();
-                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                  cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off));
-                }
-                break;
             case SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION:
+              // Code for all these is the same. We ask for a single permission
+              // and if it is denied, we generate the error callback
+              // the exact message is stored in the permission checker object
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     cordovaCallback.success();
-                    // motion activity does not affect the FSM
                 } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                    cordovaCallback.error(cordova.getActivity().getString(R.string.activity_permission_off));
+                  this.permissionChecker.generateErrorCallback();
                 }
+                this.permissionChecker = null;
                 break;
             default:
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
@@ -373,10 +484,10 @@ public class SensorControlForegroundDelegate {
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     Activity mAct = cordova.getActivity();
+    cordova.setActivityResultCallback(null);
     switch (requestCode) {
       case SensorControlConstants.ENABLE_LOCATION_SETTINGS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
-        cordova.setActivityResultCallback(null);
         final LocationSettingsStates states = LocationSettingsStates.fromIntent(data);
         Log.d(cordova.getActivity(), TAG, "at this point, isLocationUsable = " + (states != null && states.isLocationUsable()));
         switch (resultCode) {
@@ -390,34 +501,47 @@ public class SensorControlForegroundDelegate {
             }
             break;
           case Activity.RESULT_CANCELED:
-            // The user was asked to change settings, but chose not to
-            Log.e(cordova.getActivity(), TAG, "User chose not to change settings, dunno what to do");
-            cordovaCallback.error(mAct.getString(R.string.user_rejected_setting));
+            Log.i(cordova.getActivity(), TAG, "request " + requestCode + " cancelled, failing");
+            cordova.setActivityResultCallback(null);
+            cordovaCallback.error(cordova.getActivity().getString(R.string.user_rejected_setting));
             break;
           default:
             cordovaCallback.error(mAct.getString(R.string.unable_resolve_issue));
             Log.e(cordova.getActivity(), TAG, "Unknown result code while enabling location " + resultCode);
             break;
         }
+        break;
       case SensorControlConstants.ENABLE_LOCATION_SETTINGS_MANUAL:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
-        cordova.setActivityResultCallback(null);
         // this will call the callback with success or error
         checkLocationSettings(cordovaCallback);
         break;
       case SensorControlConstants.ENABLE_BOTH_PERMISSION:
+      case SensorControlConstants.ENABLE_LOCATION_PERMISSION:
+      case SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
-        cordova.setActivityResultCallback(null);
-        Log.d(mAct, TAG, "Got permission callback from launching app settings");
+        Log.d(mAct, TAG, "Got permission callback from launching app settings when prompt failed");
         if (SensorControlChecks.checkLocationPermissions(cordova.getActivity())) {
           cordovaCallback.success();
         } else {
-          cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off));
+          // this is the activity result callback, so only launched when the app settings are used
+          // so we don't need to use the permission checker, we know that the only option
+          // is to launch the settings
+          cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off_app_open));
         }
+        break;
+      case SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        Log.d(mAct, TAG, "Got permission callback from launching app settings");
+        if (SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity())) {
+          cordovaCallback.success();
+        } else {
+          permissionChecker.generateErrorCallback();
+        }
+        permissionChecker = null;
         break;
       case SensorControlConstants.ENABLE_NOTIFICATIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
-        cordova.setActivityResultCallback(null);
         Log.d(mAct, TAG, "Got notification callback from launching app settings");
         if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
           cordovaCallback.success();
@@ -427,12 +551,11 @@ public class SensorControlForegroundDelegate {
         break;
       case SensorControlConstants.REMOVE_UNUSED_APP_RESTRICTIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
-        cordova.setActivityResultCallback(null);
         Log.d(mAct, TAG, "Got unused app restrictions callback from launching app settings");
         if (SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity())) {
           cordovaCallback.success();
         } else {
-          cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
+          cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
         }
         break;
       default:
