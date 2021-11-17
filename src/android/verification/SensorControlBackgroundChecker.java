@@ -17,6 +17,8 @@ import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.Task;
 
+import java.util.Arrays;
+
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;

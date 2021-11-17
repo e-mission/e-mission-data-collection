@@ -49,7 +49,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			if (ConfigManager.getConfig(this).isSimulateUserInteraction()) {
-			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
+			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS, null, this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
 			}
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity

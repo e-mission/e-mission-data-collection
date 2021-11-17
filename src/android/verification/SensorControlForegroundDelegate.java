@@ -120,7 +120,7 @@ public class SensorControlForegroundDelegate {
 
       void generateErrorCallback() {
         if (cordovaCallback == null) {
-          NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, null, "Please upload log and report issue in generateErrorCallback");
+          NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, null, "Please upload log and report issue in generateErrorCallback");
           return;
         }
         boolean shouldShowRequestRationaleAfter = shouldShowRequestForCurrPermissions();
@@ -458,7 +458,7 @@ public class SensorControlForegroundDelegate {
         }
          */
       if (this.permissionChecker == null) {
-        NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, null, "Please upload log and report issue in requestPermissionResult");
+        NotificationHelper.createNotification(cordova.getActivity(), Constants.TRACKING_ERROR_ID, null, "Please upload log and report issue in requestPermissionResult");
         return;
       }
         switch(requestCode)
