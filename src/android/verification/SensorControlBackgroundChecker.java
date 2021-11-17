@@ -48,98 +48,42 @@ public class SensorControlBackgroundChecker {
         }
     }
 
-    public static void checkLocationSettingsAndPermissions(final Context ctxt) {
-    LocationRequest request = new LocationTrackingActions(ctxt).getLocationRequest();
-        Log.d(ctxt, TAG, "Checking location settings and permissions for request "+request);
-        // let's do the permission check first since it is synchronous
-        if (checkLocationPermissions(ctxt, request)) {
-            Log.d(ctxt, TAG, "checkLocationPermissions returned true, checking background permission");
-            if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) ||
-              checkBackgroundLocPermissions(ctxt, request)) {
-              Log.d(ctxt, TAG, "checkBackgroundLocPermissions returned true, checking location settings");
+    public static void checkAppState(final Context ctxt) {
+      NotificationHelper.cancelNotification(ctxt,
+        SensorControlConstants.OPEN_APP_STATUS_PAGE);
+      // check location settings. This is a separate function because it
+      // currently has a callback. The others can be inlined here for greater
+      // readability.
             checkLocationSettings(ctxt);
-            } else {
-              Log.d(ctxt, TAG, "check background permissions returned false, no point checking settings");
-              ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
+      boolean[] allOtherChecks = new boolean[]{
+        SensorControlChecks.checkLocationPermissions(ctxt),
+        SensorControlChecks.checkMotionActivityPermissions(ctxt),
+        SensorControlChecks.checkNotificationsEnabled(ctxt),
+        SensorControlChecks.checkUnusedAppsUnrestricted(ctxt)
+      };
+      boolean allOtherChecksPass = true;
+      for (boolean check: allOtherChecks) {
+        allOtherChecksPass = allOtherChecksPass && check;
             }
-            // final state will be set in this async call
+      if (allOtherChecksPass) {
+        Log.d(ctxt, TAG, "All permissions (except location settings) valid, nothing to prompt");
         } else {
-            Log.d(ctxt, TAG, "check location permissions returned false, no point checking settings");
+        Log.i(ctxt, TAG, "Curr status check results = "+
+            " loc permission, motion permission, notification, unused apps "+ Arrays.toString(allOtherChecks));
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
+        generateOpenAppSettingsNotification(ctxt);
         }
-
-        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) && checkMotionActivityPermissions(ctxt)) {
-            Log.d(ctxt, TAG, "checkMotionActivityPermissions returned true, nothing more yet");
-        } else {
-            Log.d(ctxt, TAG, "checkMotionActivityPermissions returned false, but that's not a tracking error");
-        }
+      restartFSMIfStartState(ctxt);
     }
 
-    private static boolean checkLocationPermissions(final Context ctxt,
-                                                   final LocationRequest request) {
-        // Ideally, we would use the request accuracy to figure out the permissions requested
-        // but I can't find an authoritative mapping, and I'm running out of time for
-        // fancy stuff
-        int result = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.LOCATION_PERMISSION);
-        Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
-        if (PackageManager.PERMISSION_GRANTED == result) {
-            return true;
-        } else {
-            generateLocationEnableNotification(ctxt);
-            return false;
-        }
-    }
-
-    public static void generateLocationEnableNotification(Context ctxt) {
+    public static void generateOpenAppSettingsNotification(Context ctxt) {
             Intent activityIntent = new Intent(ctxt, MainActivity.class);
-            activityIntent.setAction(SensorControlConstants.ENABLE_LOCATION_PERMISSION_ACTION);
-            PendingIntent pi = PendingIntent.getActivity(ctxt, SensorControlConstants.ENABLE_LOCATION_PERMISSION,
-                    activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            NotificationHelper.createNotification(ctxt, SensorControlConstants.ENABLE_LOCATION_PERMISSION,
-                    ctxt.getString(R.string.location_permission_off_enable), 
-                    pi);
-    }
-
-    private static boolean checkBackgroundLocPermissions(final Context ctxt,
-                                                        final LocationRequest request) {
-        int result = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.BACKGROUND_LOC_PERMISSION);
-        Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
-        if (PackageManager.PERMISSION_GRANTED == result) {
-            return true;
-        } else {
-            generateBackgroundLocEnableNotification(ctxt);
-            return false;
-        }
-    }
-
-    public static void generateBackgroundLocEnableNotification(Context ctxt) {
-            Intent activityIntent = new Intent(ctxt, MainActivity.class);
-            activityIntent.setAction(SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION_ACTION);
-            PendingIntent pi = PendingIntent.getActivity(ctxt, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION,
+      activityIntent.setAction(SensorControlConstants.OPEN_APP_STATUS_PAGE_ACTION);
+      PendingIntent pi = PendingIntent.getActivity(ctxt, SensorControlConstants.OPEN_APP_STATUS_PAGE,
                     activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             NotificationHelper.createNotification(ctxt, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION,
-                    ctxt.getString(R.string.background_loc_permission_off_enable), 
-                    pi);
-    }
-
-    private static boolean checkMotionActivityPermissions(final Context ctxt) {
-        int result = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.MOTION_ACTIVITY_PERMISSION);
-        Log.d(ctxt, TAG, "checkSelfPermission returned "+result);
-        if (PackageManager.PERMISSION_GRANTED == result) {
-            return true;
-        } else {
-            generateMotionActivityEnableNotification(ctxt);
-            return false;
-        }
-    }
-
-    public static void generateMotionActivityEnableNotification(Context ctxt) {
-            Intent activityIntent = new Intent(ctxt, MainActivity.class);
-            activityIntent.setAction(SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION_ACTION);
-            PendingIntent pi = PendingIntent.getActivity(ctxt, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION,
-                    activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            NotificationHelper.createNotification(ctxt, SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION,
-                    ctxt.getString(R.string.activity_permission_off_enable), 
+        ctxt.getString(R.string.fix_app_status_title),
+        ctxt.getString(R.string.fix_app_status_text),
                     pi);
     }
 
@@ -151,42 +95,8 @@ public class SensorControlBackgroundChecker {
                         // requests here.
             Log.i(ctxt, TAG, "All settings are valid, checking current state");
             Log.i(ctxt, TAG, "Current location settings are "+response);
-                        NotificationHelper.cancelNotification(ctxt, Constants.TRACKING_ERROR_ID);
-                        restartFSMIfStartState(ctxt);
           } catch (ApiException exception) {
-            switch (exception.getStatusCode()) {
-                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                      Log.i(ctxt, TAG, "location settings are not valid, but could be fixed by showing the user a dialog");
-                      // Location settings are not satisfied. But could be fixed by showing the
-                      // user a dialog.
-                      try {
-                          // Cast to a resolvable exception.
-                          ResolvableApiException resolvable = (ResolvableApiException) exception;
-                          // Show the dialog by calling startResolutionForResult(),
-                          // and check the result in onActivityResult().
-                            NotificationHelper.createResolveNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                ctxt.getString(R.string.error_location_settings),
-                                resolvable.getResolution());
-                            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-                        } catch (ClassCastException e) {
-                          // Ignore, should be an impossible error.
-                        }
-                        break;
-                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                        // Location settings are not satisfied. However, we have no way to fix the
-                        // settings so we won't show the dialog.
-                        Log.i(ctxt, TAG, "location settings are not valid, but cannot be fixed by showing a dialog");
-                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                          ctxt.getString(R.string.error_location_settings));
-                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-                        break;
-                    default:
-                        Log.i(ctxt, TAG, "unkown error reading location");
-                        NotificationHelper.createNotification(ctxt, Constants.TRACKING_ERROR_ID,
-                                    ctxt.getString(R.string.unknown_error_location_settings));
-                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
-
-                }
+            generateOpenAppSettingsNotification(ctxt);
             }
         });
     }

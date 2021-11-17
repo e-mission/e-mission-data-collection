@@ -244,12 +244,12 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
                     setNewState(newState);
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                            fCtxt.getString(R.string.success_moving_new_state, newState));
+                            null, fCtxt.getString(R.string.success_moving_new_state, newState));
                     }
                 } else {
                     if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                            fCtxt.getString(R.string.failed_moving_new_state,newState));
+                            null, fCtxt.getString(R.string.failed_moving_new_state,newState));
                 }
                 }
         });
@@ -266,12 +266,12 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
                     setNewState(newState);
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.success_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.success_moving_new_state, newState));
                     }
                 } else {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.failed_moving_new_state,newState));
+                                null, fCtxt.getString(R.string.failed_moving_new_state,newState));
                     }
                 }
         });

@@ -73,7 +73,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
           " flags = " + flags +  " and startId = " + startId);
         String message  = humanizeState(this, TripDiaryStateMachineService.getState(this));
         if (intent == null) {
-          SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(this);
+          SensorControlBackgroundChecker.checkAppState(this);
           message = humanizeState(this, TripDiaryStateMachineService.getState(this));
         }
         handleStart(message, intent, flags, startId);
@@ -133,8 +133,8 @@ public class TripDiaryStateMachineForegroundService extends Service {
 
   private Notification getNotification(String msg) {
       NotificationManager nMgr = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
-      Notification.Builder builder = NotificationHelper.getNotificationBuilderForApp(this,
-        nMgr, msg);
+      Notification.Builder builder = NotificationHelper.getNotificationBuilderForApp(this, null,
+        msg);
       builder.setOngoing(true);
 
       Intent activityIntent = new Intent(this, MainActivity.class);

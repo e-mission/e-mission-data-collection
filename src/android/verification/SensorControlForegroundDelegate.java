@@ -42,11 +42,9 @@ import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
@@ -58,6 +56,22 @@ public class SensorControlForegroundDelegate {
     private CallbackContext cordovaCallback = null;
     private PermissionPopupChecker permissionChecker = null;
     private Map<Integer, PermissionPopupChecker> permissionCheckerMap = new HashMap<>();
+
+    private static JSONObject OPEN_APP_STATUS_PAGE(Context ctxt) {
+      try {
+        JSONObject config = new JSONObject();
+        config.put("id", SensorControlConstants.OPEN_APP_STATUS_PAGE);
+        config.put("title", ctxt.getString(R.string.fix_app_status_title));
+        config.put("text", ctxt.getString(R.string.fix_app_status_text));
+        JSONObject redirectData = new JSONObject();
+        redirectData.put("redirectTo", "root.main.control");
+        config.put("data", redirectData);
+        return config;
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+      return null;
+    }
 
     class PermissionPopupChecker {
       int permissionStatusConstant = -1;
@@ -105,6 +119,10 @@ public class SensorControlForegroundDelegate {
       }
 
       void generateErrorCallback() {
+        if (cordovaCallback == null) {
+          NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, null, "Please upload log and report issue in generateErrorCallback");
+          return;
+        }
         boolean shouldShowRequestRationaleAfter = shouldShowRequestForCurrPermissions();
         Log.d(cordova.getActivity(), TAG, "In permission prompt, error callback,"+
             " before = "+shouldShowRequestRationaleBefore+" after = "+shouldShowRequestRationaleAfter);
@@ -408,29 +426,16 @@ public class SensorControlForegroundDelegate {
                 cordova.getActivity().startIntentSenderForResult(resolution.getIntentSender(), SensorControlConstants.ENABLE_LOCATION_SETTINGS, null, 0, 0, 0, null);
             } catch (IntentSender.SendIntentException e) {
                 Context mAct = cordova.getActivity();
-                NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, mAct.getString(R.string.unable_resolve_issue));
+                NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, null, mAct.getString(R.string.unable_resolve_issue));
             }
         }
     }
 
     public void onNewIntent(Intent intent) {
-        if(SensorControlConstants.ENABLE_LOCATION_PERMISSION_ACTION.equals(intent.getAction()) ||
-           SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION_ACTION.equals(intent.getAction())) {
-            checkAndPromptLocationPermissions(null);
-            return;
+      if (SensorControlConstants.OPEN_APP_STATUS_PAGE_ACTION.equals(intent.getAction())) {
+        Context ctxt = cordova.getActivity();
+        NotificationHelper.schedulePluginCompatibleNotification(ctxt, OPEN_APP_STATUS_PAGE(ctxt), null);
         }
-
-        if(SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION_ACTION.equals(intent.getAction())) {
-            checkAndPromptMotionActivityPermissions(null);
-            return;
-        }
-        if (NotificationHelper.DISPLAY_RESOLUTION_ACTION.equals(intent.getAction())) {
-            PendingIntent piFromIntent = intent.getParcelableExtra(
-                    NotificationHelper.RESOLUTION_PENDING_INTENT_KEY);
-            displayResolution(piFromIntent);
-            return;
-        }
-        Log.i(cordova.getActivity(), TAG, "Action "+intent.getAction()+" unknown, ignoring ");
     }
 
     public void onRequestPermissionResult(int requestCode, String[] permissions,
@@ -439,6 +444,7 @@ public class SensorControlForegroundDelegate {
         Log.i(cordova.getActivity(), TAG, "onRequestPermissionResult called with "+requestCode);
         Log.i(cordova.getActivity(), TAG, "permissions are "+ Arrays.toString(permissions));
         Log.i(cordova.getActivity(), TAG, "grantResults are "+Arrays.toString(grantResults));
+
         /*
          Let us figure out if we want to sent a javascript callback with the error.
          This is currently only called from markConsented, and I don't think we listen to failures there
@@ -451,6 +457,10 @@ public class SensorControlForegroundDelegate {
             }
         }
          */
+      if (this.permissionChecker == null) {
+        NotificationHelper.createNotification(mAct, Constants.TRACKING_ERROR_ID, null, "Please upload log and report issue in requestPermissionResult");
+        return;
+      }
         switch(requestCode)
         {
           case SensorControlConstants.ENABLE_BOTH_PERMISSION:
