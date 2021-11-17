@@ -65,6 +65,9 @@ public class SensorControlForegroundDelegate {
         config.put("text", ctxt.getString(R.string.fix_app_status_text));
         JSONObject redirectData = new JSONObject();
         redirectData.put("redirectTo", "root.main.control");
+        JSONObject redirectParams = new JSONObject();
+        redirectParams.put("launchAppStatusModal", true);
+        redirectData.put("redirectParams", redirectParams);
         config.put("data", redirectData);
         return config;
       } catch (JSONException e) {
