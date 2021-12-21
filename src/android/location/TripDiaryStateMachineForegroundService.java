@@ -172,7 +172,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
     }
 
   public static void checkForegroundNotification(Context ctxt) {
-    if(Build.VERSION.SDK_INT >Build.VERSION_CODES.O) {
+    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       NotificationManager mgr = (NotificationManager) ctxt.getSystemService(Context.NOTIFICATION_SERVICE);
       StatusBarNotification[] activeNotifications = mgr.getActiveNotifications();
       Log.d(ctxt, TAG, "In checkForegroundNotification, found " + activeNotifications.length + " active notifications");
