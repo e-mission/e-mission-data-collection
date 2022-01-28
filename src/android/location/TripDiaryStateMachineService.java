@@ -13,6 +13,7 @@ import com.google.android.gms.tasks.Tasks;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.berkeley.eecs.emission.cordova.serversync.ServerSyncUtil;
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
@@ -345,6 +346,9 @@ public class TripDiaryStateMachineService extends Service {
                                 null, fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
             });
+            
+            // Sync data after trip end
+            ServerSyncUtil.syncData(ctxt);
         }
             }).start();
             return;
