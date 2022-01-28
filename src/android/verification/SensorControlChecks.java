@@ -1,7 +1,5 @@
 package edu.berkeley.eecs.emission.cordova.tracker.verification;
 
-import edu.berkeley.eecs.emission.R;
-
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
