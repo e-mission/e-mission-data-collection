@@ -64,12 +64,12 @@ public class DataCollectionPlugin extends CordovaPlugin {
             JSONObject newConsent = data.getJSONObject(0);
             ConsentConfig cfg = new Gson().fromJson(newConsent.toString(), ConsentConfig.class);
             ConfigManager.setConsented(ctxt, cfg);
-            TripDiaryStateMachineForegroundService.startProperly(cordova.getActivity().getApplication());
+            // TripDiaryStateMachineForegroundService.startProperly(cordova.getActivity().getApplication());
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
             // user deleted the consent and re-consented, but didn't upgrade the app
             // mControlDelegate.checkAndPromptPermissions();
-            // ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
