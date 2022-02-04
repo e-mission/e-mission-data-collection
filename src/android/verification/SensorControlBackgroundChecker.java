@@ -67,9 +67,26 @@ public class SensorControlBackgroundChecker {
       for (boolean check: allOtherChecks) {
         allOtherChecksPass = allOtherChecksPass && check;
             }
+
+      /*
+       Using index-based iteration since we need to start from index 1 instead of 0 and array slices
+       are hard in Java
+       */
+      boolean nonLocChecksPass = true;
+      for (int i = 1; i < allOtherChecks.length; i++) {
+        nonLocChecksPass = nonLocChecksPass && allOtherChecks[i];
+      }
+
       if (allOtherChecksPass) {
         Log.d(ctxt, TAG, "All permissions (except location settings) valid, nothing to prompt");
-        } else {
+      }
+      else if (allOtherChecks[0]) {
+        Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location status "+allOtherChecks[0]+" should be true "+
+          " so one of the non-location checks must be false: loc permission, motion permission, notification, unused apps" + Arrays.toString(allOtherChecks));
+        Log.i(ctxt, TAG, "a non-local check failed, generating only user visible notification");
+        generateOpenAppSettingsNotification(ctxt);
+      }
+      else {
         Log.i(ctxt, TAG, "Curr status check results = "+
             " loc permission, motion permission, notification, unused apps "+ Arrays.toString(allOtherChecks));
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
