@@ -1,5 +1,7 @@
 package edu.berkeley.eecs.emission.cordova.tracker.verification;
 // Auto fixed by post-plugin hook
+import edu.berkeley.eecs.emission.R;
+// Auto fixed by post-plugin hook
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -101,6 +103,7 @@ public class SensorControlBackgroundChecker {
 
       if (allOtherChecksPass) {
         Log.d(ctxt, TAG, "All permissions (except location settings) valid, nothing to prompt");
+        restartFSMIfStartState(ctxt);
       }
       else if (allOtherChecks[0]) {
         Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location status "+allOtherChecks[0]+" should be true "+

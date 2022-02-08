@@ -189,6 +189,7 @@ public class SensorControlForegroundDelegate {
           Log.i(currActivity, TAG, "All settings are valid, checking current state");
           JSONObject lssJSON = statesToJSON(response.getLocationSettingsStates());
           Log.i(currActivity, TAG, "Current location settings are "+lssJSON);
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           callbackContext.success(lssJSON);
         } catch (ApiException exception) {
           switch (exception.getStatusCode()) {
@@ -334,6 +335,7 @@ public class SensorControlForegroundDelegate {
     public void checkAndPromptMotionActivityPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
       if(validPerms) {
+        SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
         cordovaCallback.success();
       } else {
         Log.i(cordova.getActivity(), TAG, "before call shouldShowRequestPermissionRationale = "+ ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.MOTION_ACTIVITY_PERMISSION));
@@ -360,6 +362,7 @@ public class SensorControlForegroundDelegate {
   public void checkAndPromptShowNotificationsEnabled(CallbackContext cordovaCallback) {
     boolean validPerms = SensorControlChecks.checkNotificationsEnabled(cordova.getActivity());
     if(validPerms) {
+      SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
       cordovaCallback.success();
     } else {
       Log.i(cordova.getActivity(), TAG, "Notifications not enabled, opening app page");
@@ -393,6 +396,7 @@ public class SensorControlForegroundDelegate {
   public void checkAndPromptUnusedAppsUnrestricted(CallbackContext cordovaCallback) {
     boolean unrestricted = SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity());
     if (unrestricted) {
+      SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
       cordovaCallback.success();
     } else {
       Log.i(cordova.getActivity(), TAG, "Unused apps restricted, asking user to unrestrict");
@@ -448,6 +452,7 @@ public class SensorControlForegroundDelegate {
             Log.i(cordova.getActivity(), TAG, "in callback shouldShowRequestPermissionRationale = "+ ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.LOCATION_PERMISSION));
             if ((grantResults[0] == PackageManager.PERMISSION_GRANTED) &&
               (grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
+              SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
               cordovaCallback.success();
             } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
               this.permissionChecker.generateErrorCallback();
@@ -461,6 +466,7 @@ public class SensorControlForegroundDelegate {
               // and if it is denied, we generate the error callback
               // the exact message is stored in the permission checker object
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
                     cordovaCallback.success();
                 } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                   this.permissionChecker.generateErrorCallback();
@@ -471,7 +477,6 @@ public class SensorControlForegroundDelegate {
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
     }
-
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     Activity mAct = cordova.getActivity();
@@ -486,6 +491,7 @@ public class SensorControlForegroundDelegate {
             // All required changes were successfully made
             Log.i(cordova.getActivity(), TAG, "All changes successfully made, reinitializing");
             try {
+              SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
               cordovaCallback.success(statesToJSON(states));
             } catch (JSONException e) {
               cordovaCallback.error(mAct.getString(R.string.unknown_error_location_settings));
@@ -513,6 +519,7 @@ public class SensorControlForegroundDelegate {
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got permission callback from launching app settings when prompt failed");
         if (SensorControlChecks.checkLocationPermissions(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();
         } else {
           // this is the activity result callback, so only launched when the app settings are used
@@ -525,6 +532,7 @@ public class SensorControlForegroundDelegate {
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got permission callback from launching app settings");
         if (SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();
         } else {
           permissionChecker.generateErrorCallback();
@@ -535,6 +543,7 @@ public class SensorControlForegroundDelegate {
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got notification callback from launching app settings");
         if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();
         } else {
           cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
@@ -544,6 +553,7 @@ public class SensorControlForegroundDelegate {
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got unused app restrictions callback from launching app settings");
         if (SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();
         } else {
           cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
