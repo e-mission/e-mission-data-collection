@@ -17,6 +17,9 @@ import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Arrays;
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
@@ -25,8 +28,8 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
-import edu.berkeley.eecs.emission.cordova.MainActivity;
-import edu.berkeley.eecs.emission.cordova.R;
+
+
 
 /*
  * Deals with settings and resolutions from the background as a service.
@@ -39,6 +42,25 @@ public class SensorControlBackgroundChecker {
     public static String TAG = "SensorControlBackgroundChecker";
 
     private static int STATE_IN_NUMBERS = 78283;
+
+    private static JSONObject OPEN_APP_STATUS_PAGE(Context ctxt) {
+      try {
+        JSONObject config = new JSONObject();
+        config.put("id", SensorControlConstants.OPEN_APP_STATUS_PAGE);
+        config.put("title", ctxt.getString(R.string.fix_app_status_title));
+        config.put("text", ctxt.getString(R.string.fix_app_status_text));
+        JSONObject redirectData = new JSONObject();
+        redirectData.put("redirectTo", "root.main.control");
+        JSONObject redirectParams = new JSONObject();
+        redirectParams.put("launchAppStatusModal", true);
+        redirectData.put("redirectParams", redirectParams);
+        config.put("data", redirectData);
+        return config;
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+      return null;
+    }
 
     public static void restartFSMIfStartState(Context ctxt) {
         String START_STATE = ctxt.getString(R.string.state_start);
@@ -96,14 +118,7 @@ public class SensorControlBackgroundChecker {
     }
 
     public static void generateOpenAppSettingsNotification(Context ctxt) {
-            Intent activityIntent = new Intent(ctxt, MainActivity.class);
-      activityIntent.setAction(SensorControlConstants.OPEN_APP_STATUS_PAGE_ACTION);
-      PendingIntent pi = PendingIntent.getActivity(ctxt, SensorControlConstants.OPEN_APP_STATUS_PAGE,
-                    activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            NotificationHelper.createNotification(ctxt, SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION,
-        ctxt.getString(R.string.fix_app_status_title),
-        ctxt.getString(R.string.fix_app_status_text),
-                    pi);
+      NotificationHelper.schedulePluginCompatibleNotification(ctxt, OPEN_APP_STATUS_PAGE(ctxt), null);
     }
 
     private static void checkLocationSettings(final Context ctxt) {

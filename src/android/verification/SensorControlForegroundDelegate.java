@@ -57,25 +57,6 @@ public class SensorControlForegroundDelegate {
     private PermissionPopupChecker permissionChecker = null;
     private Map<Integer, PermissionPopupChecker> permissionCheckerMap = new HashMap<>();
 
-    private static JSONObject OPEN_APP_STATUS_PAGE(Context ctxt) {
-      try {
-        JSONObject config = new JSONObject();
-        config.put("id", SensorControlConstants.OPEN_APP_STATUS_PAGE);
-        config.put("title", ctxt.getString(R.string.fix_app_status_title));
-        config.put("text", ctxt.getString(R.string.fix_app_status_text));
-        JSONObject redirectData = new JSONObject();
-        redirectData.put("redirectTo", "root.main.control");
-        JSONObject redirectParams = new JSONObject();
-        redirectParams.put("launchAppStatusModal", true);
-        redirectData.put("redirectParams", redirectParams);
-        config.put("data", redirectData);
-        return config;
-      } catch (JSONException e) {
-        e.printStackTrace();
-      }
-      return null;
-    }
-
     class PermissionPopupChecker {
       int permissionStatusConstant = -1;
       boolean shouldShowRequestRationaleBefore = false;
@@ -435,10 +416,7 @@ public class SensorControlForegroundDelegate {
     }
 
     public void onNewIntent(Intent intent) {
-      if (SensorControlConstants.OPEN_APP_STATUS_PAGE_ACTION.equals(intent.getAction())) {
-        Context ctxt = cordova.getActivity();
-        NotificationHelper.schedulePluginCompatibleNotification(ctxt, OPEN_APP_STATUS_PAGE(ctxt), null);
-        }
+      Log.i(cordova.getActivity(), TAG, "onNewIntent("+intent+") received, ignoring");
     }
 
     public void onRequestPermissionResult(int requestCode, String[] permissions,
