@@ -10,6 +10,7 @@
 #import "TripDiaryStateMachine.h"
 #import "AppDelegate.h"
 #import "BEMServerSyncCommunicationHelper.h"
+#define NotificationCallback @"NOTIFICATION_CALLBACK"
 
 @interface AppDelegate (datacollection)
 

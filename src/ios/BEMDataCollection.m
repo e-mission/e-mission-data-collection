@@ -79,6 +79,126 @@
     }
 }
 
+- (void)fixLocationSettings:(CDVInvokedUrlCommand*)command
+{
+}
+
+- (void)isValidLocationSettings:(CDVInvokedUrlCommand*)command
+{
+}
+
+- (void)fixLocationPermissions:(CDVInvokedUrlCommand*)command
+{
+}
+
+- (void)isValidLocationPermissions:(CDVInvokedUrlCommand*)command
+{
+}
+
+- (void)fixFitnessPermissions:(CDVInvokedUrlCommand*)command
+{
+}
+
+- (void)isValidFitnessPermissions:(CDVInvokedUrlCommand*)command
+{
+}
+
+- (UIUserNotificationSettings*) REQUESTED_NOTIFICATION_TYPES {
+    return [UIUserNotificationSettings
+            settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
+            categories:nil];
+}
+
+- (void)fixShowNotifications:(CDVInvokedUrlCommand*)command
+{
+    NSString* callbackId = [command callbackId];
+    @try {
+    if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
+        UIUserNotificationSettings* requestedSettings = [self REQUESTED_NOTIFICATION_TYPES];
+        [[UIApplication sharedApplication] registerUserNotificationSettings:requestedSettings];
+            [[NSNotificationCenter defaultCenter] addObserverForName:NotificationCallback object:nil queue:nil
+                                                          usingBlock:^(NSNotification* note) {
+                if (requestedSettings.types == ((UIUserNotificationSettings*)note.object).types) {
+                    CDVPluginResult* result = [CDVPluginResult
+                                               resultWithStatus:CDVCommandStatus_OK];
+                    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+                } else {
+                    NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked", @"DCLocalizable", nil);
+                    CDVPluginResult* result = [CDVPluginResult
+                                               resultWithStatus:CDVCommandStatus_ERROR
+                                               messageAsString:msg];
+                    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+            }];
+        }
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+}
+}
+
+
+- (void)isValidShowNotifications:(CDVInvokedUrlCommand*)command
+{
+    NSString* callbackId = [command callbackId];
+    @try {
+        UIUserNotificationSettings* requestedSettings = [self REQUESTED_NOTIFICATION_TYPES];
+        UIUserNotificationSettings* currSettings = [[UIApplication sharedApplication] currentUserNotificationSettings];
+        if (requestedSettings.types == currSettings.types) {
+            CDVPluginResult* result = [CDVPluginResult
+                                       resultWithStatus:CDVCommandStatus_OK];
+            [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+        } else {
+            NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked", @"DCLocalizable", nil);
+            CDVPluginResult* result = [CDVPluginResult
+                                       resultWithStatus:CDVCommandStatus_ERROR
+                                       messageAsString:msg];
+            [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+        }
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
+- (void)isNotificationsUnpaused:(CDVInvokedUrlCommand*)command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"isNotificationsUnpaused"];
+}
+
+- (void)fixOEMBackgroundRestrictions: (CDVInvokedUrlCommand*) command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"fixOEMBackgroundRestrictions"];
+}
+
+- (void)NOP_RETURN_TRUE:(CDVInvokedUrlCommand*) command forMethod:(NSString*) methodName
+{
+    NSString* callbackId = [command callbackId];
+    
+    @try {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+            @"%@ called, is NOP on iOS", methodName] showUI:FALSE];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
 - (void)storeBatteryLevel:(CDVInvokedUrlCommand*)command
 {
     NSString* callbackId = [command callbackId];
@@ -100,22 +220,7 @@
 
 - (void)launchInit:(CDVInvokedUrlCommand*)command
 {
-    NSString* callbackId = [command callbackId];
-    
-    @try {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-            @"launchInit called, is NOP on iOS"] showUI:FALSE];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_ERROR
-                                   messageAsString:msg];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
+    [self NOP_RETURN_TRUE:command forMethod:@"launchInit"];
 }
 
 - (void)getConfig:(CDVInvokedUrlCommand *)command
