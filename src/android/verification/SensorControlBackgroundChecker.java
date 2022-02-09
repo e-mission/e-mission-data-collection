@@ -17,6 +17,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
@@ -77,10 +78,15 @@ public class SensorControlBackgroundChecker {
     public static void checkAppState(final Context ctxt) {
       NotificationHelper.cancelNotification(ctxt,
         SensorControlConstants.OPEN_APP_STATUS_PAGE);
-      // check location settings. This is a separate function because it
-      // currently has a callback. The others can be inlined here for greater
-      // readability.
-            checkLocationSettings(ctxt);
+      SensorControlChecks.checkLocationSettings(ctxt, resultTask -> {
+        try {
+          LocationSettingsResponse response = resultTask.getResult(ApiException.class);
+          // All location settings are satisfied. The client can initialize location
+          // requests here.
+          Log.i(ctxt, TAG, "All settings are valid, checking current state");
+          Log.i(ctxt, TAG, "Current location settings are "+response);
+
+          // Now that we know that the location settings are correct, we start the permission checks
       boolean[] allOtherChecks = new boolean[]{
         SensorControlChecks.checkLocationPermissions(ctxt),
         SensorControlChecks.checkMotionActivityPermissions(ctxt),
@@ -102,39 +108,31 @@ public class SensorControlBackgroundChecker {
       }
 
       if (allOtherChecksPass) {
-        Log.d(ctxt, TAG, "All permissions (except location settings) valid, nothing to prompt");
+            Log.d(ctxt, TAG, "All settings valid, nothing to prompt");
         restartFSMIfStartState(ctxt);
       }
       else if (allOtherChecks[0]) {
-        Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location status "+allOtherChecks[0]+" should be true "+
+            Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location permission status  "+allOtherChecks[0]+" should be true "+
           " so one of the non-location checks must be false: loc permission, motion permission, notification, unused apps" + Arrays.toString(allOtherChecks));
         Log.i(ctxt, TAG, "a non-local check failed, generating only user visible notification");
         generateOpenAppSettingsNotification(ctxt);
       }
       else {
-        Log.i(ctxt, TAG, "Curr status check results = "+
+            Log.i(ctxt, TAG, "location settings are valid, but location permission is not, generating tracking error and visible notification");
+            Log.i(ctxt, TAG, "curr status check results = " +
             " loc permission, motion permission, notification, unused apps "+ Arrays.toString(allOtherChecks));
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
         generateOpenAppSettingsNotification(ctxt);
         }
-      restartFSMIfStartState(ctxt);
+          } catch (ApiException exception) {
+          Log.i(ctxt, TAG, "location settings are invalid, generating tracking error and visible notification");
+          ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
+            generateOpenAppSettingsNotification(ctxt);
+            }
+        });
     }
 
     public static void generateOpenAppSettingsNotification(Context ctxt) {
       NotificationHelper.schedulePluginCompatibleNotification(ctxt, OPEN_APP_STATUS_PAGE(ctxt), null);
-    }
-
-    private static void checkLocationSettings(final Context ctxt) {
-      SensorControlChecks.checkLocationSettings(ctxt, resultTask -> {
-          try {
-            LocationSettingsResponse response = resultTask.getResult(ApiException.class);
-                        // All location settings are satisfied. The client can initialize location
-                        // requests here.
-            Log.i(ctxt, TAG, "All settings are valid, checking current state");
-            Log.i(ctxt, TAG, "Current location settings are "+response);
-          } catch (ApiException exception) {
-            generateOpenAppSettingsNotification(ctxt);
-            }
-        });
     }
 }
