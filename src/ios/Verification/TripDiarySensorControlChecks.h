@@ -3,7 +3,13 @@
 #import <UIKit/UIKit.h>
 #import <CoreMotion/CoreMotion.h>
 
-@interface TripDiarySettingsCheck: NSObject
+@interface TripDiarySensorControlChecks: NSObject
+
++(BOOL)checkLocationSettings;
++(BOOL)checkLocationPermissions;
++(BOOL)checkMotionActivitySettings;
++(BOOL)checkMotionActivityPermissions;
++(BOOL)checkNotificationsEnabled;
 
 +(void)checkSettingsAndPermission;
 +(void)checkLocationSettingsAndPermission:(BOOL)inBackground;

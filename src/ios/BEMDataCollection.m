@@ -6,7 +6,7 @@
 #import "DataUtils.h"
 #import "StatsEvent.h"
 #import "BEMBuiltinUserCache.h"
-#import "TripDiarySettingsCheck.h"
+#import "SensorControlForegroundDelegate.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
@@ -65,7 +65,9 @@
         // which is actually easier ("always allow")
         // so in that case, we continue calling the init code in TripDiaryStateMachine
         [self initWithConsent];
+        /*
         [TripDiarySettingsCheck checkMotionSettingsAndPermission:FALSE];
+         */
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
@@ -85,6 +87,8 @@
 
 - (void)isValidLocationSettings:(CDVInvokedUrlCommand*)command
 {
+    [SensorControlForegroundDelegate checkLocationSettings:self.commandDelegate
+        forCommand:command];
 }
 
 - (void)fixLocationPermissions:(CDVInvokedUrlCommand*)command
@@ -93,6 +97,9 @@
 
 - (void)isValidLocationPermissions:(CDVInvokedUrlCommand*)command
 {
+    [SensorControlForegroundDelegate checkLocationPermissions:self.commandDelegate
+        forCommand:command];
+
 }
 
 - (void)fixFitnessPermissions:(CDVInvokedUrlCommand*)command
@@ -101,16 +108,14 @@
 
 - (void)isValidFitnessPermissions:(CDVInvokedUrlCommand*)command
 {
-}
+    [SensorControlForegroundDelegate checkMotionActivityPermissions:self.commandDelegate
+        forCommand:command];
 
-- (UIUserNotificationSettings*) REQUESTED_NOTIFICATION_TYPES {
-    return [UIUserNotificationSettings
-            settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
-            categories:nil];
 }
 
 - (void)fixShowNotifications:(CDVInvokedUrlCommand*)command
 {
+    /*
     NSString* callbackId = [command callbackId];
     @try {
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
@@ -139,34 +144,14 @@
                                    messageAsString:msg];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
+     */
 }
 
 
 - (void)isValidShowNotifications:(CDVInvokedUrlCommand*)command
 {
-    NSString* callbackId = [command callbackId];
-    @try {
-        UIUserNotificationSettings* requestedSettings = [self REQUESTED_NOTIFICATION_TYPES];
-        UIUserNotificationSettings* currSettings = [[UIApplication sharedApplication] currentUserNotificationSettings];
-        if (requestedSettings.types == currSettings.types) {
-            CDVPluginResult* result = [CDVPluginResult
-                                       resultWithStatus:CDVCommandStatus_OK];
-            [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-        } else {
-            NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked", @"DCLocalizable", nil);
-            CDVPluginResult* result = [CDVPluginResult
-                                       resultWithStatus:CDVCommandStatus_ERROR
-                                       messageAsString:msg];
-            [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-        }
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_ERROR
-                                   messageAsString:msg];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
+    [SensorControlForegroundDelegate checkNotificationsEnabled:self.commandDelegate
+        forCommand:command];
 }
 
 - (void)isNotificationsUnpaused:(CDVInvokedUrlCommand*)command

@@ -9,7 +9,7 @@
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
 #import "TripDiaryDelegate.h"
-#import "TripDiarySettingsCheck.h"
+#import "SensorControlBackgroundChecker.h"
 
 #import "LocalNotificationManager.h"
 
@@ -99,25 +99,38 @@ static NSString * const kCurrState = @"CURR_STATE";
         // would be good to test, though.
     }
 
-    
+    // STATUS SCREEN: Figure out how to fix recursion when [TripDiaryStateMachine instance] is called
+    // [SensorControlBackgroundChecker checkAppState];
+    /* The only times we should get here are:
+     * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
+     * - another option might be a re-launch of the app when the user has manually stopped tracking.
+     * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
+     * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
+     * Another way would be to just remove this transition from here...
+     * TODO: Figure out how to deal with it.
+    */
+    // STATUS SCREEN: Figure out how to fix recursion when [TripDiaryStateMachine instance] is called
+    // [SensorControlBackgroundChecker restartFSMIfStartState];
+    /*
     if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
         [TripDiarySettingsCheck promptForPermission:self.locMgr];
     } else {
         NSLog(@"Current location authorization = %d, always = %d",
               [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-        /* The only times we should get here are:
+        The only times we should get here are:
          * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
          * - another option might be a re-launch of the app when the user has manually stopped tracking.
          * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
          * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
          * Another way would be to just remove this transition from here...
          * TODO: Figure out how to deal with it.
-         */
+         
         if (self.currState == kStartState) {
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionInitialize];
         }
     }
+    */
     
     if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState) {
         /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
@@ -203,6 +216,7 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                [TripDiaryStateMachine getStateName:newState]]];
 
     self.currState = newState;
+    [SensorControlBackgroundChecker checkAppState];
 }
 
 /*
@@ -248,7 +262,7 @@ static NSString * const kCurrState = @"CURR_STATE";
               transition,
               [TripDiaryStateMachine getStateName:self.currState],
               [TripDiaryStateMachine getStateName:self.currState]);
-        [TripDiarySettingsCheck checkSettingsAndPermission];
+        [SensorControlBackgroundChecker checkAppState];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
@@ -397,8 +411,8 @@ static NSString * const kCurrState = @"CURR_STATE";
             return nil;
         }];
     } else if ([transition isEqualToString:CFCTransitionGeofenceCreationError]) {
+        // setState will call SensorControlBackgroundChecker checkAppState by default
         [self setState:kStartState];
-        [TripDiarySettingsCheck checkSettingsAndPermission];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
