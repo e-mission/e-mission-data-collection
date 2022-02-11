@@ -6,10 +6,13 @@
 
 @interface SensorControlForegroundDelegate: NSObject
 
-+(void)checkLocationSettings:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command;
-+(void)checkLocationPermissions:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command;
-+(void)checkMotionActivitySettings:(id<CDVCommandDelegate>)delegate
-forCommand:(CDVInvokedUrlCommand*)command;
-+(void)checkMotionActivityPermissions:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command;
-+(void)checkNotificationsEnabled:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command;
+- (id)initWithDelegate:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command;;
+- (void)checkLocationSettings;
+- (void)checkLocationPermissions;
+- (void)checkMotionActivitySettings;
+- (void)checkMotionActivityPermissions;
+- (void)checkNotificationsEnabled;
+
+- (void) checkAndPromptLocationSettings;
+- (void) checkAndPromptLocationPermissions;
 @end

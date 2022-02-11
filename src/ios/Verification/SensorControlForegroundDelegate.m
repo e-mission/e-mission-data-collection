@@ -1,17 +1,27 @@
 #import "SensorControlForegroundDelegate.h"
 #import "TripDiarySensorControlChecks.h"
+#import "SensorControlBackgroundChecker.h"
 #import "LocalNotificationManager.h"
 #import "BEMAppDelegate.h"
 #import "BEMActivitySync.h"
 
 #import <CoreMotion/CoreMotion.h>
 
+@interface SensorControlForegroundDelegate() {
+    id<CDVCommandDelegate> commandDelegate;
+    CDVInvokedUrlCommand* command;
+}
+@end
+
 @implementation SensorControlForegroundDelegate
+
+/*
+ * BEGIN: "check" implementations
+ */
+
 // typedef BOOL (*CheckFnType)(void);
 
-+(void) sendCheckResult:(BOOL)result
-             forDelegate:(id<CDVCommandDelegate>) commandDelegate
-              forCommand:(CDVInvokedUrlCommand*)command
+-(void) sendCheckResult:(BOOL)result
                 errorKey:(NSString*)localizableErrorKey
 {
     NSString* callbackId = [command callbackId];
@@ -37,46 +47,72 @@
     }
 }
 
-+(void)checkLocationSettings:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command
+-(id)initWithDelegate:(id<CDVCommandDelegate>)delegate
+           forCommand:(CDVInvokedUrlCommand *)command
+{
+    self->command = command;
+    self->commandDelegate = delegate;
+    return [super init];
+}
+
+
+-(void)checkLocationSettings
 {
     BOOL result = [TripDiarySensorControlChecks checkLocationSettings];
     [self sendCheckResult:result
-              forDelegate:delegate forCommand:command
                  errorKey:@"location_not_enabled"];
 }
 
-+(void)checkLocationPermissions:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command
+-(void)checkLocationPermissions
 {
     BOOL result = [TripDiarySensorControlChecks checkLocationPermissions];
     [self sendCheckResult:result
-              forDelegate:delegate forCommand:command
                  errorKey:@"location_permission_off"];
 }
 
-+(void)checkMotionActivitySettings:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command
+-(void)checkMotionActivitySettings
 {
     BOOL result = [TripDiarySensorControlChecks checkMotionActivitySettings];
     [self sendCheckResult:result
-              forDelegate:delegate forCommand:command
                  errorKey:@"activity_settings_off"];
 }
 
 
-+(void)checkMotionActivityPermissions:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command
+-(void)checkMotionActivityPermissions
 {
     BOOL result = [TripDiarySensorControlChecks checkMotionActivityPermissions];
     [self sendCheckResult:result
-              forDelegate:delegate forCommand:command
                  errorKey:@"activity_permission_off"];
 }
 
-+(void)checkNotificationsEnabled:(id<CDVCommandDelegate>)delegate forCommand:(CDVInvokedUrlCommand*)command
+-(void)checkNotificationsEnabled
 {
     BOOL result = [TripDiarySensorControlChecks checkNotificationsEnabled];
     [self sendCheckResult:result
-              forDelegate:delegate forCommand:command
                  errorKey:@"notifications_blocked"];
 }
 
+/*
+ * END: "check" implementations
+ */
 
+/*
+ * BEGIN: "fix" implementations
+ */
+
+/*
+ * In iOS, we cannot open overall settings, only the app settings.
+ * Should we open it anyway? Or just tell the user what to do?
+ * If we open it, we don't appear to get any callbacks when the location services are enabled.
+ * there are callbacks only for the auth/permission changes.
+ * https://developer.apple.com/documentation/corelocation/cllocationmanagerdelegate?language=objc
+ * So let's just prompt the user. Which means that we can reuse the check with a different error message
+ */
+
+-(void) checkAndPromptLocationSettings
+{
+    BOOL result = [TripDiarySensorControlChecks checkLocationSettings];
+    [self sendCheckResult:result
+                 errorKey:@"location-turned-off-problem"];
+}
 @end

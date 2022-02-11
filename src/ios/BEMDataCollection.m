@@ -83,12 +83,15 @@
 
 - (void)fixLocationSettings:(CDVInvokedUrlCommand*)command
 {
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptLocationSettings];
 }
 
 - (void)isValidLocationSettings:(CDVInvokedUrlCommand*)command
 {
-    [SensorControlForegroundDelegate checkLocationSettings:self.commandDelegate
-        forCommand:command];
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkLocationSettings];
+
 }
 
 - (void)fixLocationPermissions:(CDVInvokedUrlCommand*)command
@@ -97,9 +100,8 @@
 
 - (void)isValidLocationPermissions:(CDVInvokedUrlCommand*)command
 {
-    [SensorControlForegroundDelegate checkLocationPermissions:self.commandDelegate
-        forCommand:command];
-
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkLocationPermissions];
 }
 
 - (void)fixFitnessPermissions:(CDVInvokedUrlCommand*)command
@@ -108,8 +110,8 @@
 
 - (void)isValidFitnessPermissions:(CDVInvokedUrlCommand*)command
 {
-    [SensorControlForegroundDelegate checkMotionActivityPermissions:self.commandDelegate
-        forCommand:command];
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkMotionActivityPermissions];
 
 }
 
@@ -150,8 +152,8 @@
 
 - (void)isValidShowNotifications:(CDVInvokedUrlCommand*)command
 {
-    [SensorControlForegroundDelegate checkNotificationsEnabled:self.commandDelegate
-        forCommand:command];
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkNotificationsEnabled];
 }
 
 - (void)isNotificationsUnpaused:(CDVInvokedUrlCommand*)command
