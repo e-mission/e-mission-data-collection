@@ -62,6 +62,11 @@ static NSString * const kCurrState = @"CURR_STATE";
     return sharedInstance;
 }
 
++ (TripDiaryDelegate*) delegate {
+    return [self instance]->_locDelegate;
+}
+
+
 - (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     

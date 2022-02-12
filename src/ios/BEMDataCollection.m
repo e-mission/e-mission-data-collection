@@ -96,6 +96,8 @@
 
 - (void)fixLocationPermissions:(CDVInvokedUrlCommand*)command
 {
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptLocationPermissions];
 }
 
 - (void)isValidLocationPermissions:(CDVInvokedUrlCommand*)command

@@ -3,6 +3,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import <UIKit/UIKit.h>
 #import <CoreMotion/CoreMotion.h>
+#import "TripDiaryDelegate.h"
 
 @interface SensorControlForegroundDelegate: NSObject
 
@@ -15,4 +16,12 @@
 
 - (void) checkAndPromptLocationSettings;
 - (void) checkAndPromptLocationPermissions;
+- (void) didChangeAuthorizationStatus:(CLAuthorizationStatus)status;
+@end
+
+@interface TripDiaryDelegate (TripDiaryDelegatePermissions)
+- (void)registerForegroundDelegate:(SensorControlForegroundDelegate*) foregroundDelegate;
+- (void)locationManager:(CLLocationManager *)manager
+    didChangeAuthorizationStatus:(CLAuthorizationStatus)status;
+
 @end

@@ -42,19 +42,19 @@
 {
     [LocalNotificationManager cancelNotification:OPEN_APP_STATUS_PAGE_ID];
     
-    NSArray* allChecks = @[
+    NSArray<NSNumber*>* allChecks = @[
       @([TripDiarySensorControlChecks checkLocationSettings]),
       @([TripDiarySensorControlChecks checkLocationPermissions]),
       @([TripDiarySensorControlChecks checkMotionActivitySettings]),
       @([TripDiarySensorControlChecks checkMotionActivityPermissions]),
       @([TripDiarySensorControlChecks checkNotificationsEnabled])
     ];
-    BOOL allChecksPass = true;
-    for (id check in allChecks) {
-      allChecksPass = allChecksPass && check;
+    BOOL allChecksPass = TRUE;
+    for (NSNumber* check in allChecks) {
+      allChecksPass = allChecksPass && check.boolValue;
     }
     
-    BOOL locChecksPass = allChecks[0] && allChecks[1];
+    BOOL locChecksPass = allChecks[0].boolValue && allChecks[1].boolValue;
     
     if (allChecksPass) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"All settings valid, nothing to prompt"]];
