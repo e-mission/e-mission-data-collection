@@ -17,6 +17,9 @@
 - (void) checkAndPromptLocationSettings;
 - (void) checkAndPromptLocationPermissions;
 - (void) didChangeAuthorizationStatus:(CLAuthorizationStatus)status;
+
+- (void) checkAndPromptFitnessPermissions;
+- (void) didRecieveFitnessPermission:(BOOL)isPermitted;
 @end
 
 @interface TripDiaryDelegate (TripDiaryDelegatePermissions)
@@ -25,3 +28,10 @@
     didChangeAuthorizationStatus:(CLAuthorizationStatus)status;
 
 @end
+
+@interface MotionActivityPermissionDelegate: NSObject
++ (void)registerForegroundDelegate:(SensorControlForegroundDelegate*) foregroundDelegate;
++ (void)readAndPromptForPermission;
+
+@end
+

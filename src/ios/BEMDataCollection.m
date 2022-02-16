@@ -108,6 +108,8 @@
 
 - (void)fixFitnessPermissions:(CDVInvokedUrlCommand*)command
 {
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptFitnessPermissions];
 }
 
 - (void)isValidFitnessPermissions:(CDVInvokedUrlCommand*)command

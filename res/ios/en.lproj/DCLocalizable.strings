@@ -2,9 +2,9 @@
 "new-data-collections-terms" = "New data collection terms - collection paused until consent";
 "error-reading-activities" = "Error while reading activities";
 "travel-mode-unavailable" = "Travel mode detection may be unavailable.";
-"activity-detection-unsupported" = "Activity detection unsupported";
-"activity-permission-problem" = "No 'Motion & Fitness' permission - automatic mode detection will not work. Turn it on (Settings -> app)";
-"activity-turned-off-problem" = "Motion & Fitness Service disabled - automatic mode detection will not work. Turn it on (Settings -> Privacy)";
+"activity-detection-unsupported" = "Activity detection unsupported. Please uninstall.";
+"activity-permission-problem" = "'Motion & Fitness' permission off, please fix in app settings";
+"activity-turned-off-problem" = "Motion & Fitness Service disabled. Turn it on (Phone Settings -> Privacy) and *restart the app*";
 "travel-mode-unknown" = "Travel mode detection unavailable - all trips will be UNKNOWN.";
 "bad-loc-tracking-problem" = "Background location accuracy is consistently poor - trip tracking may not work. Report problem.";
 "location-turned-off-problem" = "Location Services are turned off. Turn it on (Settings -> Privacy)";
