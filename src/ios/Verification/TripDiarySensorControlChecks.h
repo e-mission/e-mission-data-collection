@@ -2,6 +2,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import <UIKit/UIKit.h>
 #import <CoreMotion/CoreMotion.h>
+#import <UIKit/UIKit.h>
 
 @interface TripDiarySensorControlChecks: NSObject
 
@@ -11,11 +12,5 @@
 +(BOOL)checkMotionActivityPermissions;
 +(BOOL)checkNotificationsEnabled;
 
-+(void)checkSettingsAndPermission;
-+(void)checkLocationSettingsAndPermission:(BOOL)inBackground;
-+(void)checkMotionSettingsAndPermission:(BOOL)inBackground;
-+(void)promptForPermission:(CLLocationManager*)locMgr;
-+(void)openAppSettings;
-+(void)showSettingsAlert:(UIAlertController*)alert;
-
++(UIUserNotificationSettings*) REQUESTED_NOTIFICATION_TYPES;
 @end

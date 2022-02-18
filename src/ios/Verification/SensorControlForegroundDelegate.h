@@ -4,6 +4,7 @@
 #import <UIKit/UIKit.h>
 #import <CoreMotion/CoreMotion.h>
 #import "TripDiaryDelegate.h"
+#import "AppDelegate.h"
 
 @interface SensorControlForegroundDelegate: NSObject
 
@@ -20,6 +21,9 @@
 
 - (void) checkAndPromptFitnessPermissions;
 - (void) didRecieveFitnessPermission:(BOOL)isPermitted;
+
+- (void) checkAndPromptNotificationPermission;
+- (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)isPermitted;
 @end
 
 @interface TripDiaryDelegate (TripDiaryDelegatePermissions)
@@ -32,6 +36,10 @@
 @interface MotionActivityPermissionDelegate: NSObject
 + (void)registerForegroundDelegate:(SensorControlForegroundDelegate*) foregroundDelegate;
 + (void)readAndPromptForPermission;
+@end
 
+@interface AppDelegate (AppDelegate)
++ (void)registerForegroundDelegate:(SensorControlForegroundDelegate*) foregroundDelegate;
++ (void)readAndPromptForPermission;
 @end
 

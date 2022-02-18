@@ -14,7 +14,7 @@
 "fix-permission-action-button" = "Fix permission";
 "precise-location-problem" = "The app does not have permission to read 'precise' location - background trip tracking will not work.";
 "notifications_blocked" = "Notifications blocked, please enable";
-"notifications_blocked_app_open" = "Notifications blocked, please fix in app settings";
+"notifications_blocked_app_open" = "Notifications blocked, please fix in app settings and then refresh";
 "location_not_enabled" = "Location turned off, please turn on";
 "location_permission_off" = "Insufficient location permissions, please fix";
 "location_permission_off_app_open" = "Insufficient location permissions, please fix in app settings";

@@ -241,6 +241,41 @@
                  errorKey:@"activity-permission-problem"];
 }
 
+- (void)checkAndPromptNotificationPermission {
+    NSString* callbackId = [command callbackId];
+    @try {
+        if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
+            UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
+            [AppDelegate registerForegroundDelegate:self];
+            [[UIApplication sharedApplication] registerUserNotificationSettings:requestedSettings];
+        }
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
+- (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)newSettings {
+    NSString* callbackId = [command callbackId];
+    UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
+    if (requestedSettings.types == newSettings.types) {
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK];
+        [commandDelegate sendPluginResult:result callbackId:callbackId];
+    } else {
+        NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked_app_open", @"DCLocalizable", nil);
+        [self openAppSettings];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
 -(void)promptForPermission:(CLLocationManager*)locMgr {
     if (IsAtLeastiOSVersion(@"13.0")) {
         NSLog(@"iOS 13+ detected, launching UI settings to easily enable always");
@@ -366,4 +401,39 @@ NSMutableArray* foregroundDelegateList;
     }];
 }
 
+@end
+
+@implementation AppDelegate(CollectionPermission)
+NSMutableArray* foregroundDelegateList;
+
+/*
+ * This is a bit tricky since this function is called whenever the authorization is changed
+ * Design decisions are at:
+ * https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-1035972636
+ * https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-1035976420
+ * https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-1035984060
+ */
+
++(void)registerForegroundDelegate:(SensorControlForegroundDelegate*) foregroundDelegate
+{
+    if (foregroundDelegateList == nil) {
+        foregroundDelegateList = [NSMutableArray new];
+    }
+    [foregroundDelegateList addObject:foregroundDelegate];
+}
+
+-(void) application:(UIApplication*)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings
+{
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"Received callback from user notification settings "]
+                                       showUI:FALSE];
+    if (foregroundDelegateList.count > 0) {
+        for (id currDelegate in foregroundDelegateList) {
+            [currDelegate didRegisterUserNotificationSettings:notificationSettings];
+        }
+        [foregroundDelegateList removeAllObjects];
+    } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"no foreground delegate callbacks found for notifications, ignoring success..."]];
+    }
+}
 @end

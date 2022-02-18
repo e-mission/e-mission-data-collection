@@ -121,36 +121,8 @@
 
 - (void)fixShowNotifications:(CDVInvokedUrlCommand*)command
 {
-    /*
-    NSString* callbackId = [command callbackId];
-    @try {
-    if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
-        UIUserNotificationSettings* requestedSettings = [self REQUESTED_NOTIFICATION_TYPES];
-        [[UIApplication sharedApplication] registerUserNotificationSettings:requestedSettings];
-            [[NSNotificationCenter defaultCenter] addObserverForName:NotificationCallback object:nil queue:nil
-                                                          usingBlock:^(NSNotification* note) {
-                if (requestedSettings.types == ((UIUserNotificationSettings*)note.object).types) {
-                    CDVPluginResult* result = [CDVPluginResult
-                                               resultWithStatus:CDVCommandStatus_OK];
-                    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-                } else {
-                    NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked", @"DCLocalizable", nil);
-                    CDVPluginResult* result = [CDVPluginResult
-                                               resultWithStatus:CDVCommandStatus_ERROR
-                                               messageAsString:msg];
-                    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-            }];
-        }
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_ERROR
-                                   messageAsString:msg];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-}
-     */
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptNotificationPermission];
 }
 
 
