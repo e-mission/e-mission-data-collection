@@ -143,6 +143,7 @@
 
 - (void) didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
+    [[TripDiaryStateMachine instance].locMgr stopUpdatingLocation];
     NSString* callbackId = [command callbackId];
     @try {
         if (status == kCLAuthorizationStatusAuthorizedAlways) {
@@ -281,6 +282,7 @@
         NSLog(@"iOS 13+ detected, launching UI settings to easily enable always");
         // we want to leave the registration in the prompt for permission, since we don't want to register callbacks when we open the app settings for other reasons
         [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
+        [[TripDiaryStateMachine instance].locMgr startUpdatingLocation];
         [self openAppSettings];
     }
     else {
