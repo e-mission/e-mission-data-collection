@@ -9,7 +9,7 @@
 #import "TripDiaryStateMachine.h"
 #import "TripDiaryActions.h"
 #import "TripDiaryDelegate.h"
-#import "TripDiarySettingsCheck.h"
+#import "SensorControlBackgroundChecker.h"
 
 #import "LocalNotificationManager.h"
 
@@ -62,6 +62,11 @@ static NSString * const kCurrState = @"CURR_STATE";
     return sharedInstance;
 }
 
++ (TripDiaryDelegate*) delegate {
+    return [self instance]->_locDelegate;
+}
+
+
 - (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
@@ -99,25 +104,38 @@ static NSString * const kCurrState = @"CURR_STATE";
         // would be good to test, though.
     }
 
-    
+    // STATUS SCREEN: Figure out how to fix recursion when [TripDiaryStateMachine instance] is called
+    // [SensorControlBackgroundChecker checkAppState];
+    /* The only times we should get here are:
+     * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
+     * - another option might be a re-launch of the app when the user has manually stopped tracking.
+     * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
+     * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
+     * Another way would be to just remove this transition from here...
+     * TODO: Figure out how to deal with it.
+    */
+    // STATUS SCREEN: Figure out how to fix recursion when [TripDiaryStateMachine instance] is called
+    // [SensorControlBackgroundChecker restartFSMIfStartState];
+    /*
     if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
         [TripDiarySettingsCheck promptForPermission:self.locMgr];
     } else {
         NSLog(@"Current location authorization = %d, always = %d",
               [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-        /* The only times we should get here are:
+        The only times we should get here are:
          * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
          * - another option might be a re-launch of the app when the user has manually stopped tracking.
          * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
          * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
          * Another way would be to just remove this transition from here...
          * TODO: Figure out how to deal with it.
-         */
+         
         if (self.currState == kStartState) {
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionInitialize];
         }
     }
+    */
     
     if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState) {
         /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
@@ -125,7 +143,7 @@ static NSString * const kCurrState = @"CURR_STATE";
          it easier for us to ignore silent push as well as the transitions generated from here.
          */
         [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
-        [self setState:kOngoingTripState];
+        [self setState:kOngoingTripState withChecks:TRUE];
         [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr];
     }
 
@@ -193,7 +211,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     }
 }
 
--(void)setState:(TripDiaryStates) newState {
+-(void)setState:(TripDiaryStates) newState withChecks:(BOOL) doChecks {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setInteger:newState forKey:kCurrState];
     
@@ -203,6 +221,9 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                [TripDiaryStateMachine getStateName:newState]]];
 
     self.currState = newState;
+    if (doChecks) {
+    [SensorControlBackgroundChecker checkAppState];
+}
 }
 
 /*
@@ -232,7 +253,7 @@ static NSString * const kCurrState = @"CURR_STATE";
             // but if tracking is stopped, we can skip that, and then if we turn it on again, we
             // need to turn everything on here as well
             [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr];
-            [self setState:kOngoingTripState];
+            [self setState:kOngoingTripState withChecks:TRUE];
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         }
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
@@ -241,26 +262,26 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
-        [self setState:kWaitingForTripStartState];
+        [self setState:kWaitingForTripStartState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionGeofenceCreationError]) {
         // if we get a geofence creation error, we stay in the start state.
         NSLog(@"Got transition %@ in state %@, staying in %@ state",
               transition,
               [TripDiaryStateMachine getStateName:self.currState],
               [TripDiaryStateMachine getStateName:self.currState]);
-        [TripDiarySettingsCheck checkSettingsAndPermission];
+        [self setState:kStartState withChecks:FALSE];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
-        [self setState:kOngoingTripState];
+        [self setState:kOngoingTripState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         // One would think that we don't need to deal with anything other than starting from the start
         // state, but we can be stuck in the start state for a while if it turns out that the geofence is
         // not created correctly. If the user forces us to stop tracking then, we still need to do it.
-        [self setState:kTrackingStoppedState];
+        [self setState:kTrackingStoppedState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionStartTracking]) {
         // One would think that we don't need to deal with anything other than starting from the start
         // state, but we can be stuck in the start state for a while if it turns out that the geofence is
@@ -298,7 +319,7 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                                 object:CFCTransitionTripStarted];
         }
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
-        [self setState:kOngoingTripState];
+        [self setState:kOngoingTripState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         // Let's push any pending changes since we know that the trip has ended
         [[TripDiaryActions pushTripToServer] continueWithBlock:^id(BFTask *task) {
@@ -316,7 +337,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
-        [self setState:kTrackingStoppedState];
+        [self setState:kTrackingStoppedState withChecks:TRUE];
     } else  {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
@@ -386,7 +407,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         // so we can use visits for the trip start detection, so we are also
         // about to move to the WAITING_FOR_TRIP_START state
         // TODO: Should this be here, or in EndTripTracking
-        [self setState:kWaitingForTripStartState];
+        [self setState:kWaitingForTripStartState withChecks:TRUE];
         [[BEMServerSyncCommunicationHelper backgroundSync] continueWithBlock:^id(BFTask *task) {
             [[BuiltinUserCache database] checkAfterPull];
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
@@ -397,12 +418,12 @@ static NSString * const kCurrState = @"CURR_STATE";
             return nil;
         }];
     } else if ([transition isEqualToString:CFCTransitionGeofenceCreationError]) {
-        [self setState:kStartState];
-        [TripDiarySettingsCheck checkSettingsAndPermission];
+        // setState will call SensorControlBackgroundChecker checkAppState by default
+        [self setState:kStartState withChecks:FALSE];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
-        [self setState:kTrackingStoppedState];
+        [self setState:kTrackingStoppedState withChecks:TRUE];
     } else {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
@@ -422,14 +443,14 @@ static NSString * const kCurrState = @"CURR_STATE";
         [LocalNotificationManager addNotification:[NSString stringWithFormat:
            @"Found unexpected VISIT_STARTED transition while tracking was stopped, stop everything again"]
            showUI:TRUE];
-        [self setState:kTrackingStoppedState];
+        [self setState:kTrackingStoppedState withChecks:TRUE];
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
-        [self setState:kTrackingStoppedState];
+        [self setState:kTrackingStoppedState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionStartTracking]) {
-        [self setState:kStartState];
+        [self setState:kStartState withChecks:TRUE];
         // This will run the one time init tracking as well as try to create a geofence
         // if we are moving, then we will be outside the geofence... the existing state machine will take over.
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName

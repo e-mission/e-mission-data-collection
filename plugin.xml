@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.6.1">
+        version="1.7.0">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -117,9 +117,13 @@
 		</service>
     </config-file>
 
-    <framework src="com.google.code.gson:gson:2.8.5"/>
+    <framework src="com.google.code.gson:gson:2.8.8"/>
     <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
-    <preference name="LOCATION_VERSION" default="17.0.0"/>
+    <preference name="LOCATION_VERSION" default="18.0.0"/>
+    <framework src="androidx.core:core:$ANDROIDX_CORE_VERSION"/>
+    <preference name="ANDROIDX_CORE_VERSION" default="1.7.0"/>
+
+    <framework src="src/android/enable_api_31.gradle" custom="true" type="gradleReference" />
 
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
@@ -144,6 +148,7 @@
     <source-file src="src/android/sensors/PollSensor.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
     <source-file src="src/android/sensors/PollSensorManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>
     <source-file src="src/android/verification/SensorControlConstants.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
+    <source-file src="src/android/verification/SensorControlChecks.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
     <source-file src="src/android/verification/SensorControlBackgroundChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
     <source-file src="src/android/verification/SensorControlForegroundDelegate.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/verification"/>
     <source-file src="src/android/wrapper/Metadata.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
@@ -196,10 +201,16 @@
         <false/>
     </config-file>
 
-    <framework src="Bolts/Tasks" type="podspec" spec="~> 1.9.0"/>
+    <podspec>
+      <config>
+        <source url="https://cdn.cocoapods.org/"/>
+      </config>
+      <pods use-frameworks="true">
+        <pod name="Bolts/Tasks" spec="~> 1.9.1" />
+      </pods>
+    </podspec>
 
     <framework src="CoreLocation.framework"/>
-    <framework src="Accounts.framework"/>
 
     <header-file src="src/ios/BEMDataCollection.h"/>
     <header-file src="src/ios/BEMAppDelegate.h"/>
@@ -210,7 +221,9 @@
     <header-file src="src/ios/Location/TripDiaryActions.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryDelegate.h" target-dir="Location"/>
     <header-file src="src/ios/Location/TripDiaryStateMachine.h" target-dir="Location"/>
-    <header-file src="src/ios/Location/TripDiarySettingsCheck.h" target-dir="Location"/>
+    <header-file src="src/ios/Verification/TripDiarySensorControlChecks.h" target-dir="Verification"/>
+    <header-file src="src/ios/Verification/SensorControlForegroundDelegate.h" target-dir="Verification"/>
+    <header-file src="src/ios/Verification/SensorControlBackgroundChecker.h" target-dir="Verification"/>
     <header-file src="src/ios/Wrapper/Metadata.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/MotionActivity.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/SimpleLocation.h" target-dir="Wrapper"/>
@@ -230,7 +243,9 @@
     <source-file src="src/ios/Location/TripDiaryActions.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryDelegate.m" target-dir="Location"/>
     <source-file src="src/ios/Location/TripDiaryStateMachine.m" target-dir="Location"/>
-    <source-file src="src/ios/Location/TripDiarySettingsCheck.m" target-dir="Location"/>
+    <source-file src="src/ios/Verification/TripDiarySensorControlChecks.m" target-dir="Verification"/>
+    <source-file src="src/ios/Verification/SensorControlForegroundDelegate.m" target-dir="Verification"/>
+    <source-file src="src/ios/Verification/SensorControlBackgroundChecker.m" target-dir="Verification"/>
     <source-file src="src/ios/Wrapper/Metadata.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/MotionActivity.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/SimpleLocation.m" target-dir="Wrapper"/>

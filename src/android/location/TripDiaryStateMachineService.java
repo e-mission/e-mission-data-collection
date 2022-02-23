@@ -116,7 +116,7 @@ public class TripDiaryStateMachineService extends Service {
         // This makes the rest of the code much simpler, allows us to catch issues as quickly as possible,
         // and
         if (doChecks) {
-            SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
+            SensorControlBackgroundChecker.checkAppState(TripDiaryStateMachineService.this);
         }
         stopSelf();
     }
@@ -240,7 +240,7 @@ public class TripDiaryStateMachineService extends Service {
               if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.success_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                         setNewState(newState, true);
                     } else {
@@ -256,7 +256,7 @@ public class TripDiaryStateMachineService extends Service {
                         }
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.failed_moving_new_state,newState));
+                                null, fCtxt.getString(R.string.failed_moving_new_state,newState));
               } // both branches have called setState or are waiting for sth else
             }); // listener end
             return; // handled the transition, returning
@@ -319,7 +319,7 @@ public class TripDiaryStateMachineService extends Service {
                 if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.success_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                         setNewState(newState, true);
                     } else {
@@ -338,12 +338,12 @@ public class TripDiaryStateMachineService extends Service {
                             //        "Error " + batchResult.getStatus().getStatusCode()+" while creating geofence");
                             // let's mark this operation as done since the other one is static
                         // markOngoingOperationFinished();
-                            SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
+                            SensorControlBackgroundChecker.checkAppState(TripDiaryStateMachineService.this);
                             // will wait for async call to complete
                         }
                         if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                    fCtxt.getString(R.string.failed_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
             });
             
@@ -429,7 +429,7 @@ public class TripDiaryStateMachineService extends Service {
                                 setNewState(newState, true);
                                 if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                                fCtxt.getString(R.string.success_moving_new_state, newState));
+                                            null, fCtxt.getString(R.string.success_moving_new_state, newState));
                                 }
                             } else {
                                     Log.e(fCtxt, TAG, "error while creating geofence, staying in the current state");
@@ -443,7 +443,7 @@ public class TripDiaryStateMachineService extends Service {
                                 }
                                 if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                            fCtxt.getString(R.string.failed_moving_new_state, newState));
+                                            null, fCtxt.getString(R.string.failed_moving_new_state, newState));
                                 }
                     });
                 } else {
@@ -451,7 +451,7 @@ public class TripDiaryStateMachineService extends Service {
                     // own state change
                     // let's mark this operation as done since the other one is static
                     // markOngoingOperationFinished();
-                    SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(fCtxt);
+                    SensorControlBackgroundChecker.checkAppState(fCtxt);
                 }
             }
         }).start();
@@ -468,16 +468,16 @@ public class TripDiaryStateMachineService extends Service {
                         setNewState(newState, true);
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.success_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                     } else {
                             setNewState(mCurrState, true);
                         // markOngoingOperationFinished();
-                        SensorControlBackgroundChecker.checkLocationSettingsAndPermissions(TripDiaryStateMachineService.this);
+                        SensorControlBackgroundChecker.checkAppState(TripDiaryStateMachineService.this);
                     }
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.failed_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
             });
     }
@@ -496,13 +496,13 @@ public class TripDiaryStateMachineService extends Service {
                     if (TripDiaryStateMachineService.isAllSuccessful(resultList)) {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.success_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.success_moving_new_state, newState));
                         }
                         setNewState(newState, false);
                     } else {
                     if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
-                                fCtxt.getString(R.string.failed_moving_new_state, newState));
+                                null, fCtxt.getString(R.string.failed_moving_new_state, newState));
                     }
 
                         if (!resultList.get(1).isSuccessful()) {

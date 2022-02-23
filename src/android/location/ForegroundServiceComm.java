@@ -45,7 +45,7 @@ public class ForegroundServiceComm {
           mCtxt.bindService(fsi, connection, 0);
         } else {
           NotificationHelper.createNotification(mCtxt, Constants.TRACKING_ERROR_ID,
-            mCtxt.getString(R.string.unable_resolve_issue));
+                  null, mCtxt.getString(R.string.unable_resolve_issue));
           Log.e(mCtxt, TAG, "Too many recursions, generating notification");
         }
     }

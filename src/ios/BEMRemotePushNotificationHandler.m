@@ -1,6 +1,6 @@
 #import "BEMRemotePushNotificationHandler.h"
 #import "TripDiaryStateMachine.h"
-#import "TripDiarySettingsCheck.h"
+#import "SensorControlBackgroundChecker.h"
 #import "LocalNotificationManager.h"
 
 @implementation BEMRemotePushNotificationHandler
@@ -100,22 +100,8 @@
 
 + (void) performPeriodicActivity
 {
-    [TripDiarySettingsCheck checkSettingsAndPermission];
-    [BEMRemotePushNotificationHandler validateAndCleanupState];
-}
-
-+ (void) validateAndCleanupState
-{
-    NSUInteger currState = [TripDiaryStateMachine instance].currState;
-    if (currState == kStartState) {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"Still in start state, sending initialize..."] showUI:TRUE];
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionInitialize];
-    } else {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                   @"In valid state %@, nothing to do...", [TripDiaryStateMachine getStateName:currState]] showUI:FALSE];
-    }
+    [SensorControlBackgroundChecker checkAppState];
+    [SensorControlBackgroundChecker restartFSMIfStartState];
 }
 
 @end

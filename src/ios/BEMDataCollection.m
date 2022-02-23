@@ -6,7 +6,7 @@
 #import "DataUtils.h"
 #import "StatsEvent.h"
 #import "BEMBuiltinUserCache.h"
-#import "TripDiarySettingsCheck.h"
+#import "SensorControlForegroundDelegate.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
@@ -65,13 +65,96 @@
         // which is actually easier ("always allow")
         // so in that case, we continue calling the init code in TripDiaryStateMachine
         [self initWithConsent];
+        /*
         [TripDiarySettingsCheck checkMotionSettingsAndPermission:FALSE];
+         */
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
     @catch (NSException *exception) {
         NSString* msg = [NSString stringWithFormat: @"While updating settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
+- (void)fixLocationSettings:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptLocationSettings];
+}
+
+- (void)isValidLocationSettings:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkLocationSettings];
+
+}
+
+- (void)fixLocationPermissions:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptLocationPermissions];
+}
+
+- (void)isValidLocationPermissions:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkLocationPermissions];
+}
+
+- (void)fixFitnessPermissions:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptFitnessPermissions];
+}
+
+- (void)isValidFitnessPermissions:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkMotionActivityPermissions];
+
+}
+
+- (void)fixShowNotifications:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkAndPromptNotificationPermission];
+}
+
+
+- (void)isValidShowNotifications:(CDVInvokedUrlCommand*)command
+{
+    [[[SensorControlForegroundDelegate alloc] initWithDelegate:self.commandDelegate
+                                                   forCommand:command] checkNotificationsEnabled];
+}
+
+- (void)isNotificationsUnpaused:(CDVInvokedUrlCommand*)command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"isNotificationsUnpaused"];
+}
+
+- (void)fixOEMBackgroundRestrictions: (CDVInvokedUrlCommand*) command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"fixOEMBackgroundRestrictions"];
+}
+
+- (void)NOP_RETURN_TRUE:(CDVInvokedUrlCommand*) command forMethod:(NSString*) methodName
+{
+    NSString* callbackId = [command callbackId];
+    
+    @try {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:
+            @"%@ called, is NOP on iOS", methodName] showUI:FALSE];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_ERROR
                                    messageAsString:msg];
@@ -100,22 +183,7 @@
 
 - (void)launchInit:(CDVInvokedUrlCommand*)command
 {
-    NSString* callbackId = [command callbackId];
-    
-    @try {
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:
-            @"launchInit called, is NOP on iOS"] showUI:FALSE];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
-    @catch (NSException *exception) {
-        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_ERROR
-                                   messageAsString:msg];
-        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
+    [self NOP_RETURN_TRUE:command forMethod:@"launchInit"];
 }
 
 - (void)getConfig:(CDVInvokedUrlCommand *)command

@@ -15,7 +15,7 @@
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
 #import "BEMAppDelegate.h"
-#import "TripDiarySettingsCheck.h"
+#import "SensorControlBackgroundChecker.h"
 
 #define ACCURACY_THRESHOLD 200
 
@@ -228,9 +228,11 @@
     // and the background call to checkLocationSettingsAndPermission from the remote push code
     // doesn't have that reference. Can simplify this after we stop supporting iOS13.
     if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined) {
-        [TripDiarySettingsCheck promptForPermission:manager];
+        // STATUS SCREEN: handle with checkAndFix
+        // [TripDiarySettingsCheck promptForPermission:manager];
     } else {
-        [TripDiarySettingsCheck checkLocationSettingsAndPermission:FALSE];
+        // STATUS SCREEN: handle with checkAndFix
+        // [TripDiarySettingsCheck checkLocationSettingsAndPermission:FALSE];
     }
 
     if (_tdsm.currState == kStartState) {

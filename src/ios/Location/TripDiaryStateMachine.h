@@ -60,6 +60,7 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 
 @interface TripDiaryStateMachine : NSObject
 + (TripDiaryStateMachine*) instance;
++ (id) delegate;
 
 -(void)registerForNotifications;
 

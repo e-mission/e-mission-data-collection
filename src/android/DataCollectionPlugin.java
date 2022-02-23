@@ -1,5 +1,7 @@
 package edu.berkeley.eecs.emission.cordova.tracker;
 
+import edu.berkeley.eecs.emission.R;
+
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CallbackContext;
@@ -62,15 +64,59 @@ public class DataCollectionPlugin extends CordovaPlugin {
             JSONObject newConsent = data.getJSONObject(0);
             ConsentConfig cfg = new Gson().fromJson(newConsent.toString(), ConsentConfig.class);
             ConfigManager.setConsented(ctxt, cfg);
-            TripDiaryStateMachineForegroundService.startProperly(cordova.getActivity().getApplication());
+            // TripDiaryStateMachineForegroundService.startProperly(cordova.getActivity().getApplication());
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
             // user deleted the consent and re-consented, but didn't upgrade the app
-            mControlDelegate.checkAndPromptPermissions();
-            // ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
+            // mControlDelegate.checkAndPromptPermissions();
+            ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_initialize));
             // TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;
+        } else if (action.equals("fixLocationSettings")) {
+            Log.d(cordova.getActivity(), TAG, "fixing location settings");
+            mControlDelegate.checkAndPromptLocationSettings(callbackContext);
+            return true;
+        } else if (action.equals("isValidLocationSettings")) {
+            Log.d(cordova.getActivity(), TAG, "checking location settings");
+            mControlDelegate.checkLocationSettings(callbackContext);
+            return true;
+        } else if (action.equals("fixLocationPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing location permissions");
+          mControlDelegate.checkAndPromptLocationPermissions(callbackContext);
+          return true;
+        } else if (action.equals("isValidLocationPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "checking location permissions");
+          mControlDelegate.checkLocationPermissions(callbackContext);
+          return true;
+        } else if (action.equals("fixFitnessPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing fitness permissions");
+          mControlDelegate.checkAndPromptMotionActivityPermissions(callbackContext);
+          return true;
+        } else if (action.equals("isValidFitnessPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "checking fitness permissions");
+          mControlDelegate.checkMotionActivityPermissions(callbackContext);
+          return true;
+        } else if (action.equals("fixShowNotifications")) {
+          Log.d(cordova.getActivity(), TAG, "fixing notification enable");
+          mControlDelegate.checkAndPromptShowNotificationsEnabled(callbackContext);
+          return true;
+        } else if (action.equals("isValidShowNotifications")) {
+          Log.d(cordova.getActivity(), TAG, "checking notification enable");
+          mControlDelegate.checkShowNotificationsEnabled(callbackContext);
+          return true;
+        } else if (action.equals("isNotificationsUnpaused")) {
+          Log.d(cordova.getActivity(), TAG, "checking notification unpause");
+          mControlDelegate.checkPausedNotifications(callbackContext);
+          return true;
+        } else if (action.equals("fixUnusedAppRestrictions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing unused app restrictions");
+          mControlDelegate.checkAndPromptUnusedAppsUnrestricted(callbackContext);
+          return true;
+        } else if (action.equals("isUnusedAppUnrestricted")) {
+          Log.d(cordova.getActivity(), TAG, "checking unused app restrictions");
+          mControlDelegate.checkUnusedAppsUnrestricted(callbackContext);
+          return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
             TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);
