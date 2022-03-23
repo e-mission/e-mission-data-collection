@@ -105,7 +105,9 @@ public class SensorControlChecks {
   public static boolean checkUnusedAppsUnrestricted(final Context ctxt) {
       ListenableFuture<Integer> future = PackageManagerCompat.getUnusedAppRestrictionsStatus(ctxt);
     try {
+      Log.i(ctxt, TAG, "About to call future.get to read the restriction status");
       Integer appRestrictionStatus = future.get();
+      Log.i(ctxt, TAG, "Received "+appRestrictionStatus+" from future.get");
       switch(appRestrictionStatus) {
         case UnusedAppRestrictionsConstants.ERROR: return false;
         case UnusedAppRestrictionsConstants.FEATURE_NOT_AVAILABLE: return true;
@@ -116,8 +118,10 @@ public class SensorControlChecks {
           return false;
       }
     } catch (ExecutionException | InterruptedException e) {
+      Log.e(ctxt, TAG, "Got exception from future.get" + e);
       return false;
     }
+    Log.e(ctxt, TAG, "Random final false");
     return false;
   }
 }

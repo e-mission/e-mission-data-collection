@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
 
@@ -552,12 +553,17 @@ public class SensorControlForegroundDelegate {
       case SensorControlConstants.REMOVE_UNUSED_APP_RESTRICTIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got unused app restrictions callback from launching app settings");
+        AsyncTask.execute(new Runnable() {
+          @Override
+          public void run() {
         if (SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity())) {
-          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+              // SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();
         } else {
           cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
         }
+          }
+        });
         break;
       default:
         Log.d(cordova.getActivity(), TAG, "Got unsupported request code " + requestCode + " , ignoring...");
