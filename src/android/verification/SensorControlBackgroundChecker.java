@@ -26,6 +26,8 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
@@ -143,15 +145,15 @@ public class SensorControlBackgroundChecker {
            * generateOpenAppSettingsNotification? Nothing in the NotificationManager indicates that
            * it needs to run on the UI thread either.
            */
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-        executor.execute(() -> {
+        executor.schedule(() -> {
           if (!SensorControlChecks.checkUnusedAppsUnrestricted(ctxt)) {
             Log.i(ctxt, TAG, "all current settings and permissions are probably valid, but could be reset later");
             Log.i(ctxt, TAG, "don't generate a tracking error right now, but let's ask the user to avoid the reset ");
             generateOpenAppSettingsNotification(ctxt);
           }
-        });
+        }, 1, TimeUnit.MINUTES);
     }
 
     public static void generateOpenAppSettingsNotification(Context ctxt) {
