@@ -24,6 +24,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
@@ -90,8 +92,7 @@ public class SensorControlBackgroundChecker {
       boolean[] allOtherChecks = new boolean[]{
         SensorControlChecks.checkLocationPermissions(ctxt),
         SensorControlChecks.checkMotionActivityPermissions(ctxt),
-        SensorControlChecks.checkNotificationsEnabled(ctxt),
-        SensorControlChecks.checkUnusedAppsUnrestricted(ctxt)
+        SensorControlChecks.checkNotificationsEnabled(ctxt)
       };
       boolean allOtherChecksPass = true;
       for (boolean check: allOtherChecks) {
@@ -113,14 +114,14 @@ public class SensorControlBackgroundChecker {
       }
       else if (allOtherChecks[0]) {
             Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location permission status  "+allOtherChecks[0]+" should be true "+
-          " so one of the non-location checks must be false: loc permission, motion permission, notification, unused apps" + Arrays.toString(allOtherChecks));
+          " so one of the non-location checks must be false: loc permission, motion permission, notification" + Arrays.toString(allOtherChecks));
         Log.i(ctxt, TAG, "a non-local check failed, generating only user visible notification");
         generateOpenAppSettingsNotification(ctxt);
       }
       else {
             Log.i(ctxt, TAG, "location settings are valid, but location permission is not, generating tracking error and visible notification");
             Log.i(ctxt, TAG, "curr status check results = " +
-            " loc permission, motion permission, notification, unused apps "+ Arrays.toString(allOtherChecks));
+            " loc permission, motion permission, notification "+ Arrays.toString(allOtherChecks));
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
         generateOpenAppSettingsNotification(ctxt);
         }
@@ -129,6 +130,27 @@ public class SensorControlBackgroundChecker {
           ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
             generateOpenAppSettingsNotification(ctxt);
             }
+        });
+
+          /*
+           * AsyncTask is deprecated, so let's try to use the standard concurrent utilities here.
+           * Haven't used raw java concurrent utilities for 20 years (new Thread(...)) anyone?
+           * So this code snippet is based on
+           * https://stackoverflow.com/a/64969640/4040267
+           *
+           * Do we need to do anything in the UI thread. The `checkUnusedAppsUnrestricted`
+           * doesn't say anything about which thread to call it from. What about
+           * generateOpenAppSettingsNotification? Nothing in the NotificationManager indicates that
+           * it needs to run on the UI thread either.
+           */
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+          if (!SensorControlChecks.checkUnusedAppsUnrestricted(ctxt)) {
+            Log.i(ctxt, TAG, "all current settings and permissions are probably valid, but could be reset later");
+            Log.i(ctxt, TAG, "don't generate a tracking error right now, but let's ask the user to avoid the reset ");
+            generateOpenAppSettingsNotification(ctxt);
+          }
         });
     }
 
