@@ -47,7 +47,7 @@
 +(BOOL)checkNotificationsEnabled {
     UIUserNotificationSettings* requestedSettings = [self REQUESTED_NOTIFICATION_TYPES];
     UIUserNotificationSettings* currSettings = [[UIApplication sharedApplication] currentUserNotificationSettings];
-    return requestedSettings.types == currSettings.types;
+    return (currSettings.types & requestedSettings.types) == requestedSettings.types;
 }
 
 +(UIUserNotificationSettings*) REQUESTED_NOTIFICATION_TYPES {
