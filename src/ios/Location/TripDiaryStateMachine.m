@@ -87,7 +87,9 @@ static NSString * const kCurrState = @"CURR_STATE";
     _geofenceLocator = [GeofenceActions new];
     
     // The operations in the one time init tracking are idempotent, so let's start them anyway
-    [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+    if ([ConfigManager getPriorConsent] != NULL) {
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+    }
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"initializing TripDiaryStateMachine with state = %@",
