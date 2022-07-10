@@ -4,6 +4,7 @@
 #import "LocalNotificationManager.h"
 #import "BEMAppDelegate.h"
 #import "BEMActivitySync.h"
+#import "ConfigManager.h"
 
 #import <CoreMotion/CoreMotion.h>
 #define OPEN_APP_STATUS_PAGE_ID @362253744
@@ -60,26 +61,24 @@
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"All settings valid, nothing to prompt"]];
         [self restartFSMIfStartState];
     }
-    else if (locChecksPass) {
-        /*
-        Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location permission status  "+allOtherChecks[0]+" should be true "+
-        " so one of the non-location checks must be false: loc permission, motion permission, notification, unused apps" + Arrays.toString(allOtherChecks));
-        Log.i(ctxt, TAG, "a non-local check failed, generating only user visible notification");
-         */
-        [self generateOpenAppSettingsNotification];
-    }
     else {
-        /*
-         Log.i(ctxt, TAG, "location settings are valid, but location permission is not, generating tracking error and visible notification");
-         Log.i(ctxt, TAG, "curr status check results = " +
-                " loc permission, motion permission, notification, unused apps "+ Arrays.toString(allOtherChecks));
-         */
-        // Should replace with TRACKING_ERROR but looks like we
-        // don't have any
-        [[NSNotificationCenter defaultCenter]
-            postNotificationName:CFCTransitionNotificationName
-                object:CFCTransitionGeofenceCreationError];
-        [self generateOpenAppSettingsNotification];
+        if ([ConfigManager getPriorConsent] == NULL) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"User has not yet consented, ignoring failed checks"]];
+        } else {
+            if (locChecksPass) {
+                [LocalNotificationManager addNotification:[NSString stringWithFormat:@"allChecksPass = %@, but location permimssions pass, so one of the non-location checks must be false: [loc settings, loc permissions, motion settings, motion permissions, notification] = %@", @(allChecksPass), allChecks]];
+                [self generateOpenAppSettingsNotification];
+            }
+            else {
+                [LocalNotificationManager addNotification:[NSString stringWithFormat:@"allChecksPass = %@, but location checks fail, generating error and notification, allChecks: [loc settings, loc permissions, motion settings, motion permissions, notification] = %@", @(allChecksPass), allChecks]];
+                // Should replace with TRACKING_ERROR but looks like we
+                // don't have any
+                [[NSNotificationCenter defaultCenter]
+                    postNotificationName:CFCTransitionNotificationName
+                        object:CFCTransitionGeofenceCreationError];
+                [self generateOpenAppSettingsNotification];
+            }
+        }
     }
 }
 
