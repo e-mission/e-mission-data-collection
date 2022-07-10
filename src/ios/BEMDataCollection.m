@@ -7,6 +7,7 @@
 #import "StatsEvent.h"
 #import "BEMBuiltinUserCache.h"
 #import "SensorControlForegroundDelegate.h"
+#import "SensorControlBackgroundChecker.h"
 #import <CoreLocation/CoreLocation.h>
 
 @implementation BEMDataCollection
@@ -46,6 +47,7 @@
 
 - (void)initWithConsent {
     self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+    [SensorControlBackgroundChecker checkAppState];
     NSDictionary* emptyOptions = @{};
     [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
 }
