@@ -87,7 +87,9 @@ static NSString * const kCurrState = @"CURR_STATE";
     _geofenceLocator = [GeofenceActions new];
     
     // The operations in the one time init tracking are idempotent, so let's start them anyway
-    [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+    if ([ConfigManager getPriorConsent] != NULL) {
+        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+    }
     
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"initializing TripDiaryStateMachine with state = %@",
@@ -104,38 +106,10 @@ static NSString * const kCurrState = @"CURR_STATE";
         // would be good to test, though.
     }
 
-    // STATUS SCREEN: Figure out how to fix recursion when [TripDiaryStateMachine instance] is called
-    // [SensorControlBackgroundChecker checkAppState];
-    /* The only times we should get here are:
-     * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
-     * - another option might be a re-launch of the app when the user has manually stopped tracking.
-     * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
-     * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
-     * Another way would be to just remove this transition from here...
-     * TODO: Figure out how to deal with it.
-    */
-    // STATUS SCREEN: Figure out how to fix recursion when [TripDiaryStateMachine instance] is called
-    // [SensorControlBackgroundChecker restartFSMIfStartState];
-    /*
-    if ([CLLocationManager authorizationStatus] != kCLAuthorizationStatusAuthorizedAlways) {
-        [TripDiarySettingsCheck promptForPermission:self.locMgr];
-    } else {
-        NSLog(@"Current location authorization = %d, always = %d",
-              [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-        The only times we should get here are:
-         * - if we re-install a previously installed app, and so it is already authorized for background location collection BUT is in the start state, or
-         * - another option might be a re-launch of the app when the user has manually stopped tracking.
-         * It would be bad to automatically restart the tracking if the user has manully stopped tracking.
-         * One way to deal with this would be to have separate states for "start" and for "tracking suspended".
-         * Another way would be to just remove this transition from here...
-         * TODO: Figure out how to deal with it.
-         
-        if (self.currState == kStartState) {
-            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                                object:CFCTransitionInitialize];
-        }
-    }
-    */
+    // Replaced by a call to [SensorControlBackgroundChecker checkAppState]
+    // just after the initialization is complete in the background
+    // currently only in `BEMDataCollection initWithConsent`
+    // https://github.com/e-mission/e-mission-docs/issues/735#issuecomment-1179774103
     
     if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState) {
         /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen

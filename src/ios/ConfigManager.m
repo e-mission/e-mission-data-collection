@@ -45,6 +45,12 @@ static LocationTrackingConfig *_instance;
     _instance = newConfig;
 }
 
++ (ConsentConfig*) getPriorConsent {
+    ConsentConfig* currConfig = (ConsentConfig*)[[BuiltinUserCache database] getDocument:CONSENT_CONFIG_KEY wrapperClass:[ConsentConfig class]];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"in getPriorConsent, currConfig = %@", currConfig]];
+    return currConfig;
+}
+
 + (BOOL) isConsented:(NSString*)reqConsent {
     @try {
     ConsentConfig* currConfig = (ConsentConfig*)[[BuiltinUserCache database] getDocument:CONSENT_CONFIG_KEY wrapperClass:[ConsentConfig class]];

@@ -14,6 +14,7 @@
 
 + (LocationTrackingConfig*) instance;
 + (void) updateConfig:(LocationTrackingConfig*) newConfig;
++ (ConsentConfig*) getPriorConsent;
 + (BOOL) isConsented:(NSString*)reqConsent;
 + (void) setConsented:(ConsentConfig*) newConfig;
 @end
