@@ -143,14 +143,18 @@
 
 - (void) didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In delegate didChangeAuthorizationStatus, newStatus = %d", status]];
     [[TripDiaryStateMachine instance].locMgr stopUpdatingLocation];
     NSString* callbackId = [command callbackId];
     @try {
         if (status == kCLAuthorizationStatusAuthorizedAlways) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"status == always, restarting FSM if start state"]];
+            [SensorControlBackgroundChecker restartFSMIfStartState];
             CDVPluginResult* result = [CDVPluginResult
                                        resultWithStatus:CDVCommandStatus_OK];
             [commandDelegate sendPluginResult:result callbackId:callbackId];
         } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"status %d != always %d, returning error", status, kCLAuthorizationStatusAuthorizedAlways]];
             NSString* msg = NSLocalizedStringFromTable(@"location_permission_off_app_open",         @"DCLocalizable", nil);
             CDVPluginResult* result = [CDVPluginResult
                                        resultWithStatus:CDVCommandStatus_ERROR
@@ -340,13 +344,16 @@ NSMutableArray* foregroundDelegateList;
             didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:@"In checker's didChangeAuthorizationStatus, new authorization status = %d, always = %d", status, kCLAuthorizationStatusAuthorizedAlways]];
 
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Calling TripDiarySettingsCheck from didChangeAuthorizationStatus to verify location service status and permission"]];
     if (foregroundDelegateList.count > 0) {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"%lu foreground delegates found, calling didChangeAuthorizationStatus to return the new value %d", (unsigned long)foregroundDelegateList.count, status]];
+
         for (id currDelegate in foregroundDelegateList) {
             [currDelegate didChangeAuthorizationStatus:(CLAuthorizationStatus)status];
         }
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Notified all foreground delegates, removing all of them"]];
         [foregroundDelegateList removeAllObjects];
     } else {
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"No foreground delegate found, calling SensorControlBackgroundChecker from didChangeAuthorizationStatus to verify location service status and permission"]];
         [SensorControlBackgroundChecker checkAppState];
     }
 }
