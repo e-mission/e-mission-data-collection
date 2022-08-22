@@ -105,12 +105,22 @@ public class ActivityTransitionIntentService extends IntentService {
                 // Or should we just disable the listener if in `ongoing_trip` state
                 // latter is more consistent with current geofence implementation
                 // former lets us get a new source of sensor data
-                if (event.getActivityType() == DetectedActivity.WALKING ||
-                        event.getActivityType() == DetectedActivity.RUNNING) {
-                    handleWalkingTransition();
-                } else {
-                    // TODO: Do we want to filter out UNKNOWN here?
-                    handleNonWalkingTransition();
+                switch(event.getActivityType()) {
+                    case DetectedActivity.STILL:
+                        break;
+                    case DetectedActivity.WALKING:
+                    case DetectedActivity.RUNNING:
+                        handleWalkingTransition();
+                        break;
+                    case DetectedActivity.ON_BICYCLE:
+                    case DetectedActivity.IN_VEHICLE:
+                        handleNonWalkingTransition();
+                        break;
+                    default:
+                        NotificationHelper.createNotification(this, ACTIVITY_ERROR_IN_NUMBERS,
+                            null, new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())
+                                +" Expected enter transition, found "+toActivityString(event.getActivityType())
+                                +" "+toTransitionType(event.getTransitionType()));
                 }
             }
 		}
