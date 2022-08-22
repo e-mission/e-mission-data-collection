@@ -52,7 +52,7 @@ public class GeofenceActions {
     // of the location.
 
     private static final String TAG = "CreateGeofenceAction";
-    private static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
+    public static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
 
     private Context mCtxt;
     private UserCache uc;
