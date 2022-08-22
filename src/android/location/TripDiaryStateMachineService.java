@@ -21,8 +21,11 @@ import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
+
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
+import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityTransitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
+import edu.berkeley.eecs.emission.cordova.tracker.location.actions.SignificantMotionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
@@ -164,6 +167,9 @@ public class TripDiaryStateMachineService extends Service {
         // Get current location
         if (actionString.equals(ctxt.getString(R.string.transition_initialize)) &&
                 !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
+            // create the significant motion callback first since it is
+            // synchronous and the geofence is not
+            new SignificantMotionActions(ctxt).create();
             createGeofenceInThread(ctxt, actionString);
             return;
             // we will wait for async geofence creation to complete
@@ -294,14 +300,18 @@ public class TripDiaryStateMachineService extends Service {
                 @Override
                 public void run() {
                     System.out.println("Running in new thread!!");
+            // first perform the synchronous activity
+            new SignificantMotionActions(ctxt).create();
             final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
             tokenList.add(new LocationTrackingActions(ctxt).stop());
             tokenList.add(new ActivityRecognitionActions(ctxt).stop());
                     // TODO: change once we move to chained promises
+
             Task<Void> createGeofenceResult = new GeofenceActions(ctxt).create();
             if (createGeofenceResult != null) {
                 tokenList.add(createGeofenceResult);
             }
+            tokenList.add(new ActivityTransitionActions(ctxt).start());
                     final boolean geofenceCreationPossible = createGeofenceResult != null;
             final Context fCtxt = ctxt;
             Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
@@ -420,10 +430,20 @@ public class TripDiaryStateMachineService extends Service {
                 // one callback for the first and two for the second.
                 // So for now, we punt and simply start the geofence creation in a separate
                 // (non-UI thread). Revisit this later once chaining is supported.
+                final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
                 Task<Void> createGeofenceResult =
                         new GeofenceActions(ctxt).create();
                 if (createGeofenceResult != null) {
-                    createGeofenceResult.addOnCompleteListener(task -> {
+                    tokenList.add(createGeofenceResult);
+                } else {
+                    // Geofence was not created properly. let's make an async call that will generate its
+                    // own state change
+                    // let's mark this operation as done since the other one is static
+                    // markOngoingOperationFinished();
+                    SensorControlBackgroundChecker.checkAppState(fCtxt);
+                }
+                tokenList.add(new ActivityTransitionActions(ctxt).start());
+                Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
                             String newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
                             if (task.isSuccessful()) {
                                 setNewState(newState, true);
@@ -446,13 +466,6 @@ public class TripDiaryStateMachineService extends Service {
                                             null, fCtxt.getString(R.string.failed_moving_new_state, newState));
                                 }
                     });
-                } else {
-                    // Geofence was not created properly. let's make an async call that will generate its
-                    // own state change
-                    // let's mark this operation as done since the other one is static
-                    // markOngoingOperationFinished();
-                    SensorControlBackgroundChecker.checkAppState(fCtxt);
-                }
             }
         }).start();
     }
