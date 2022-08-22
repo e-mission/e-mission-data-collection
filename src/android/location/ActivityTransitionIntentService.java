@@ -186,10 +186,20 @@ public class ActivityTransitionIntentService extends IntentService {
             if (distanceToCurrGeofence > 100) {
                 Log.d(this, TAG, "isAlreadyOutsideGeofence: distanceToCurrGeofence = "
                 +distanceToCurrGeofence+" returning OUTSIDE");
+                // Add the exit location to the tracking database, just like we do
+                // for the geofence exit intent service
+                uc.putSensorData(R.string.key_usercache_location,
+                    new SimpleLocation(currLoc));
                 return LocationGeofenceStatus.OUTSIDE;
             } else {
                 Log.d(this, TAG, "isAlreadyOutsideGeofence: distanceToCurrGeofence = "
-                +distanceToCurrGeofence+" returning INSIDE");
+                    +distanceToCurrGeofence+" returning INSIDE");
+                // TODO: Also figure out whether we should store the location
+                // even when we are inside.
+                // on the one hand, we have read it, so why not store it?
+                // on the other hand, we don't really need it and it is is not
+                // consistent with anything else
+                // optimizing for consistency here...
                 return LocationGeofenceStatus.INSIDE;
             }
         } catch (ExecutionException e) {
