@@ -19,7 +19,7 @@ public class ActivityRecognitionActions {
     private static final int ACTIVITY_IN_NUMBERS = 22848489;
     private int ACTIVITY_DETECTION_INTERVAL;
 
-    private static final String TAG = "ActivityRecognitionHandler";
+    private static final String TAG = "ActivityRecognitionActions";
 
     private Context mCtxt;
 
