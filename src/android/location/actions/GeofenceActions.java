@@ -34,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService;
 
@@ -105,7 +106,9 @@ public class GeofenceActions {
         try {
             JSONObject jo = new JSONObject();
             jo.put("type", "Point");
-            double[] currCoordinates = {currLoc.getLongitude(), currLoc.getLatitude()};
+            JSONArray currCoordinates = new JSONArray();
+            currCoordinates.put(0, currLoc.getLongitude());
+            currCoordinates.put(1, currLoc.getLatitude());
             jo.put("coordinates", currCoordinates);
             uc.putLocalStorage(GEOFENCE_LOC_KEY, jo);
         } catch (JSONException e) {
