@@ -20,6 +20,8 @@ import com.google.android.gms.location.ActivityTransitionEvent;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationResult;
 // import com.google.android.gms.location.Priority;
 // import com.google.android.gms.location.CurrentLocationRequest;
 // import com.google.android.gms.location.CurrentLocationRequest.Builder;
@@ -42,16 +44,27 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import android.app.IntentService;
 import android.content.Intent;
 import android.location.Location;
+import android.content.Context;
+import android.os.Looper;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
+import androidx.work.WorkManager;
+import androidx.work.Worker;
+import androidx.work.WorkRequest;
+import androidx.work.WorkerParameters;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.OneTimeWorkRequest.Builder;
+
+import androidx.annotation.NonNull;
 
 public class ActivityTransitionIntentService extends IntentService {
 	private static final int ACTIVITY_IN_NUMBERS = 22848489;
 	private static final int ACTIVITY_ERROR_IN_NUMBERS = 22848490;
     private UserCache uc;
+    private WalkExitGeofenceLocationCallback walkExitCallback;
 
     enum LocationGeofenceStatus {
         INSIDE,
@@ -61,6 +74,7 @@ public class ActivityTransitionIntentService extends IntentService {
 
 	public ActivityTransitionIntentService() {
 		super("ActivityTransitionIntentService");
+		Log.d(this, TAG, "initializer called");
         this.uc = UserCacheFactory.getUserCache(this);
 	}
 
@@ -107,6 +121,7 @@ public class ActivityTransitionIntentService extends IntentService {
                 // former lets us get a new source of sensor data
                 switch(event.getActivityType()) {
                     case DetectedActivity.STILL:
+                        cancelPendingDelayedCheck();
                         break;
                     case DetectedActivity.WALKING:
                     case DetectedActivity.RUNNING:
@@ -128,28 +143,31 @@ public class ActivityTransitionIntentService extends IntentService {
 
     private void handleNonWalkingTransition() {
         Log.i(this, TAG, "Found non-walking transition in custom geofence, sending exited_geofence message");
+        cancelPendingDelayedCheck();
         sendBroadcast(new ExplicitIntent(this, R.string.transition_exited_geofence));
     }
 
     private void handleWalkingTransition() {
         Log.i(this, TAG, "Found walking transition in custom geofence, starting to read location");
-        LocationGeofenceStatus alreadyOutsideStatus = checkAlreadyOutsideGeofence();
-        if (alreadyOutsideStatus == LocationGeofenceStatus.INSIDE) {
-            Log.i(this, TAG, "already outside check: stayed inside geofence, not an exit, ignoring");
+        LocationGeofenceStatus isOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(this);
+        if (isOutsideStatus == LocationGeofenceStatus.INSIDE) {
+            Log.i(this, TAG, "is outside check: stayed inside geofence, not an exit, ignoring");
+            scheduleDelayedCheck();
             return;
         }
-        if (alreadyOutsideStatus == LocationGeofenceStatus.OUTSIDE) {
-            Log.i(this, TAG, "already outside check: exited geofence, sending broadcast");
+        if (isOutsideStatus == LocationGeofenceStatus.OUTSIDE) {
+            Log.i(this, TAG, "is outside check: exited geofence, sending broadcast");
             sendBroadcast(new ExplicitIntent(this, R.string.transition_exited_geofence));
             return;
         }
 
+        scheduleDelayedCheck();
         NotificationHelper.createNotification(this, ACTIVITY_ERROR_IN_NUMBERS,
             null, new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())
                 +" walking transition but status is unknown, skipping ");
     }
 
-    private LocationGeofenceStatus checkAlreadyOutsideGeofence() {
+    public static LocationGeofenceStatus isOutsideGeofence(Context ctxt) {
         CancellationTokenSource initialReadCancelToken = new CancellationTokenSource();
         try {
             /*
@@ -169,30 +187,30 @@ public class ActivityTransitionIntentService extends IntentService {
              * So in a way, this spans both cases (2)(a) and (2)(c)(workaround)
              */
             Location currLoc = Tasks.await(
-                LocationServices.getFusedLocationProviderClient(this).getCurrentLocation(
+                LocationServices.getFusedLocationProviderClient(ctxt).getCurrentLocation(
                         LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY,
                         initialReadCancelToken.getToken()),
                     2, TimeUnit.MINUTES);
             if (currLoc == null) {
-                Log.d(this, TAG, "isAlreadyOutsideGeofence: currLocation = null "
+                Log.d(ctxt, TAG, "isOutsideGeofence: currLocation = null "
                 +"returning UNKNOWN");
                 return LocationGeofenceStatus.UNKNOWN;
             }
-            JSONObject currGeofenceLoc = uc.getLocalStorage(GeofenceActions.GEOFENCE_LOC_KEY, false);
-            Log.d(this, TAG, "isAlreadyOutsideGeofence: currLocation = "+currLoc
+            JSONObject currGeofenceLoc = UserCacheFactory.getUserCache(ctxt).getLocalStorage(GeofenceActions.GEOFENCE_LOC_KEY, false);
+            Log.d(ctxt, TAG, "isOutsideGeofence: currLocation = "+currLoc
                 +"checking with stored loc "+currGeofenceLoc);
             float distanceToCurrGeofence = SimpleLocation.distanceTo(currLoc,
                 currGeofenceLoc);
             if (distanceToCurrGeofence > 100) {
-                Log.d(this, TAG, "isAlreadyOutsideGeofence: distanceToCurrGeofence = "
+                Log.d(ctxt, TAG, "isOutsideGeofence: distanceToCurrGeofence = "
                 +distanceToCurrGeofence+" returning OUTSIDE");
                 // Add the exit location to the tracking database, just like we do
                 // for the geofence exit intent service
-                uc.putSensorData(R.string.key_usercache_location,
+                UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_location,
                     new SimpleLocation(currLoc));
                 return LocationGeofenceStatus.OUTSIDE;
             } else {
-                Log.d(this, TAG, "isAlreadyOutsideGeofence: distanceToCurrGeofence = "
+                Log.d(ctxt, TAG, "isOutsideGeofence: distanceToCurrGeofence = "
                     +distanceToCurrGeofence+" returning INSIDE");
                 // TODO: Also figure out whether we should store the location
                 // even when we are inside.
@@ -203,65 +221,58 @@ public class ActivityTransitionIntentService extends IntentService {
                 return LocationGeofenceStatus.INSIDE;
             }
         } catch (ExecutionException e) {
-            Log.exception(this, TAG, e);
+            Log.exception(ctxt, TAG, e);
             return LocationGeofenceStatus.UNKNOWN;
         } catch (InterruptedException e) {
-            Log.exception(this, TAG, e);
+            Log.exception(ctxt, TAG, e);
             return LocationGeofenceStatus.UNKNOWN;
         } catch (TimeoutException e) {
-            Log.exception(this, TAG, e);
+            Log.exception(ctxt, TAG, e);
             return LocationGeofenceStatus.UNKNOWN;
         } catch (JSONException e) {
-            Log.exception(this, TAG, e);
+            Log.exception(ctxt, TAG, e);
             return LocationGeofenceStatus.UNKNOWN;
         }
     }
 
-    /*
-     * Checking the location every minute can be done in multiple different
-     * ways, namely: (1) using a looper, (2) using an executor, (3) using a
-     * pending intent, (4) using a worker and checking the current location.
-     * Let's use the looper for now since it is the easiest and the best documented,
-     * but might want to move to a pending intent to be consistent with geofence
-     * creation in the future
-     * https://developer.android.com/training/location/request-updates
-
-    private checkGeofenceExit(LocationRequest request) {
-        JSONObject currGeofenceLoc = uc.getLocalStorage(GEOFENCE_LOC_KEY);
-        final Context fCtxt = this;
-        LocationCallback locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) {
-                    // if we have had a sequence of NULL responses
-                    // return UNKNOWN
-                    return;
-                }
-                // if last transition was STILL
-                    // return INSIDE
-                for (Location currLocation : locationResult.getLocations()) {
-                    float distanceToCurrGeofence = SimpleLocation.distanceTo(
-                        currLocation,
-                        currGeofenceLoc);
-                    if (distanceToCurrGeofence > 100) {
-                        return;
-                    }
-                    // if duration between first and now is 5 minutes
-                        // return INSIDE
-                }
-            }
-            
-            private void returnResult(LocationGeofenceStatus result) {
-                synchronized(ActivityTransitionIntentService.this) {
-                    ActivityTransitionIntentService.this.geofenceStateResult = result;
-                    ActivityTransitionIntentService.this.notify();
-                    LocationServices.getFusedLocationProviderClient(fCtxt).removeLocationUpdates(this);
-                }
-            }
-        };
+    private void scheduleDelayedCheck() {
+        Log.i(this, TAG, "scheduleDelayedCheck, creating work request");
+        WalkExitGeofenceWorker.scheduleCheckWalkGeofenceExit(this);
+        /*
+        Log.i(this, TAG, "scheduleDelayedCheck, creating location looper");
+        try {
+            JSONObject currGeofenceLoc = uc.getLocalStorage(
+                GeofenceActions.GEOFENCE_LOC_KEY, false);
+            walkExitCallback = new WalkExitGeofenceLocationCallback(currGeofenceLoc);
+            LocationServices.getFusedLocationProviderClient(this).requestLocationUpdates(
+                getMediumAccuracyOneMinuteRequest(),
+                walkExitCallback,
+                Looper.getMainLooper());
+        } catch (JSONException e) {
+            Log.exception(this, TAG, e);
+        }
+        */
     }
-     */
 
+    private void cancelPendingDelayedCheck() {
+        Log.i(this, TAG, "cancelPendingDelayedCheck, cancelling workers");
+        WalkExitGeofenceWorker.cancelCheckWalkGeofenceExit(this);
+
+        /*
+        Log.i(this, TAG, "cancelPendingDelayedCheck, cancelling callback "+walkExitCallback);
+        if (walkExitCallback != null) {
+            try {
+                Tasks.await(LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(walkExitCallback));
+                Log.i(this, TAG, "cancelPendingDelayedCheck, finished cancelling, setting callback to null ");
+                walkExitCallback = null;
+            } catch (ExecutionException e) {
+                Log.exception(this, TAG, e);
+            } catch (InterruptedException e) {
+                Log.exception(this, TAG, e);
+            }
+        }
+        */
+    }
 
     /*
     private static CurrentLocationRequest getMediumAccuracyOneMinuteRequest() {
@@ -274,7 +285,6 @@ public class ActivityTransitionIntentService extends IntentService {
     }
     */
 
-    /*
     private static LocationRequest getMediumAccuracyOneMinuteRequest() {
         LocationRequest everyMinute = LocationRequest.create();
         return everyMinute
@@ -283,6 +293,7 @@ public class ActivityTransitionIntentService extends IntentService {
                 .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
     }
 
+    /*
     private static LocationRequest getHighAccuracyOneMinuteRequest() {
         LocationRequest everyMinute = LocationRequest.create();
         return everyMinute
@@ -291,6 +302,54 @@ public class ActivityTransitionIntentService extends IntentService {
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
     */
+
+    class WalkExitGeofenceLocationCallback extends LocationCallback {
+        private JSONObject currGeofenceLoc;
+
+        public WalkExitGeofenceLocationCallback(JSONObject geofenceLoc) {
+            this.currGeofenceLoc = geofenceLoc;
+        }
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            if (locationResult == null) {
+                Log.d(ActivityTransitionIntentService.this, TAG, "onLocationResult: currLocation = null "
+                +"returning UNKNOWN");
+                return;
+            }
+            for (Location currLoc : locationResult.getLocations()) {
+                try {
+                    float distanceToCurrGeofence = SimpleLocation.distanceTo(
+                        currLoc,
+                        currGeofenceLoc);
+                    Log.d(ActivityTransitionIntentService.this, TAG,
+                        "onLocationResult: currLocation = "+currLoc
+                        +"checking with stored loc "+currGeofenceLoc);
+                    if (distanceToCurrGeofence > 100) {
+                        Log.d(ActivityTransitionIntentService.this, TAG,
+                            "onLocationResult: distanceToCurrGeofence = "
+                            +distanceToCurrGeofence+" sending geofence_exit message");
+                        ActivityTransitionIntentService.this.uc.putSensorData(
+                            R.string.key_usercache_location,
+                            new SimpleLocation(currLoc));
+                        ActivityTransitionIntentService.this.sendBroadcast(
+                            new ExplicitIntent(ActivityTransitionIntentService.this,
+                            R.string.transition_exited_geofence));
+                        return;
+                    } else {
+                        Log.d(ActivityTransitionIntentService.this,
+                            TAG, "onLocationResult: distanceToCurrGeofence = "
+                            +distanceToCurrGeofence+" skipping exit");
+                        return;
+                    }
+                } catch (JSONException e) {
+                    Log.exception(ActivityTransitionIntentService.this, TAG, e);
+                    return;
+                }
+            }
+        }
+    }
+
 
     private static String toActivityString(int activity) {
         switch (activity) {
