@@ -104,10 +104,12 @@ public class OPGeofenceExitActivityIntentService extends IntentService {
                     " (" + toTransitionType(event.getTransitionType()) + ")" + "   " +
                     new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
                 Log.d(this, TAG, info);
+                /*
                 NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS,
                     null, new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())
                         +" "+toActivityString(event.getActivityType())
                         +" "+toTransitionType(event.getTransitionType()));
+                */
                 if (event.getTransitionType() != ActivityTransition.ACTIVITY_TRANSITION_ENTER) {
                     NotificationHelper.createNotification(this, ACTIVITY_ERROR_IN_NUMBERS,
                         null, new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())
@@ -217,6 +219,10 @@ public class OPGeofenceExitActivityIntentService extends IntentService {
             JSONObject currGeofenceLoc = UserCacheFactory.getUserCache(ctxt).getLocalStorage(GeofenceActions.GEOFENCE_LOC_KEY, false);
             Log.d(ctxt, TAG, "isOutsideGeofence: currLocation = "+currLoc
                 +"checking with stored loc "+currGeofenceLoc);
+            if (currGeofenceLoc == null) {
+                throw new JSONException("Unable to retrieve local storage at key "+
+                    GeofenceActions.GEOFENCE_LOC_KEY);
+            }
             float distanceToCurrGeofence = SimpleLocation.distanceTo(currLoc,
                 currGeofenceLoc);
             if (distanceToCurrGeofence > 100) {
