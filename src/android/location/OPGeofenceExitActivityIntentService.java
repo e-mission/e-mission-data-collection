@@ -60,7 +60,7 @@ import androidx.work.OneTimeWorkRequest.Builder;
 
 import androidx.annotation.NonNull;
 
-public class ActivityTransitionIntentService extends IntentService {
+public class OPGeofenceExitActivityIntentService extends IntentService {
 	private static final int ACTIVITY_IN_NUMBERS = 22848489;
 	private static final int ACTIVITY_ERROR_IN_NUMBERS = 22848490;
     private UserCache uc;
@@ -72,13 +72,13 @@ public class ActivityTransitionIntentService extends IntentService {
         UNKNOWN
     }
 
-	public ActivityTransitionIntentService() {
-		super("ActivityTransitionIntentService");
+	public OPGeofenceExitActivityIntentService() {
+		super("OPGeofenceExitActivityIntentService");
 		Log.d(this, TAG, "initializer called");
         this.uc = UserCacheFactory.getUserCache(this);
 	}
 
-	private static final String TAG = "ActivityTransitionIntentService";
+	private static final String TAG = "OPGeofenceExitActivityIntentService";
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -150,12 +150,12 @@ public class ActivityTransitionIntentService extends IntentService {
     private void handleWalkingTransition() {
         Log.i(this, TAG, "Found walking transition in custom geofence, starting to read location");
         LocationGeofenceStatus isOutsideStatus =
-            ActivityTransitionIntentService.isOutsideGeofence(this, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+            OPGeofenceExitActivityIntentService.isOutsideGeofence(this, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         if (isOutsideStatus != LocationGeofenceStatus.UNKNOWN) {
             handleKnownResult(isOutsideStatus);
         } else {
             Log.i(this, TAG, "handle walking transition: unknown status with balanced accuracy, retrying with high accuracy");
-            LocationGeofenceStatus highAccuracyOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(this,
+            LocationGeofenceStatus highAccuracyOutsideStatus = OPGeofenceExitActivityIntentService.isOutsideGeofence(this,
                 LocationRequest.PRIORITY_HIGH_ACCURACY);
             if (highAccuracyOutsideStatus == LocationGeofenceStatus.UNKNOWN) {
                 handleUnknownResult();
@@ -255,7 +255,7 @@ public class ActivityTransitionIntentService extends IntentService {
 
     private void scheduleDelayedCheck() {
         Log.i(this, TAG, "scheduleDelayedCheck, creating work request");
-        WalkExitGeofenceWorker.scheduleCheckWalkGeofenceExit(this);
+        OPGeofenceWalkExitWorker.scheduleCheckWalkGeofenceExit(this);
         /*
         Log.i(this, TAG, "scheduleDelayedCheck, creating location looper");
         try {
@@ -274,7 +274,7 @@ public class ActivityTransitionIntentService extends IntentService {
 
     private void cancelPendingDelayedCheck() {
         Log.i(this, TAG, "cancelPendingDelayedCheck, cancelling workers");
-        WalkExitGeofenceWorker.cancelCheckWalkGeofenceExit(this);
+        OPGeofenceWalkExitWorker.cancelCheckWalkGeofenceExit(this);
 
         /*
         Log.i(this, TAG, "cancelPendingDelayedCheck, cancelling callback "+walkExitCallback);
@@ -331,7 +331,7 @@ public class ActivityTransitionIntentService extends IntentService {
         @Override
         public void onLocationResult(LocationResult locationResult) {
             if (locationResult == null) {
-                Log.d(ActivityTransitionIntentService.this, TAG, "onLocationResult: currLocation = null "
+                Log.d(OPGeofenceExitActivityIntentService.this, TAG, "onLocationResult: currLocation = null "
                 +"returning UNKNOWN");
                 return;
             }
@@ -340,28 +340,28 @@ public class ActivityTransitionIntentService extends IntentService {
                     float distanceToCurrGeofence = SimpleLocation.distanceTo(
                         currLoc,
                         currGeofenceLoc);
-                    Log.d(ActivityTransitionIntentService.this, TAG,
+                    Log.d(OPGeofenceExitActivityIntentService.this, TAG,
                         "onLocationResult: currLocation = "+currLoc
                         +"checking with stored loc "+currGeofenceLoc);
                     if (distanceToCurrGeofence > 100) {
-                        Log.d(ActivityTransitionIntentService.this, TAG,
+                        Log.d(OPGeofenceExitActivityIntentService.this, TAG,
                             "onLocationResult: distanceToCurrGeofence = "
                             +distanceToCurrGeofence+" sending geofence_exit message");
-                        ActivityTransitionIntentService.this.uc.putSensorData(
+                        OPGeofenceExitActivityIntentService.this.uc.putSensorData(
                             R.string.key_usercache_location,
                             new SimpleLocation(currLoc));
-                        ActivityTransitionIntentService.this.sendBroadcast(
-                            new ExplicitIntent(ActivityTransitionIntentService.this,
+                        OPGeofenceExitActivityIntentService.this.sendBroadcast(
+                            new ExplicitIntent(OPGeofenceExitActivityIntentService.this,
                             R.string.transition_exited_geofence));
                         return;
                     } else {
-                        Log.d(ActivityTransitionIntentService.this,
+                        Log.d(OPGeofenceExitActivityIntentService.this,
                             TAG, "onLocationResult: distanceToCurrGeofence = "
                             +distanceToCurrGeofence+" skipping exit");
                         return;
                     }
                 } catch (JSONException e) {
-                    Log.exception(ActivityTransitionIntentService.this, TAG, e);
+                    Log.exception(OPGeofenceExitActivityIntentService.this, TAG, e);
                     return;
                 }
             }

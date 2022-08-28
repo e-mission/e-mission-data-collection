@@ -23,7 +23,7 @@ import edu.berkeley.eecs.emission.R;
 
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
-import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityTransitionActions;
+import edu.berkeley.eecs.emission.cordova.tracker.location.actions.OPGeofenceExitActivityActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.SignificantMotionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
@@ -213,7 +213,7 @@ public class TripDiaryStateMachineService extends Service {
             // so we need to handle it similar to the createGeofence in handleTripEnd
             final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
             tokenList.add(new GeofenceActions(ctxt).remove());
-            tokenList.add(new ActivityTransitionActions(ctxt).stop());
+            tokenList.add(new OPGeofenceExitActivityActions(ctxt).stop());
             tokenList.add(new ActivityRecognitionActions(ctxt).start());
             Task<Void> locationTrackingResult = new LocationTrackingActions(ctxt).start();
             if (locationTrackingResult != null) {
@@ -312,7 +312,7 @@ public class TripDiaryStateMachineService extends Service {
             if (createGeofenceResult != null) {
                 tokenList.add(createGeofenceResult);
             }
-            tokenList.add(new ActivityTransitionActions(ctxt).start());
+            tokenList.add(new OPGeofenceExitActivityActions(ctxt).start());
                     final boolean geofenceCreationPossible = createGeofenceResult != null;
             final Context fCtxt = ctxt;
             Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
@@ -443,7 +443,7 @@ public class TripDiaryStateMachineService extends Service {
                     // markOngoingOperationFinished();
                     SensorControlBackgroundChecker.checkAppState(fCtxt);
                 }
-                tokenList.add(new ActivityTransitionActions(ctxt).start());
+                tokenList.add(new OPGeofenceExitActivityActions(ctxt).start());
                 Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
                             String newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
                             if (task.isSuccessful()) {
@@ -474,7 +474,7 @@ public class TripDiaryStateMachineService extends Service {
     private void deleteGeofence(Context ctxt, final String targetState) {
         final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
         tokenList.add(new GeofenceActions(ctxt).remove());
-        tokenList.add(new ActivityTransitionActions(ctxt).stop());
+        tokenList.add(new OPGeofenceExitActivityActions(ctxt).stop());
             final Context fCtxt = ctxt;
             Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
               List<Task<?>> resultList = task.getResult();
@@ -502,7 +502,7 @@ public class TripDiaryStateMachineService extends Service {
             // in this state, may be good to turn everything off
             final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
             tokenList.add(new GeofenceActions(ctxt).remove());
-            tokenList.add(new ActivityTransitionActions(ctxt).stop());
+            tokenList.add(new OPGeofenceExitActivityActions(ctxt).stop());
             tokenList.add(new LocationTrackingActions(ctxt).stop());
             tokenList.add(new ActivityRecognitionActions(ctxt).stop());
             final Context fCtxt = ctxt;

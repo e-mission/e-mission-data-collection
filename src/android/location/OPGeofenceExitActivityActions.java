@@ -15,7 +15,7 @@ import com.google.android.gms.tasks.Task;
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.tracker.location.ActivityTransitionIntentService;
+import edu.berkeley.eecs.emission.cordova.tracker.location.OPGeofenceExitActivityIntentService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +23,15 @@ import java.util.List;
 /**
  * Created by shankari on 12/31/14.
  */
-public class ActivityTransitionActions {
+public class OPGeofenceExitActivityActions {
     private static final int ACTIVITY_IN_NUMBERS = 22848489;
     private int ACTIVITY_DETECTION_INTERVAL;
 
-    private static final String TAG = "ActivityTransitionActions";
+    private static final String TAG = "OPGeofenceExitActivityActions";
 
     private Context mCtxt;
 
-    public ActivityTransitionActions(Context context) {
+    public OPGeofenceExitActivityActions(Context context) {
         this.mCtxt = context;
         ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
     }
@@ -66,7 +66,7 @@ public class ActivityTransitionActions {
     }
 
     public static PendingIntent getActivityTransitionPendingIntent(Context ctxt) {
-        Intent innerIntent = new Intent(ctxt, ActivityTransitionIntentService.class);
+        Intent innerIntent = new Intent(ctxt, OPGeofenceExitActivityIntentService.class);
 		/*
 		 * Setting FLAG_UPDATE_CURRENT so that sending the PendingIntent again updates the original.
 		 * We only want to have one geofence active at one point of time.

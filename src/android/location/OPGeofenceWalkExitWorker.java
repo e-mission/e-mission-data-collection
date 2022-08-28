@@ -63,32 +63,32 @@ import androidx.work.OneTimeWorkRequest.Builder;
 
 import androidx.annotation.NonNull;
 
-public class WalkExitGeofenceWorker extends Worker {
+public class OPGeofenceWalkExitWorker extends Worker {
     private Context ctxt;
 	private static final int ACTIVITY_ERROR_IN_NUMBERS = 22848490;
 
-    public WalkExitGeofenceWorker(
+    public OPGeofenceWalkExitWorker(
         @NonNull Context ctxt,
         @NonNull WorkerParameters params) {
         super(ctxt, params);
         this.ctxt = ctxt;
     }
 
-	private static final String TAG = "WalkExitGeofenceWorker";
+	private static final String TAG = "OPGeofenceWalkExitWorker";
 
     @Override
     public Result doWork() {
         Log.i(ctxt, TAG, "Would initiate delayed read for walking transition");
-        ActivityTransitionIntentService.LocationGeofenceStatus isOutsideStatus =
-            ActivityTransitionIntentService.isOutsideGeofence(
+        OPGeofenceExitActivityIntentService.LocationGeofenceStatus isOutsideStatus =
+            OPGeofenceExitActivityIntentService.isOutsideGeofence(
                 ctxt, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        if (isOutsideStatus != ActivityTransitionIntentService.LocationGeofenceStatus.UNKNOWN) {
+        if (isOutsideStatus != OPGeofenceExitActivityIntentService.LocationGeofenceStatus.UNKNOWN) {
             return handleKnownResult(isOutsideStatus);
         } else {
             Log.i(ctxt, TAG, "handle walking transition: unknown status with balanced accuracy, retrying with high accuracy");
-            ActivityTransitionIntentService.LocationGeofenceStatus highAccuracyOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(ctxt,
+            OPGeofenceExitActivityIntentService.LocationGeofenceStatus highAccuracyOutsideStatus = OPGeofenceExitActivityIntentService.isOutsideGeofence(ctxt,
                 LocationRequest.PRIORITY_HIGH_ACCURACY);
-            if (highAccuracyOutsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.UNKNOWN) {
+            if (highAccuracyOutsideStatus == OPGeofenceExitActivityIntentService.LocationGeofenceStatus.UNKNOWN) {
                 return handleUnknownResult();
             } else {
                 return handleKnownResult(highAccuracyOutsideStatus);
@@ -96,12 +96,12 @@ public class WalkExitGeofenceWorker extends Worker {
         }
     }
 
-    private Result handleKnownResult(ActivityTransitionIntentService.LocationGeofenceStatus outsideStatus) {
-        if (outsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.INSIDE) {
+    private Result handleKnownResult(OPGeofenceExitActivityIntentService.LocationGeofenceStatus outsideStatus) {
+        if (outsideStatus == OPGeofenceExitActivityIntentService.LocationGeofenceStatus.INSIDE) {
             Log.i(ctxt, TAG, "is outside check: stayed inside geofence, not an exit, ignoring");
             scheduleCheckWalkGeofenceExit(ctxt);
         }
-        if (outsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.OUTSIDE) {
+        if (outsideStatus == OPGeofenceExitActivityIntentService.LocationGeofenceStatus.OUTSIDE) {
             Log.i(ctxt, TAG, "is outside check: exited geofence, sending broadcast");
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_exited_geofence));
         }
@@ -119,7 +119,7 @@ public class WalkExitGeofenceWorker extends Worker {
 
     public static void scheduleCheckWalkGeofenceExit(Context ctxt) {
         WorkRequest walkExitGeofenceRequest =
-            new OneTimeWorkRequest.Builder(WalkExitGeofenceWorker.class)
+            new OneTimeWorkRequest.Builder(OPGeofenceWalkExitWorker.class)
                 .setInitialDelay(1, TimeUnit.MINUTES)
                 .addTag(getAppSpecificWorkTag(ctxt))
                 .build();
