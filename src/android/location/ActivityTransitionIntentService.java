@@ -149,25 +149,43 @@ public class ActivityTransitionIntentService extends IntentService {
 
     private void handleWalkingTransition() {
         Log.i(this, TAG, "Found walking transition in custom geofence, starting to read location");
-        LocationGeofenceStatus isOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(this);
-        if (isOutsideStatus == LocationGeofenceStatus.INSIDE) {
-            Log.i(this, TAG, "is outside check: stayed inside geofence, not an exit, ignoring");
+        LocationGeofenceStatus isOutsideStatus =
+            ActivityTransitionIntentService.isOutsideGeofence(this, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        if (isOutsideStatus != LocationGeofenceStatus.UNKNOWN) {
+            handleKnownResult(isOutsideStatus);
+        } else {
+            Log.i(this, TAG, "handle walking transition: unknown status with balanced accuracy, retrying with high accuracy");
+            LocationGeofenceStatus highAccuracyOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(this,
+                LocationRequest.PRIORITY_HIGH_ACCURACY);
+            if (highAccuracyOutsideStatus == LocationGeofenceStatus.UNKNOWN) {
+                handleUnknownResult();
+            } else {
+                handleKnownResult(highAccuracyOutsideStatus);
+            }
+        }
+    }
+
+    private void handleKnownResult(LocationGeofenceStatus outsideStatus) {
+        if (outsideStatus == LocationGeofenceStatus.INSIDE) {
+            Log.i(this, TAG, "handle walking transition: stayed inside geofence, not an exit, ignoring");
             scheduleDelayedCheck();
             return;
         }
-        if (isOutsideStatus == LocationGeofenceStatus.OUTSIDE) {
-            Log.i(this, TAG, "is outside check: exited geofence, sending broadcast");
+        if (outsideStatus == LocationGeofenceStatus.OUTSIDE) {
+            Log.i(this, TAG, "handle walking transition: exited geofence, sending broadcast");
             sendBroadcast(new ExplicitIntent(this, R.string.transition_exited_geofence));
             return;
         }
+    }
 
+    private void handleUnknownResult() {
         scheduleDelayedCheck();
         NotificationHelper.createNotification(this, ACTIVITY_ERROR_IN_NUMBERS,
             null, new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())
                 +" walking transition but status is unknown, skipping ");
     }
 
-    public static LocationGeofenceStatus isOutsideGeofence(Context ctxt) {
+    public static LocationGeofenceStatus isOutsideGeofence(Context ctxt, int priority) {
         CancellationTokenSource initialReadCancelToken = new CancellationTokenSource();
         try {
             /*
@@ -188,12 +206,12 @@ public class ActivityTransitionIntentService extends IntentService {
              */
             Location currLoc = Tasks.await(
                 LocationServices.getFusedLocationProviderClient(ctxt).getCurrentLocation(
-                        LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY,
+                        priority,
                         initialReadCancelToken.getToken()),
                     2, TimeUnit.MINUTES);
             if (currLoc == null) {
-                Log.d(ctxt, TAG, "isOutsideGeofence: currLocation = null "
-                +"returning UNKNOWN");
+                Log.d(ctxt, TAG, "isOutsideGeofence: currLocation = null,"
+                    +"returning UNKNOWN");
                 return LocationGeofenceStatus.UNKNOWN;
             }
             JSONObject currGeofenceLoc = UserCacheFactory.getUserCache(ctxt).getLocalStorage(GeofenceActions.GEOFENCE_LOC_KEY, false);

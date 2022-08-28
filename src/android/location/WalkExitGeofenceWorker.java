@@ -79,18 +79,36 @@ public class WalkExitGeofenceWorker extends Worker {
     @Override
     public Result doWork() {
         Log.i(ctxt, TAG, "Would initiate delayed read for walking transition");
-        ActivityTransitionIntentService.LocationGeofenceStatus isOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(ctxt);
-      
-        if (isOutsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.INSIDE) {
+        ActivityTransitionIntentService.LocationGeofenceStatus isOutsideStatus =
+            ActivityTransitionIntentService.isOutsideGeofence(
+                ctxt, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        if (isOutsideStatus != ActivityTransitionIntentService.LocationGeofenceStatus.UNKNOWN) {
+            return handleKnownResult(isOutsideStatus);
+        } else {
+            Log.i(ctxt, TAG, "handle walking transition: unknown status with balanced accuracy, retrying with high accuracy");
+            ActivityTransitionIntentService.LocationGeofenceStatus highAccuracyOutsideStatus = ActivityTransitionIntentService.isOutsideGeofence(ctxt,
+                LocationRequest.PRIORITY_HIGH_ACCURACY);
+            if (highAccuracyOutsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.UNKNOWN) {
+                return handleUnknownResult();
+            } else {
+                return handleKnownResult(highAccuracyOutsideStatus);
+            }
+        }
+    }
+
+    private Result handleKnownResult(ActivityTransitionIntentService.LocationGeofenceStatus outsideStatus) {
+        if (outsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.INSIDE) {
             Log.i(ctxt, TAG, "is outside check: stayed inside geofence, not an exit, ignoring");
             scheduleCheckWalkGeofenceExit(ctxt);
-            return Result.success();
         }
-        if (isOutsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.OUTSIDE) {
+        if (outsideStatus == ActivityTransitionIntentService.LocationGeofenceStatus.OUTSIDE) {
             Log.i(ctxt, TAG, "is outside check: exited geofence, sending broadcast");
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_exited_geofence));
-            return Result.success();
         }
+        return Result.success();
+    }
+
+    private Result handleUnknownResult() {
         scheduleCheckWalkGeofenceExit(ctxt);
         NotificationHelper.createNotification(ctxt, ACTIVITY_ERROR_IN_NUMBERS,
             null, new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date())
