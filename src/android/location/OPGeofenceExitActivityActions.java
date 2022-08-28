@@ -24,16 +24,12 @@ import java.util.List;
  * Created by shankari on 12/31/14.
  */
 public class OPGeofenceExitActivityActions {
-    private static final int ACTIVITY_IN_NUMBERS = 22848489;
-    private int ACTIVITY_DETECTION_INTERVAL;
-
     private static final String TAG = "OPGeofenceExitActivityActions";
 
     private Context mCtxt;
 
     public OPGeofenceExitActivityActions(Context context) {
         this.mCtxt = context;
-        ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
     }
 
     public Task<Void> start() {
@@ -75,7 +71,6 @@ public class OPGeofenceExitActivityActions {
     }
 
     public Task<Void> stop() {
-        Log.d(mCtxt, TAG, "Stopping activity recognition with interval = "+ACTIVITY_DETECTION_INTERVAL);
         return ActivityRecognition.getClient(mCtxt).removeActivityTransitionUpdates(
                 getActivityTransitionPendingIntent(mCtxt));
     }
