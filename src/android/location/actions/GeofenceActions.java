@@ -34,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import edu.berkeley.eecs.emission.cordova.tracker.location.GeofenceExitIntentService;
 
@@ -52,7 +53,7 @@ public class GeofenceActions {
     // of the location.
 
     private static final String TAG = "CreateGeofenceAction";
-    private static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
+    public static final String GEOFENCE_LOC_KEY = "CURR_GEOFENCE_LOCATION";
 
     private Context mCtxt;
     private UserCache uc;
@@ -105,7 +106,9 @@ public class GeofenceActions {
         try {
             JSONObject jo = new JSONObject();
             jo.put("type", "Point");
-            double[] currCoordinates = {currLoc.getLongitude(), currLoc.getLatitude()};
+            JSONArray currCoordinates = new JSONArray();
+            currCoordinates.put(0, currLoc.getLongitude());
+            currCoordinates.put(1, currLoc.getLatitude());
             jo.put("coordinates", currCoordinates);
             uc.putLocalStorage(GEOFENCE_LOC_KEY, jo);
         } catch (JSONException e) {
@@ -206,6 +209,28 @@ public class GeofenceActions {
         }
 
     /*
+     * At least on android 12, geofence IDs are not application specific.
+     * So if we have multiple instance of the app, and manually turn geofences
+     * off and on, we will end up with only one geofence ID at the end.
+     *
+     * https://github.com/e-mission/e-mission-docs/issues/774#issuecomment-1221468502
+     * https://github.com/e-mission/e-mission-docs/issues/774#issuecomment-1221476351
+     *
+     * prepending with the PackageName to allow multiple apps to co-exist.
+    private getAppSpecificGeofenceID() {
+        // geofence IDs are limited to 100 characters, so let's truncate
+        // the PackageName to 80 characters if needed
+        String pkgName = mCtxt.getPackageName();
+        if (pkgName.length() > 80) {
+            pkgName = pkgName.substring(0, 80);
+        }
+        String retVal = pkgName+"_"+GEOFENCE_REQUEST_ID;
+        Log.d("Returning app-specific geofence ID "+retVal);
+        return retVal;
+    }
+     */
+
+    /*
      * Returns the geofence request object to be used with the geofencing API.
      * Called from the previous create() call.
      */
@@ -227,8 +252,14 @@ public class GeofenceActions {
 
     public Task<Void> remove() {
         Log.d(mCtxt, TAG, "Removing geofence with ID = "+GEOFENCE_REQUEST_ID);
+        /*
+         * remove using pending intent instead of ID to ensure that we delete
+         * only the entry for this app
+         * https://github.com/e-mission/e-mission-docs/issues/774#issuecomment-1221468502
+         * https://github.com/e-mission/e-mission-docs/issues/774#issuecomment-1221476351
+         */
         return LocationServices.getGeofencingClient(mCtxt).removeGeofences(
-                Arrays.asList(GEOFENCE_REQUEST_ID));
+                getGeofenceExitPendingIntent(mCtxt));
     }
 
     public static PendingIntent getGeofenceExitPendingIntent(Context ctxt) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.7.3">
+        version="1.7.4">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -85,6 +85,11 @@
 		    android:exported="false">
 		</service>
         <service
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.OPGeofenceExitActivityIntentService"
+		    android:enabled="true"
+		    android:exported="false">
+		</service>
+        <service
             android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService"
             android:enabled="true"
             android:exported="false">
@@ -122,6 +127,8 @@
     <preference name="LOCATION_VERSION" default="18.0.0"/>
     <framework src="androidx.core:core:$ANDROIDX_CORE_VERSION"/>
     <preference name="ANDROIDX_CORE_VERSION" default="1.7.0"/>
+    <framework src="androidx.work:work-runtime:$ANDROIDX_WORK_VERSION"/>
+    <preference name="ANDROIDX_WORK_VERSION" default="2.7.1"/>
 
     <framework src="src/android/enable_api_31.gradle" custom="true" type="gradleReference" />
 
@@ -132,6 +139,8 @@
     <source-file src="src/android/GooglePlayChecker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/ConfigManager.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/location/ActivityRecognitionChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/OPGeofenceExitActivityIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
+    <source-file src="src/android/location/OPGeofenceWalkExitWorker.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/ForegroundServiceComm.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/GeofenceExitIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/LocationChangeIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
@@ -141,6 +150,7 @@
     <source-file src="src/android/location/TripDiaryStateMachineForegroundService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location"/>
     <source-file src="src/android/location/actions/ActivityRecognitionActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/GeofenceActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
+    <source-file src="src/android/location/OPGeofenceExitActivityActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/GeofenceLocationIntentService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/location/actions/LocationTrackingActions.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/location/actions"/>
     <source-file src="src/android/sensors/BatteryPollSensor.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/sensors"/>

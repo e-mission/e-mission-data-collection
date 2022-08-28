@@ -19,7 +19,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.LocationChangeIntentS
  * Created by shankari on 12/30/14.
  */
 public class LocationTrackingActions {
-    private static final String TAG = "LocationHandler";
+    private static final String TAG = "LocationTrackingAction";
     private static final int LOCATION_IN_NUMBERS = 56228466;
 
     private Context mCtxt;
@@ -30,6 +30,7 @@ public class LocationTrackingActions {
 
     public Task<Void> start() {
         try {
+        Log.d(mCtxt, TAG, "requesting location updates" + getLocationRequest());
         return LocationServices.getFusedLocationProviderClient(mCtxt).requestLocationUpdates(
                 getLocationRequest(),
                 getLocationTrackingPendingIntent(mCtxt));

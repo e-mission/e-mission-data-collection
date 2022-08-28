@@ -3,6 +3,9 @@ package edu.berkeley.eecs.emission.cordova.tracker.wrapper;
 import android.location.Location;
 
 import java.text.SimpleDateFormat;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 /**
  * Created by shankari on 8/30/15.
@@ -61,6 +64,14 @@ public class SimpleLocation {
     public float distanceTo(SimpleLocation dest) {
         float[] results = new float[1];
         Location.distanceBetween(latitude, longitude, dest.getLatitude(), dest.getLongitude(), results);
+        return results[0];
+    }
+
+    public static float distanceTo(Location loc, JSONObject destGeoJSON) throws JSONException {
+        float[] results = new float[1];
+        JSONArray destCoordinates = destGeoJSON.getJSONArray("coordinates");
+        Location.distanceBetween(loc.getLatitude(), loc.getLongitude(),
+            destCoordinates.getDouble(1), destCoordinates.getDouble(0), results);
         return results[0];
     }
 }
