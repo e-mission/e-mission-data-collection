@@ -78,7 +78,7 @@ public class OPGeofenceWalkExitWorker extends Worker {
 
     @Override
     public Result doWork() {
-        Log.i(ctxt, TAG, "Would initiate delayed read for walking transition");
+        Log.i(ctxt, TAG, "Initiating delayed read for walking transition");
         OPGeofenceExitActivityIntentService.LocationGeofenceStatus isOutsideStatus =
             OPGeofenceExitActivityIntentService.isOutsideGeofence(
                 ctxt, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
