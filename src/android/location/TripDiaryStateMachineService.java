@@ -186,6 +186,18 @@ public class TripDiaryStateMachineService extends Service {
             // create the significant motion callback first since it is
             // synchronous and the geofence is not
             createGeofenceInThread(ctxt, actionString);
+            /*
+             * Since we currently have the opGeofence controlled by a config
+             * option, we cannot assume that we only need to create a geofence
+             * on re-initialize. If the initialize was triggered by the user
+             * turning off the experimental geofence, we may need to delete the
+             * existing op-geofence.
+             */
+            if (opGeofenceCfg == null) {
+                new OPGeofenceExitActivityActions(ctxt).stop().addOnCompleteListener(task -> {
+                    Log.e(ctxt, TAG, "removed opgeofence on initialize, result is "+task.getResult());
+                });
+            }
             return;
             // we will wait for async geofence creation to complete
         }

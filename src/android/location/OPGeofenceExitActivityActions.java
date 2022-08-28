@@ -55,7 +55,7 @@ public class OPGeofenceExitActivityActions {
                 .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
                 .build());
         
-        Log.d(mCtxt, TAG, "Starting activity transitions for list = "+activityTransitionList);
+        Log.d(mCtxt, TAG, "Starting listening to activity transitions for list = "+activityTransitionList);
         ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
         return ActivityRecognition.getClient(mCtxt).requestActivityTransitionUpdates(request,
                 getActivityTransitionPendingIntent(mCtxt));
@@ -71,6 +71,7 @@ public class OPGeofenceExitActivityActions {
     }
 
     public Task<Void> stop() {
+        Log.d(mCtxt, TAG, "Stopped listening to activity transitions");
         return ActivityRecognition.getClient(mCtxt).removeActivityTransitionUpdates(
                 getActivityTransitionPendingIntent(mCtxt));
     }
