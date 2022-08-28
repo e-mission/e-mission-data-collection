@@ -25,7 +25,6 @@ import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.ActivityRecognitionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.OPGeofenceExitActivityActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceActions;
-import edu.berkeley.eecs.emission.cordova.tracker.location.actions.SignificantMotionActions;
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
@@ -169,7 +168,6 @@ public class TripDiaryStateMachineService extends Service {
                 !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
             // create the significant motion callback first since it is
             // synchronous and the geofence is not
-            new SignificantMotionActions(ctxt).create();
             createGeofenceInThread(ctxt, actionString);
             return;
             // we will wait for async geofence creation to complete
@@ -301,8 +299,6 @@ public class TripDiaryStateMachineService extends Service {
                 @Override
                 public void run() {
                     System.out.println("Running in new thread!!");
-            // first perform the synchronous activity
-            new SignificantMotionActions(ctxt).create();
             final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
             tokenList.add(new LocationTrackingActions(ctxt).stop());
             tokenList.add(new ActivityRecognitionActions(ctxt).stop());
