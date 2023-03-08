@@ -451,12 +451,15 @@ static NSString * const kCurrState = @"CURR_STATE";
 
 - (void) forceRefreshToken
 {
+    /*
+    Since we now use a locally stored string as the token, we don't need to refresh it asynchronously
+    but let's keep the calls to refreshToken in case we need to ever restore it and just convert
+    forceRefreshToken to a NOP
+
     [[AuthTokenCreationFactory getInstance] getExpirationDate:^(NSString *expirationDate, NSError *error) {
-        /*
          * Note that we do not condition any further tasks on this refresh. That is because, in general, we expect that
          * the token refreshed at this time will be used to push the next set of values. This is just pre-emptive refreshing,
          * to increase the chance that we will finish pushing our data within the 30 sec interval.
-         */
         if (error == NULL) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Finished refreshing token in background, new expiry is %@", expirationDate]
@@ -467,6 +470,7 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                showUI:TRUE];
         }
     }];
+    */
 }
 
 /*
