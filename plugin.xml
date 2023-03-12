@@ -61,7 +61,8 @@
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <receiver
             android:name="edu.berkeley.eecs.emission.cordova.tracker.BootReceiver"
-            android:enabled="true" >
+            android:enabled="true"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" >
                 </action>
@@ -69,7 +70,8 @@
         </receiver>
         <receiver
             android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver"
-            android:enabled="true">
+            android:enabled="true"
+            android:exported="false">
             <intent-filter>
                 <action android:name="local.transition.initialize"></action>
                 <action android:name="local.transition.exited_geofence"></action>
