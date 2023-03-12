@@ -124,11 +124,11 @@
 		</service>
     </config-file>
 
-    <framework src="com.google.code.gson:gson:2.8.8"/>
+    <framework src="com.google.code.gson:gson:2.10.1"/>
     <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
-    <preference name="LOCATION_VERSION" default="18.0.0"/>
+    <preference name="LOCATION_VERSION" default="21.0.1"/>
     <framework src="androidx.core:core:$ANDROIDX_CORE_VERSION"/>
-    <preference name="ANDROIDX_CORE_VERSION" default="1.7.0"/>
+    <preference name="ANDROIDX_CORE_VERSION" default="1.8.0"/>
     <framework src="androidx.work:work-runtime:$ANDROIDX_WORK_VERSION"/>
     <preference name="ANDROIDX_WORK_VERSION" default="2.7.1"/>
 
