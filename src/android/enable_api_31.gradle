@@ -1,7 +1,7 @@
 ext.postBuildExtras = {
     android {
         defaultConfig {
-            compileSdkVersion 31
+            compileSdkVersion 32
         }
     }
 }

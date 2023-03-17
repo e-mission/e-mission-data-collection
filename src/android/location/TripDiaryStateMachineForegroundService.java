@@ -1,4 +1,12 @@
 package edu.berkeley.eecs.emission.cordova.tracker.location;
+// Auto fixed by post-plugin hook 
+import edu.berkeley.eecs.emission.MainActivity; 
+// Auto fixed by post-plugin hook 
+import edu.berkeley.eecs.emission.R;
+// Auto fixed by post-plugin hook 
+import edu.berkeley.eecs.emission.MainActivity; 
+// Auto fixed by post-plugin hook 
+import edu.berkeley.eecs.emission.R;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -13,7 +21,7 @@ import android.service.notification.StatusBarNotification;
 
 import androidx.annotation.Nullable;
 
-import edu.berkeley.eecs.emission.MainActivity;
+
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -141,7 +149,7 @@ public class TripDiaryStateMachineForegroundService extends Service {
       activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
       PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
-        activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        activityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
       builder.setContentIntent(activityPendingIntent);
       return builder.build();
     }
@@ -152,10 +160,28 @@ public class TripDiaryStateMachineForegroundService extends Service {
      We need to use getService for pre-Oreo and getForegroundService for O+.
      There are 4 usages of this pattern, so it is probably worth pulling out into a static function.
      When we ever move the minAPI up to 26, we can move this back inline.
+
+     UPDATE for SDK 32: This is used to get a pending intent that is modified
+     by the google play services library.
+
+     These fall into the category of:
+     "Requesting device location information by calling requestLocationUpdates()
+     or similar APIs. The mutable PendingIntent object allows the system to add
+     intent extras that represent location lifecycle events. These events include a
+     change in location and a provider becoming available."
+
+     Fortunately, all of these call this function, so we can specify the
+     MUTABLE flag in one location.
+
+     We ensure that the PendingIntent wrapper an inner explicit intent.
      */
 
     public static PendingIntent getProperPendingIntent(Context ctxt, Intent innerIntent) {
-        return PendingIntent.getService(ctxt, 0, innerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        if (innerIntent.getComponent() == null) {
+            Log.e(ctxt, TAG, "getProperPendingIntent called with implicit intent "+innerIntent);
+        }
+        return PendingIntent.getService(ctxt, 0, innerIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
     }
 
     public static void startProperly(Context ctxt) {

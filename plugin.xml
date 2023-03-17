@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.7.5">
+        version="1.7.6">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -61,7 +61,8 @@
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <receiver
             android:name="edu.berkeley.eecs.emission.cordova.tracker.BootReceiver"
-            android:enabled="true" >
+            android:enabled="true"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" >
                 </action>
@@ -69,7 +70,8 @@
         </receiver>
         <receiver
             android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver"
-            android:enabled="true">
+            android:enabled="true"
+            android:exported="false">
             <intent-filter>
                 <action android:name="local.transition.initialize"></action>
                 <action android:name="local.transition.exited_geofence"></action>
@@ -122,11 +124,11 @@
 		</service>
     </config-file>
 
-    <framework src="com.google.code.gson:gson:2.8.8"/>
+    <framework src="com.google.code.gson:gson:2.10.1"/>
     <framework src="com.google.android.gms:play-services-location:$LOCATION_VERSION"/>
-    <preference name="LOCATION_VERSION" default="18.0.0"/>
+    <preference name="LOCATION_VERSION" default="21.0.1"/>
     <framework src="androidx.core:core:$ANDROIDX_CORE_VERSION"/>
-    <preference name="ANDROIDX_CORE_VERSION" default="1.7.0"/>
+    <preference name="ANDROIDX_CORE_VERSION" default="1.8.0"/>
     <framework src="androidx.work:work-runtime:$ANDROIDX_WORK_VERSION"/>
     <preference name="ANDROIDX_WORK_VERSION" default="2.7.1"/>
 

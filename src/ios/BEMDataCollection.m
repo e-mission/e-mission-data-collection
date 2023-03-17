@@ -139,6 +139,26 @@
     [self NOP_RETURN_TRUE:command forMethod:@"isNotificationsUnpaused"];
 }
 
+- (void)fixUnusedAppRestrictions:(CDVInvokedUrlCommand*)command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"fixUnusedAppRestrictions"];
+}
+
+- (void)isUnusedAppUnrestricted: (CDVInvokedUrlCommand*) command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"isUnusedAppUnrestricted"];
+}
+
+- (void)fixIgnoreBatteryOptimizations: (CDVInvokedUrlCommand*)command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"fixUnusedAppRestrictions"];
+}
+
+- (void)isIgnoreBatteryOptimizations: (CDVInvokedUrlCommand*) command
+{
+    [self NOP_RETURN_TRUE:command forMethod:@"isUnusedAppUnrestricted"];
+}
+
 - (void)fixOEMBackgroundRestrictions: (CDVInvokedUrlCommand*) command
 {
     [self NOP_RETURN_TRUE:command forMethod:@"fixOEMBackgroundRestrictions"];

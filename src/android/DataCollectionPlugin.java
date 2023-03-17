@@ -117,6 +117,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
           Log.d(cordova.getActivity(), TAG, "checking unused app restrictions");
           mControlDelegate.checkUnusedAppsUnrestricted(callbackContext);
           return true;
+        } else if (action.equals("fixIgnoreBatteryOptimizations")) {
+          Log.d(cordova.getActivity(), TAG, "fixing ignore battery optimizations");
+          mControlDelegate.checkAndPromptIgnoreBatteryOptimizations(callbackContext);
+          return true;
+        } else if (action.equals("isIgnoreBatteryOptimizations")) {
+          Log.d(cordova.getActivity(), TAG, "checking ignored battery optimizations");
+          mControlDelegate.checkIgnoreBatteryOptimizations(callbackContext);
+          return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
             TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);
