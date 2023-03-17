@@ -76,6 +76,16 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isUnusedAppUnrestricted", []);
         });
     },
+    fixIgnoreBatteryOptimizations: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixIgnoreBatteryOptimizations", []);
+        });
+    },
+    isIgnoreBatteryOptimizations: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isIgnoreBatteryOptimizations", []);
+        });
+    },
     fixOEMBackgroundRestrictions: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "fixOEMBackgroundRestrictions", []);

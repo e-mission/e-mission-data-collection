@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.location.Location;
 import android.os.Build;
+import android.os.PowerManager;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
@@ -123,5 +124,10 @@ public class SensorControlChecks {
     }
     Log.e(ctxt, TAG, "Random final false");
     return false;
+  }
+
+  public static boolean checkIgnoreBatteryOptimizations(final Context ctxt) {
+    PowerManager pm = (PowerManager)ctxt.getSystemService(Context.POWER_SERVICE);
+    return pm.isIgnoringBatteryOptimizations(ctxt.getPackageName());
   }
 }

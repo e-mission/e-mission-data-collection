@@ -408,6 +408,31 @@ public class SensorControlForegroundDelegate {
     }
   }
 
+  public void checkIgnoreBatteryOptimizations(CallbackContext cordovaCallback) {
+    boolean unoptimized = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
+    if (unoptimized) {
+      cordovaCallback.success();
+    } else {
+      Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
+      cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
+    }
+  }
+
+
+  public void checkAndPromptIgnoreBatteryOptimizations(CallbackContext cordovaCallback) {
+    boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
+    if (unrestricted) {
+      SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+      cordovaCallback.success();
+    } else {
+      Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
+      this.cordovaCallback = cordovaCallback;
+      cordova.setActivityResultCallback(plugin);
+      Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+      cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
+    }
+  }
+
     private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
             try {
@@ -565,6 +590,20 @@ public class SensorControlForegroundDelegate {
           }
         });
         break;
+      case SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE:
+        Log.d(mAct, TAG, requestCode + " is our code, handling callback");
+        Log.d(mAct, TAG, "Got ignore battery optimization callback from launching optimization page");
+        AsyncTask.execute(new Runnable() {
+          @Override
+          public void run() {
+        if (SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+          cordovaCallback.success();
+        } else {
+          cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
+        }
+          }
+        });
       default:
         Log.d(cordova.getActivity(), TAG, "Got unsupported request code " + requestCode + " , ignoring...");
     }

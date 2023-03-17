@@ -17,6 +17,7 @@ public class SensorControlConstants {
     public static final int ENABLE_NOTIFICATIONS = 362253742;
     public static final int REMOVE_UNUSED_APP_RESTRICTIONS = 362253743;
     public static final int OPEN_APP_STATUS_PAGE = 362253744;
+    public static final int OPEN_BATTERY_OPTIMIZATION_PAGE = 362253745;
 
     public static final String ENABLE_LOCATION_PERMISSION_ACTION = "ENABLE_LOCATION_PERMISSION";
     public static final String ENABLE_BACKGROUND_LOC_PERMISSION_ACTION = "ENABLE_BACKGROUND_LOC_PERMISSION";

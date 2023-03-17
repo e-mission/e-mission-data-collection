@@ -93,8 +93,9 @@ public class SensorControlBackgroundChecker {
           // Now that we know that the location settings are correct, we start the permission checks
       boolean[] allOtherChecks = new boolean[]{
         SensorControlChecks.checkLocationPermissions(ctxt),
+        SensorControlChecks.checkIgnoreBatteryOptimizations(ctxt),
         SensorControlChecks.checkMotionActivityPermissions(ctxt),
-        SensorControlChecks.checkNotificationsEnabled(ctxt)
+        SensorControlChecks.checkNotificationsEnabled(ctxt),
       };
       boolean allOtherChecksPass = true;
       for (boolean check: allOtherChecks) {
@@ -106,7 +107,7 @@ public class SensorControlBackgroundChecker {
        are hard in Java
        */
       boolean nonLocChecksPass = true;
-      for (int i = 1; i < allOtherChecks.length; i++) {
+      for (int i = 2; i < allOtherChecks.length; i++) {
         nonLocChecksPass = nonLocChecksPass && allOtherChecks[i];
       }
 
@@ -114,16 +115,16 @@ public class SensorControlBackgroundChecker {
             Log.d(ctxt, TAG, "All settings valid, nothing to prompt");
         restartFSMIfStartState(ctxt);
       }
-      else if (allOtherChecks[0]) {
+      else if (allOtherChecks[0] && allOtherChecks[1]) {
             Log.i(ctxt, TAG, "all checks = "+allOtherChecksPass+" but location permission status  "+allOtherChecks[0]+" should be true "+
-          " so one of the non-location checks must be false: loc permission, motion permission, notification" + Arrays.toString(allOtherChecks));
+          " so one of the non-location checks must be false: loc permission, ignore optimization, motion permission, notification" + Arrays.toString(allOtherChecks));
         Log.i(ctxt, TAG, "a non-local check failed, generating only user visible notification");
         generateOpenAppSettingsNotification(ctxt);
       }
       else {
             Log.i(ctxt, TAG, "location settings are valid, but location permission is not, generating tracking error and visible notification");
             Log.i(ctxt, TAG, "curr status check results = " +
-            " loc permission, motion permission, notification "+ Arrays.toString(allOtherChecks));
+            " loc permission, ignore optimization, motion permission, notification"+ Arrays.toString(allOtherChecks));
             ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_tracking_error));
         generateOpenAppSettingsNotification(ctxt);
         }
