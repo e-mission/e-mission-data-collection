@@ -47,7 +47,6 @@ public class TripDiaryStateMachineService extends Service {
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
     private ForegroundServiceComm mComm = null;
-    private JSONObject opGeofenceCfg = null;
 
     public TripDiaryStateMachineService() {
         super();
@@ -151,17 +150,18 @@ public class TripDiaryStateMachineService extends Service {
         // - have initialize function as a reset, which stops any current stuff and starts the new one
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
                 BatteryUtils.getBatteryInfo(ctxt));
+        // This try/catch block can be removed in the next release, once all the
+        // geofence config objects have been removed
         try {
-        this.opGeofenceCfg = UserCacheFactory.getUserCache(this).getLocalStorage(OP_GEOFENCE_CFG, false);
+            JSONObject opGeofenceCfg = UserCacheFactory.getUserCache(this).getLocalStorage(OP_GEOFENCE_CFG, false)
+            if (opGeofenceCfg != null) {
+                Log.i(this, TAG, "opGeofenceCfg != null, opGeofence enabled, "+
+                    " deleting entry to cleanup");
+                UserCacheFactory.getUserCache(this).removeLocalStorage(OP_GEOFENCE_CFG);
+            };
         } catch (JSONException e) {
-            this.opGeofenceCfg = null;
-        }
-        if (opGeofenceCfg == null) {
-            Log.i(this, TAG, "opGeofenceCfg == null, opGeofence disabled, "+
-                " using only google geofence");
-        } else {
-            Log.i(this, TAG, "opGeofenceCfg != null, opGeofence enabled, "+
-                " using both geofences");
+            Log.i(this, TAG, "JSONException while accessing geofence cfg "+
+                " skipping delete");
         }
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, actionString);
@@ -186,18 +186,6 @@ public class TripDiaryStateMachineService extends Service {
             // create the significant motion callback first since it is
             // synchronous and the geofence is not
             createGeofenceInThread(ctxt, actionString);
-            /*
-             * Since we currently have the opGeofence controlled by a config
-             * option, we cannot assume that we only need to create a geofence
-             * on re-initialize. If the initialize was triggered by the user
-             * turning off the experimental geofence, we may need to delete the
-             * existing op-geofence.
-             */
-            if (opGeofenceCfg == null) {
-                new OPGeofenceExitActivityActions(ctxt).stop().addOnCompleteListener(task -> {
-                    Log.e(ctxt, TAG, "removed opgeofence on initialize, result is "+task.getResult());
-                });
-            }
             return;
             // we will wait for async geofence creation to complete
         }
@@ -240,9 +228,7 @@ public class TripDiaryStateMachineService extends Service {
             // so we need to handle it similar to the createGeofence in handleTripEnd
             final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
             tokenList.add(new GeofenceActions(ctxt).remove());
-            if (opGeofenceCfg != null) {
                 tokenList.add(new OPGeofenceExitActivityActions(ctxt).stop());
-            }
             tokenList.add(new ActivityRecognitionActions(ctxt).start());
             Task<Void> locationTrackingResult = new LocationTrackingActions(ctxt).start();
             if (locationTrackingResult != null) {
@@ -339,10 +325,8 @@ public class TripDiaryStateMachineService extends Service {
             if (createGeofenceResult != null) {
                 tokenList.add(createGeofenceResult);
             }
-            if (opGeofenceCfg != null) {
                 tokenList.add(new OPGeofenceExitActivityActions(ctxt).start());
-            }
-                    final boolean geofenceCreationPossible = createGeofenceResult != null;
+            final boolean geofenceCreationPossible = createGeofenceResult != null;
             final Context fCtxt = ctxt;
             Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
                 List<Task<?>> resultList = task.getResult();
@@ -472,9 +456,7 @@ public class TripDiaryStateMachineService extends Service {
                     // markOngoingOperationFinished();
                     SensorControlBackgroundChecker.checkAppState(fCtxt);
                 }
-                if (opGeofenceCfg != null) {
                     tokenList.add(new OPGeofenceExitActivityActions(ctxt).start());
-                }
                 Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
                             String newState = fCtxt.getString(R.string.state_waiting_for_trip_start);
                             if (task.isSuccessful()) {
@@ -505,9 +487,7 @@ public class TripDiaryStateMachineService extends Service {
     private void deleteGeofence(Context ctxt, final String targetState) {
         final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
         tokenList.add(new GeofenceActions(ctxt).remove());
-        if (opGeofenceCfg != null) {
             tokenList.add(new OPGeofenceExitActivityActions(ctxt).stop());
-        }
             final Context fCtxt = ctxt;
             Tasks.whenAllComplete(tokenList).addOnCompleteListener(task -> {
               List<Task<?>> resultList = task.getResult();
@@ -535,9 +515,7 @@ public class TripDiaryStateMachineService extends Service {
             // in this state, may be good to turn everything off
             final List<Task<Void>> tokenList = new LinkedList<Task<Void>>();
             tokenList.add(new GeofenceActions(ctxt).remove());
-            if (opGeofenceCfg != null) {
                 tokenList.add(new OPGeofenceExitActivityActions(ctxt).stop());
-            }
             tokenList.add(new LocationTrackingActions(ctxt).stop());
             tokenList.add(new ActivityRecognitionActions(ctxt).stop());
             final Context fCtxt = ctxt;
