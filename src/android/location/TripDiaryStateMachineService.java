@@ -153,7 +153,7 @@ public class TripDiaryStateMachineService extends Service {
         // This try/catch block can be removed in the next release, once all the
         // geofence config objects have been removed
         try {
-            JSONObject opGeofenceCfg = UserCacheFactory.getUserCache(this).getLocalStorage(OP_GEOFENCE_CFG, false)
+            JSONObject opGeofenceCfg = UserCacheFactory.getUserCache(this).getLocalStorage(OP_GEOFENCE_CFG, false);
             if (opGeofenceCfg != null) {
                 Log.i(this, TAG, "opGeofenceCfg != null, opGeofence enabled, "+
                     " deleting entry to cleanup");
