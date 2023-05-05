@@ -21,5 +21,5 @@
 "location_permission_off_enable" = "Insufficient location permissions, please enable";
 "activity_permission_off" = "Motion and Fitness permission off, please enable";
 "activity_permission_off_app_open" = "Motion and Fitness permission off, please fix in app settings";
-"fix_app_status_title" = "Incorrect app settings";
+"fix_app_status_title" = "Please update permissions";
 "fix_app_status_text" = "Click to view and fix app status";
