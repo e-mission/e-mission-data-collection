@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.7.8">
+        version="1.7.9">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -131,8 +131,6 @@
     <preference name="ANDROIDX_CORE_VERSION" default="1.8.0"/>
     <framework src="androidx.work:work-runtime:$ANDROIDX_WORK_VERSION"/>
     <preference name="ANDROIDX_WORK_VERSION" default="2.7.1"/>
-
-    <framework src="src/android/enable_api_31.gradle" custom="true" type="gradleReference" />
 
     <source-file src="src/android/DataCollectionPlugin.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
     <source-file src="src/android/BootReceiver.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker"/>
