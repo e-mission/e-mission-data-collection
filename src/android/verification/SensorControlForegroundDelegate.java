@@ -428,10 +428,15 @@ public class SensorControlForegroundDelegate {
       Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
       this.cordovaCallback = cordovaCallback;
       cordova.setActivityResultCallback(plugin);
-      Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-      cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
+      Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+      String packageName = cordova.getActivity().getPackageName();
+      intent.setData(Uri.parse("package:" + packageName));
+      cordova.getActivity().startActivity(intent);
+      cordovaCallback.success("Battery optimization request sent!");
+      // cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
     }
   }
+
 
     private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
