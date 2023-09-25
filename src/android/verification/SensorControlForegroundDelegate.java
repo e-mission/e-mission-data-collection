@@ -420,10 +420,31 @@ public class SensorControlForegroundDelegate {
 
 
   public void checkAndPromptIgnoreBatteryOptimizations(CallbackContext cordovaCallback) {
+    // Attempt at using permission checker class to call this permission, didn't work though
+
+    // boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
+    // if (unrestricted) {
+    //   SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+    //   cordovaCallback.success();
+    //   return;
+    // } else {
+    //   this.cordovaCallback = cordovaCallback;
+    //   this.permissionChecker = getPermissionChecker(
+    //     362253746,
+    //         Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+    //         "Please turn this on!",
+    //         "Please reconsider!"
+    //   );
+    //   this.permissionChecker.requestPermission();
+    //   return;
+    // }
+
+
     boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
     if (unrestricted) {
       SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
       cordovaCallback.success();
+      return;
     } else {
       Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
       this.cordovaCallback = cordovaCallback;
@@ -431,9 +452,9 @@ public class SensorControlForegroundDelegate {
       Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
       String packageName = cordova.getActivity().getPackageName();
       intent.setData(Uri.parse("package:" + packageName));
-      cordova.getActivity().startActivity(intent);
+      cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
       cordovaCallback.success("Battery optimization request sent!");
-      // cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
+      return;
     }
   }
 
