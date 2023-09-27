@@ -1,6 +1,8 @@
-package edu.berkeley.eecs.emission.cordova.tracker.verification;
-// Auto fixed by post-plugin hook
+package edu.berkeley.eecs.emission.cordova.tracker.verification; 
+// Auto fixed by post-plugin hook 
 import edu.berkeley.eecs.emission.R;
+// Auto fixed by post-plugin hook
+
 
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
@@ -47,6 +49,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+
+////////////////
+////////////////
+import android.Manifest;
+////////////////
+////////////////
+
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
 public class SensorControlForegroundDelegate {
@@ -57,6 +66,10 @@ public class SensorControlForegroundDelegate {
     private CallbackContext cordovaCallback = null;
     private PermissionPopupChecker permissionChecker = null;
     private Map<Integer, PermissionPopupChecker> permissionCheckerMap = new HashMap<>();
+
+
+
+
 
     class PermissionPopupChecker {
       int permissionStatusConstant = -1;
@@ -71,6 +84,7 @@ public class SensorControlForegroundDelegate {
                                     String[] permissions,
                                     String retryString,
                                     String deniedString) {
+
         this.permissionStatusConstant = permissionStatusConstant;
         currPermissions = permissions;
         this.deniedString = deniedString;
@@ -134,6 +148,16 @@ public class SensorControlForegroundDelegate {
          }
       }
     }
+
+
+
+
+
+
+
+
+
+
 
     public SensorControlForegroundDelegate(CordovaPlugin inPlugin,
                                            CordovaInterface inCordova) {
@@ -265,12 +289,18 @@ public class SensorControlForegroundDelegate {
       }
     }
 
+
+
+
+
+
     public void checkAndPromptLocationPermissions(CallbackContext cordovaCallback) {
         if(cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
             cordovaCallback.success();
         }
+        
         // If this is android 11 (API 30), we want to launch the app settings instead of prompting for permission
         // because the default permission prompting does not offer "always" as an option
         // https://github.com/e-mission/e-mission-docs/issues/608
@@ -286,8 +316,11 @@ public class SensorControlForegroundDelegate {
           openAppSettingsPage(cordovaCallback, SensorControlConstants.ENABLE_BOTH_PERMISSION);
           return;
         }
+
+
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) &&
+
           !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
           Log.i(cordova.getActivity(), TAG, "Both permissions missing, requesting both");
           this.cordovaCallback = cordovaCallback;
@@ -299,6 +332,8 @@ public class SensorControlForegroundDelegate {
           this.permissionChecker.requestPermission();
           return;
         }
+
+
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)) {
             Log.i(cordova.getActivity(), TAG, "before call shouldShowRequestPermissionRationale = "+ ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.LOCATION_PERMISSION));
             Log.i(cordova.getActivity(), TAG, "Only location permission missing, requesting it");
@@ -311,6 +346,8 @@ public class SensorControlForegroundDelegate {
             this.permissionChecker.requestPermission();
             return;
         }
+
+
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)) {
             Log.i(cordova.getActivity(), TAG, "Only background permission missing, requesting it");
             this.cordovaCallback = cordovaCallback;
@@ -324,7 +361,14 @@ public class SensorControlForegroundDelegate {
         }
     }
 
-    public void checkMotionActivityPermissions(CallbackContext cordovaCallback) {
+
+
+
+
+
+
+
+  public void checkMotionActivityPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
       if(validPerms) {
         cordovaCallback.success();
@@ -333,7 +377,7 @@ public class SensorControlForegroundDelegate {
       }
     }
 
-    public void checkAndPromptMotionActivityPermissions(CallbackContext cordovaCallback) {
+  public void checkAndPromptMotionActivityPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
       if(validPerms) {
         SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
@@ -393,7 +437,6 @@ public class SensorControlForegroundDelegate {
     }
   }
 
-
   public void checkAndPromptUnusedAppsUnrestricted(CallbackContext cordovaCallback) {
     boolean unrestricted = SensorControlChecks.checkUnusedAppsUnrestricted(cordova.getActivity());
     if (unrestricted) {
@@ -418,27 +461,7 @@ public class SensorControlForegroundDelegate {
     }
   }
 
-
   public void checkAndPromptIgnoreBatteryOptimizations(CallbackContext cordovaCallback) {
-    // Attempt at using permission checker class to call this permission, didn't work though
-
-    // boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
-    // if (unrestricted) {
-    //   SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
-    //   cordovaCallback.success();
-    //   return;
-    // } else {
-    //   this.cordovaCallback = cordovaCallback;
-    //   this.permissionChecker = getPermissionChecker(
-    //     362253746,
-    //         Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-    //         "Please turn this on!",
-    //         "Please reconsider!"
-    //   );
-    //   this.permissionChecker.requestPermission();
-    //   return;
-    // }
-
 
     boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
     if (unrestricted) {
@@ -446,20 +469,36 @@ public class SensorControlForegroundDelegate {
       cordovaCallback.success();
       return;
     } else {
-      Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
       this.cordovaCallback = cordovaCallback;
-      cordova.setActivityResultCallback(plugin);
-      Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-      String packageName = cordova.getActivity().getPackageName();
-      intent.setData(Uri.parse("package:" + packageName));
-      cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
-      cordovaCallback.success("Battery optimization request sent!");
+      this.permissionChecker = getPermissionChecker(
+          SensorControlConstants.IGNORE_BATTERY_OPTIMIZATIONS,
+          SensorControlConstants.REQUEST_BATTERY_PERMISSION,
+          "Please turn this on!",
+          "Please reconsider!"
+      );
+      this.permissionChecker.requestPermission();
       return;
     }
+
+    // boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
+    // if (unrestricted) {
+    //   SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+    //   cordovaCallback.success();
+    //   return;
+    // } else {
+    //   Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
+    //   this.cordovaCallback = cordovaCallback;
+    //   cordova.setActivityResultCallback(plugin);
+    //   Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+    //   String packageName = cordova.getActivity().getPackageName();
+    //   intent.setData(Uri.parse("package:" + packageName));
+    //   cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
+    //   cordovaCallback.success("Battery optimization request sent!");
+    //   return;
+    // }
   }
 
-
-    private void displayResolution(PendingIntent resolution) {
+  private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
             try {
                 cordova.setActivityResultCallback(plugin);
@@ -471,11 +510,11 @@ public class SensorControlForegroundDelegate {
         }
     }
 
-    public void onNewIntent(Intent intent) {
+  public void onNewIntent(Intent intent) {
       Log.i(cordova.getActivity(), TAG, "onNewIntent("+intent+") received, ignoring");
     }
 
-    public void onRequestPermissionResult(int requestCode, String[] permissions,
+  public void onRequestPermissionResult(int requestCode, String[] permissions,
                                           int[] grantResults) throws JSONException
     {
         Log.i(cordova.getActivity(), TAG, "onRequestPermissionResult called with "+requestCode);
@@ -525,6 +564,24 @@ public class SensorControlForegroundDelegate {
                 }
                 this.permissionChecker = null;
                 break;
+
+
+    ///////////////////////////////////////
+    // ********************************* //
+    ///////////////////////////////////////
+    ///////////////////////////////////////
+    // ********************************* //
+    ///////////////////////////////////////
+
+            case SensorControlConstants.IGNORE_BATTERY_OPTIMIZATIONS:
+              if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+                cordovaCallback.success();
+              } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                this.permissionChecker.generateErrorCallback();
+              }
+              this.permissionChecker = null;
+              break;
             default:
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
@@ -600,7 +657,7 @@ public class SensorControlForegroundDelegate {
         } else {
           cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
         }
-        break;
+      break;
       case SensorControlConstants.REMOVE_UNUSED_APP_RESTRICTIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got unused app restrictions callback from launching app settings");
@@ -615,21 +672,32 @@ public class SensorControlForegroundDelegate {
         }
           }
         });
-        break;
-      case SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE:
+      break;
+
+
+
+    ///////////////////////////////////////
+    // ********************************* //
+    ///////////////////////////////////////
+    ///////////////////////////////////////
+    // ********************************* //
+    ///////////////////////////////////////
+
+      case SensorControlConstants.IGNORE_BATTERY_OPTIMIZATIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got ignore battery optimization callback from launching optimization page");
         AsyncTask.execute(new Runnable() {
           @Override
           public void run() {
-        if (SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity())) {
-          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
-          cordovaCallback.success();
-        } else {
-          cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
-        }
+            if (SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity())) {
+              SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+              cordovaCallback.success();
+            } else {
+              cordovaCallback.error(cordova.getActivity().getString(R.string.unused_apps_restricted));
+            }
           }
         });
+      break;
       default:
         Log.d(cordova.getActivity(), TAG, "Got unsupported request code " + requestCode + " , ignoring...");
     }
