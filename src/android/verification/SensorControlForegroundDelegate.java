@@ -93,6 +93,8 @@ public class SensorControlForegroundDelegate {
           String.format("After iterating over all entries in %s shouldShowRequest = %s", currPermissions, shouldShowRequestRationaleBefore));
         if (openAppSettings) {
           SensorControlForegroundDelegate.this.openAppSettingsPage(cordovaCallback, permissionStatusConstant);
+        } else if (permissionStatusConstant == SensorControlConstants.IGNORE_BATTERY_OPTIMIZATIONS) {
+          SensorControlForegroundDelegate.this.openRequestBatteryOptimization(cordovaCallback, permissionStatusConstant);
         } else {
           if (currPermissions.length > 1) {
             cordova.requestPermissions(plugin, permissionStatusConstant, currPermissions);
@@ -418,20 +420,47 @@ public class SensorControlForegroundDelegate {
     }
   }
 
-
-  public void checkAndPromptIgnoreBatteryOptimizations(CallbackContext cordovaCallback) {
-    boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
-    if (unrestricted) {
-      SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
-      cordovaCallback.success();
-    } else {
-      Log.i(cordova.getActivity(), TAG, "Battery optimizations enforced, asking user to ignore");
-      this.cordovaCallback = cordovaCallback;
-      cordova.setActivityResultCallback(plugin);
-      Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-      cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
+  /**
+     * @param cordovaCallback
+     * 
+     * Driver function that gets called to ignore battery optimizations. Uses PermissionPopupChecker to generate the
+     * intent and handle the user's input. 
+     */
+    public void checkAndPromptIgnoreBatteryOptimizations(CallbackContext cordovaCallback) {
+      boolean unrestricted = SensorControlChecks.checkIgnoreBatteryOptimizations(cordova.getActivity());
+      if (unrestricted) {
+        SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+        cordovaCallback.success();
+        return;
+      } else {
+        this.cordovaCallback = cordovaCallback;
+        this.permissionChecker = getPermissionChecker(
+            SensorControlConstants.IGNORE_BATTERY_OPTIMIZATIONS,
+            SensorControlConstants.REQUEST_BATTERY_PERMISSION,
+            "Insufficient battery permissions, please fix!",
+            "Insufficient battery permissions, please fix!"
+        );
+        this.permissionChecker.requestPermission();
+        return;
+      }
     }
-  }
+
+    /**
+     * @param cordovaCallback
+     * @param requestCode
+     * 
+     * Creates and specifies an intent to open ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATION. Used as a helper function inside
+     * of PermissionPopupChecker.requestPermissions() 
+     */
+    public void openRequestBatteryOptimization(CallbackContext cordovaCallback, int requestCode) {
+        Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+        String packageName = cordova.getActivity().getPackageName();
+        intent.setData(Uri.parse("package:" + packageName));
+        this.cordovaCallback = cordovaCallback;
+        cordova.setActivityResultCallback(plugin);
+        // cordova.getActivity().startActivityForResult(intent, SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE);
+        cordova.getActivity().startActivityForResult(intent, requestCode);
+    } 
 
     private void displayResolution(PendingIntent resolution) {
         if (resolution != null) {
@@ -590,7 +619,7 @@ public class SensorControlForegroundDelegate {
           }
         });
         break;
-      case SensorControlConstants.OPEN_BATTERY_OPTIMIZATION_PAGE:
+      case SensorControlConstants.IGNORE_BATTERY_OPTIMIZATIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got ignore battery optimization callback from launching optimization page");
         AsyncTask.execute(new Runnable() {
