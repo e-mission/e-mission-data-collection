@@ -31,6 +31,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
+import android.content.DialogInterface;
+import android.app.AlertDialog;
 
 
 import androidx.core.app.ActivityCompat;
@@ -273,20 +275,32 @@ public class SensorControlForegroundDelegate {
             SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
             cordovaCallback.success();
         }
-        // If this is android 11 (API 30), we want to launch the app settings instead of prompting for permission
-        // because the default permission prompting does not offer "always" as an option
-        // https://github.com/e-mission/e-mission-docs/issues/608
-        // we don't really care about which level of permission is missing since the prompt doesn't
-        // do anything anyway. If either permission is missing, we just open the app settings
-        if ((Build.VERSION.SDK_INT >= (Build.VERSION_CODES.R)) &&
-          (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) ||
-           !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION))) {
-          String msgString = " LOC = "+cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)+
-            " BACKGROUND LOC "+ cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)+
-            " Android R+, so opening app settings anyway";
+        // On Android 11 and above, you are no longer allowed to directly request location permissions
+        // with "allow all the time" as an option. We are now prompting the user for "FINE" location
+        // permissions first, and then sending them directly to the location permissions settings. If
+        // the user backs out or denies at any stage, our privileges to send the user directly to the location
+        // permissions page are revoked, so we just send them to the generic app settings page like before.
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.R)) { 
+          String msgString = " FINE LOC = "+cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)+
+            " BACKGROUND LOC "+ cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION);
           Log.i(cordova.getActivity(), TAG, msgString);
-          openAppSettingsPage(cordovaCallback, SensorControlConstants.ENABLE_BOTH_PERMISSION);
-          return;
+          
+          if (ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.BACKGROUND_LOC_PERMISSION) && 
+              !ActivityCompat.shouldShowRequestPermissionRationale(cordova.getActivity(), SensorControlConstants.LOCATION_PERMISSION)) {
+              Log.i(cordova.getActivity(), TAG, "Has neither, request both!");
+              this.cordovaCallback = cordovaCallback;
+              this.permissionChecker = getPermissionChecker(
+                SensorControlConstants.LOCATION_INTERMEDIARY,
+                SensorControlConstants.LOCATION_PERMISSION,
+                cordova.getActivity().getString(R.string.location_permission_off),
+                cordova.getActivity().getString(R.string.location_permission_off_app_open));
+              this.permissionChecker.requestPermission();
+              return;
+            } else {
+              Log.i(cordova.getActivity(), TAG, "User has denied previous requests, just show app settings!");
+              openAppSettingsPage(cordovaCallback, SensorControlConstants.ENABLE_BOTH_PERMISSION);
+              return;
+            }
         }
         if(!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) &&
           (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) &&
@@ -420,7 +434,7 @@ public class SensorControlForegroundDelegate {
     }
   }
 
-  /**
+    /**
      * @param cordovaCallback
      * 
      * Driver function that gets called to ignore battery optimizations. Uses PermissionPopupChecker to generate the
@@ -528,9 +542,57 @@ public class SensorControlForegroundDelegate {
                 }
                 this.permissionChecker = null;
                 break;
+            case SensorControlConstants.LOCATION_INTERMEDIARY:
+                // This case allows us to do the 3 step user location permissions setup. ACCESS_FINE_LOCATION gets called first,  
+                // and this is the callback case for it. If it is allowed, prompt user with a dialog, then send them to the location
+                // permissions settings if they accept. 
+                if (grantResults.length == 0) {
+                  // Covers weird error where SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION will get called again after an
+                  // initial intended call. The second erroneous call creates an error because grantResults = [], causing an array 
+                  // out of bounds error, so just return.
+                  Log.i(cordova.getActivity(), TAG, "/d/as/das/dsadas/d/as/das/d/asd/as/d/asd/as/d/as Weird error happened! /d/as/das/dsadas/d/as/das/d/asd/as/d/asd/as/d/as");
+                  return;
+                } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                  // Set up for potential background location permissions request
+                  Log.i(cordova.getActivity(), TAG, "");
+                  this.cordovaCallback = cordovaCallback;
+                  this.permissionChecker = getPermissionChecker(
+                    SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION,
+                    SensorControlConstants.BACKGROUND_LOC_PERMISSION,
+                    cordova.getActivity().getString(R.string.location_permission_off),
+                    cordova.getActivity().getString(R.string.location_permission_off_app_open));
+                  // Send out alert dialog
+                  generateLocationRequestDialog(this.permissionChecker);
+                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
+                  this.permissionChecker.generateErrorCallback();
+                }
+                break;
             default:
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
+    }
+
+    /**
+     * Creates dialog to ask user for additional location permissions, before redirecting them to the
+     * location permission settings page.
+     */
+    public void generateLocationRequestDialog(PermissionPopupChecker permissionChecker){
+      new AlertDialog.Builder(cordova.getActivity())
+      .setTitle("Permission Needed!")
+      .setMessage("Further location permission needed. In order to use this app you need to click \"Allow all the time\" on the next page.")
+      .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            permissionChecker.requestPermission();
+          }
+      })
+      .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+              permissionChecker.generateErrorCallback();
+          }
+      })
+      .create().show();
     }
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
