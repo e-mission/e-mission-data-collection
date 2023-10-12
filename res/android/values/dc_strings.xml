@@ -20,6 +20,8 @@
     <string name="location_permission_off">Insufficient location permissions, please fix</string>
     <string name="location_permission_off_app_open">Insufficient location permissions, please fix in app settings</string>
     <string name="location_permission_off_enable">Location permission off, click to enable</string>
+    <string name="location_permission_intermediary_title">Permissions Needed!</string>
+    <string name="location_permission_intermediary_message">Further location permission needed. In order to use this app you need to click \"Allow all the time\" on the next page.</string>
     <string name="background_loc_permission_off_enable">Background location permission off, click to enable</string>
     <string name="activity_permission_off">Activity permission off, please fix</string>
     <string name="activity_permission_off_app_open">Activity permission off, please fix in app settings</string>

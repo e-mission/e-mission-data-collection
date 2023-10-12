@@ -578,8 +578,8 @@ public class SensorControlForegroundDelegate {
      */
     public void generateLocationRequestDialog(PermissionPopupChecker permissionChecker){
       new AlertDialog.Builder(cordova.getActivity())
-      .setTitle("Permission Needed!")
-      .setMessage("Further location permission needed. In order to use this app you need to click \"Allow all the time\" on the next page.")
+      .setTitle(R.string.location_permission_intermediary_title)
+      .setMessage(R.string.location_permission_intermediary_title)
       .setPositiveButton("OK", new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int which) {
