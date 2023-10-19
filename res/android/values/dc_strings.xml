@@ -22,6 +22,12 @@
     <string name="location_permission_off_enable">Location permission off, click to enable</string>
     <string name="location_permission_intermediary_title">Permissions Needed!</string>
     <string name="location_permission_intermediary_message">Further location permission needed. In order to use this app you need to click \"Allow all the time\" on the next page.</string>
+    <string name="location_feedback_both_off">Please make sure \"Allow all the time\" and \"Precise Location\" are turned on in the settings.</string>
+    <string name="location_feedback_fine_off">Please make sure \"Precise Location\" is turned on in the settings.</string>
+    <string name="location_feedback_background_off">Please make sure \"Allow all the time\" is turned on in the settings.</string>
+    <string name="location_feedback_denied_popup">Location permissions are needed to use this app.</string>
+    <string name="location_permission_settings_message">Location permissions are needed to use this app. Please enable \"Allow all the time\" and \"Precise Location\" to use this app.</string>
+    <string name="location_permission_denied_fine">Fine location is needed to use this app. Please click \"Fix\" and turn it on in the settings.</string>
     <string name="background_loc_permission_off_enable">Background location permission off, click to enable</string>
     <string name="activity_permission_off">Activity permission off, please fix</string>
     <string name="activity_permission_off_app_open">Activity permission off, please fix in app settings</string>

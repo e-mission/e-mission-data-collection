@@ -118,6 +118,15 @@ public class SensorControlForegroundDelegate {
         // see the issue for more details
         // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-958438153
 
+        if (permissionStatusConstant == SensorControlConstants.LOCATION_INTERMEDIARY) {
+          cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_denied_fine));
+          return;
+        }
+        if (permissionStatusConstant == SensorControlConstants.ENABLE_BACKGROUND_LOC_PERMISSION) {
+          String errorMessage = SensorControlForegroundDelegate.this.generateLocationPermissionError();
+          cordovaCallback.error(errorMessage);
+          return;
+        }
         if (!shouldShowRequestRationaleBefore && !shouldShowRequestRationaleAfter) {
           // before = FALSE, after = FALSE => user had denied it earlier
           openAppSettings = true;
@@ -260,6 +269,76 @@ public class SensorControlForegroundDelegate {
         cordova.getActivity().startActivityForResult(intent, requestCode);
     }
 
+    /**
+     * Generates dialog that explains to the user what needs to be turned on in the settings page.
+     * This is for the secondary flow where the user denied the initial request and now needs to go 
+     * through the old flow of just opening up the app settings page.
+     * 
+     * @param callbackContext
+     * @param requestCode
+     */
+    public void beforeAppSettingsDialog(CallbackContext callbackContext, int requestCode){
+      new AlertDialog.Builder(cordova.getActivity())
+      .setTitle(R.string.location_permission_intermediary_title)
+      .setMessage(R.string.location_permission_settings_message)
+      .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            openAppSettingsPage(callbackContext, requestCode);
+          }
+      })
+      .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            callbackContext.error(cordova.getActivity().getString(R.string.location_feedback_denied_popup));
+          }
+      })
+      .create().show();
+    }
+
+    /**
+     * Generates dialog to ask user for additional location permissions, before redirecting them to the
+     * location permission settings page. This is used in the first flow which sends the user straight 
+     * to the location permissions page.
+     */
+    public void intermediaryLocationDialog(PermissionPopupChecker permissionChecker){
+      new AlertDialog.Builder(cordova.getActivity())
+      .setTitle(R.string.location_permission_intermediary_title)
+      .setMessage(R.string.location_permission_intermediary_message)
+      .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            permissionChecker.requestPermission();
+          }
+      })
+      .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+              permissionChecker.generateErrorCallback();
+          }
+      })
+      .create().show();
+    }
+
+    /**
+     * Generates location permission error based off of what permissions the user currently has given.
+     * 3 different states: NO fine && NO background, NO fine, NO background 
+     * 
+     * @return Error String
+     */
+    public String generateLocationPermissionError() {
+      if (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION) && !cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)){
+        return cordova.getActivity().getString(R.string.location_feedback_both_off);
+      } else if (!cordova.hasPermission(SensorControlConstants.LOCATION_PERMISSION)) {
+        // No fine loc
+        return cordova.getActivity().getString(R.string.location_feedback_fine_off);
+      } else {
+        // No background loc
+        return cordova.getActivity().getString(R.string.location_feedback_background_off);
+      }
+      // cordova.hasPermission(SensorControlConstants.BACKGROUND_LOC_PERMISSION)
+    }
+
     public void checkLocationPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkLocationPermissions(cordova.getActivity());
       if(validPerms) {
@@ -298,7 +377,8 @@ public class SensorControlForegroundDelegate {
               return;
             } else {
               Log.i(cordova.getActivity(), TAG, "User has denied previous requests, just show app settings!");
-              openAppSettingsPage(cordovaCallback, SensorControlConstants.ENABLE_BOTH_PERMISSION);
+              // Go to the dialog first, which then sends them to the app settings.
+              beforeAppSettingsDialog(cordovaCallback, SensorControlConstants.ENABLE_BOTH_PERMISSION);
               return;
             }
         }
@@ -642,7 +722,10 @@ public class SensorControlForegroundDelegate {
           // this is the activity result callback, so only launched when the app settings are used
           // so we don't need to use the permission checker, we know that the only option
           // is to launch the settings
-          cordovaCallback.error(cordova.getActivity().getString(R.string.location_permission_off_app_open));
+          if (cordovaCallback != null) {
+            String errorMessage = generateLocationPermissionError();
+            cordovaCallback.error(errorMessage);
+          }
         }
         break;
       case SensorControlConstants.ENABLE_MOTION_ACTIVITY_PERMISSION:
