@@ -642,7 +642,7 @@ public class SensorControlForegroundDelegate {
                     cordova.getActivity().getString(R.string.location_permission_off),
                     cordova.getActivity().getString(R.string.location_permission_off_app_open));
                   // Send out alert dialog
-                  generateLocationRequestDialog(this.permissionChecker);
+                  intermediaryLocationDialog(this.permissionChecker);
                 } else if (grantResults[0] == PackageManager.PERMISSION_DENIED || grantResults[1] == PackageManager.PERMISSION_DENIED) {
                   this.permissionChecker.generateErrorCallback();
                 }
@@ -650,29 +650,6 @@ public class SensorControlForegroundDelegate {
             default:
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
-    }
-
-    /**
-     * Creates dialog to ask user for additional location permissions, before redirecting them to the
-     * location permission settings page.
-     */
-    public void generateLocationRequestDialog(PermissionPopupChecker permissionChecker){
-      new AlertDialog.Builder(cordova.getActivity())
-      .setTitle(R.string.location_permission_intermediary_title)
-      .setMessage(R.string.location_permission_intermediary_title)
-      .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int which) {
-            permissionChecker.requestPermission();
-          }
-      })
-      .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int which) {
-              permissionChecker.generateErrorCallback();
-          }
-      })
-      .create().show();
     }
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
