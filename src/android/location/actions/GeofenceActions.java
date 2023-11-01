@@ -101,16 +101,47 @@ public class GeofenceActions {
         }
     }
 
+    /**
+     * Helper function for createGeofenceAtLocation as it returns a geofence related 
+     * JSONObject that will be saved in local storage
+     */
+    private JSONObject createGeofenceJSONData(Location currLoc) throws JSONException {
+        JSONObject jo = new JSONObject();
+        jo.put("type", "Point");
+        JSONArray currCoordinates = new JSONArray();
+        currCoordinates.put(0, currLoc.getLongitude());
+        currCoordinates.put(1, currLoc.getLatitude());
+        jo.put("coordinates", currCoordinates);
+        return jo;
+    }
+
+    /**
+     * Creates geofence at location. Also contains logic that puts a bound on how many 
+     * geofence location entries can be saved in local storage.
+     */
     private Task<Void> createGeofenceAtLocation(Location currLoc)  throws SecurityException {
         Log.d(mCtxt, TAG, "creating geofence at location " + currLoc);
         try {
-            JSONObject jo = new JSONObject();
-            jo.put("type", "Point");
-            JSONArray currCoordinates = new JSONArray();
-            currCoordinates.put(0, currLoc.getLongitude());
-            currCoordinates.put(1, currLoc.getLatitude());
-            jo.put("coordinates", currCoordinates);
+            // First check to see how many values stored in GeoFence
+            JSONArray geofences = uc.getLocalStorageArr(GEOFENCE_LOC_KEY, false);
+
+            // Bound value
+            int N = 3;
+
+            // Next geofence data
+            JSONObject jo = createGeofenceJSONData(currLoc);
+
+            // If we have N entries already then remove oldest
+            if (geofences.length() >= N){
+                uc.removeOldestGeofence(GEOFENCE_LOC_KEY);
+            } 
+            
             uc.putLocalStorage(GEOFENCE_LOC_KEY, jo);
+            
+            // Print out what is currently stored
+            JSONArray data = uc.getLocalStorageArr(GEOFENCE_LOC_KEY, false);
+            String dataString = data.toString();
+            Log.d(mCtxt, TAG, "Currently stored: " + dataString);
         } catch (JSONException e) {
             Log.e(mCtxt, TAG, "Error while storing current geofence location, skipping..."+e.getMessage());
         }
