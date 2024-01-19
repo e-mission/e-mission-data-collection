@@ -55,10 +55,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS, null, this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
 		}
 
-		//////////////////////////////////////////////////////
-		// Adding in logs for mysterious trip dissapearance //
-		//////////////////////////////////////////////////////
-
+		// Add in logs to check for trip dissapearance
 		Log.d(this, TAG, "Beginning checks for trip dissapearance...");
 
 		// Check to see if the foreground service is still alive
@@ -82,10 +79,6 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 		});
 
 		Log.d(this, TAG, "Ending checks for trip dissapearance...");
-
-		//////////////////////////////////////////////////////
-		// Adding in logs for mysterious trip dissapearance //
-		//////////////////////////////////////////////////////
 
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
