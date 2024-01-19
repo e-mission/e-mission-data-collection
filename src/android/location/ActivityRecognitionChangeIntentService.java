@@ -17,6 +17,9 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
+import com.google.android.gms.location.LocationAvailability;
+import com.google.android.gms.location.LocationServices;
+import android.content.Context;
 
 public class ActivityRecognitionChangeIntentService extends IntentService {
 	private static final int ACTIVITY_IN_NUMBERS = 22848489;
@@ -50,7 +53,40 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			if (ConfigManager.getConfig(this).isSimulateUserInteraction()) {
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS, null, this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
+		}
+
+		//////////////////////////////////////////////////////
+		// Adding in logs for mysterious trip dissapearance //
+		//////////////////////////////////////////////////////
+
+		Log.d(this, TAG, "Beginning checks for trip dissapearance...");
+
+		// Check to see if the foreground service is still alive
+		Context ctxt = getApplicationContext();
+		TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+
+		// Check if can retrieve current location
+		LocationServices.getFusedLocationProviderClient(ctxt).getLocationAvailability()
+		.addOnSuccessListener(locationAvailability -> {
+			if (locationAvailability != null && locationAvailability.isLocationAvailable()) {
+				// Location is available
+				Log.d(this, TAG, "Location is available");
+			} else {
+				// Location is not available
+				Log.d(this, TAG, "Location is not available");
 			}
+		})
+		.addOnFailureListener(e -> {
+			// Handle failure, if any
+			Log.d(this, TAG, "Error getting location availability: " + e.getMessage());
+		});
+
+		Log.d(this, TAG, "Ending checks for trip dissapearance...");
+
+		//////////////////////////////////////////////////////
+		// Adding in logs for mysterious trip dissapearance //
+		//////////////////////////////////////////////////////
+
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
             // Let's suck everything up to the server for now and optimize later
