@@ -4,6 +4,7 @@ import edu.berkeley.eecs.emission.R;
 
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 
@@ -50,10 +51,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 
 public class SensorControlForegroundDelegate {
     public static final String TAG = "SensorPermissionsAndSettingsForegroundDelegate";
-
+  
     private CordovaPlugin plugin = null;
     private CordovaInterface cordova = null;
     private CallbackContext cordovaCallback = null;
@@ -186,6 +188,9 @@ public class SensorControlForegroundDelegate {
             Log.i(currActivity, TAG, "All settings are valid, checking current state");
             Log.i(currActivity, TAG, "Current location settings are "+response.getLocationSettingsStates());
             cordovaCallback.success(Objects.requireNonNull(response.getLocationSettingsStates()).toString());
+
+            // Check to see if we have a foreground service, if not start one
+            TripDiaryStateMachineForegroundService.checkForegroundNotification(currActivity);
           } catch (ApiException exception) {
             Log.i(currActivity, TAG, "Settings are not valid, returning "+exception.getMessage());
             cordovaCallback.error(exception.getLocalizedMessage());
