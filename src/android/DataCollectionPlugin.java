@@ -62,6 +62,13 @@ public class DataCollectionPlugin extends CordovaPlugin {
     }
 
     @Override
+    public void onResume(boolean multitasking){
+      Context ctxt = cordova.getActivity();
+      Log.d(ctxt, TAG, "On resume, check for foreground service.");
+      TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+    }
+
+    @Override
     public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException {
         if (action.equals("launchInit")) {
             Log.d(cordova.getActivity(), TAG, "application launched, init is nop on android");
