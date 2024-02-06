@@ -71,7 +71,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             boolean isAirplaneModeOn = intent.getBooleanExtra("state", false);
             if (!isAirplaneModeOn) {
                 Log.d(context, TAG, "Airplane mode was turned off, restart FSM.");
-                context.sendBroadcast(new ExplicitIntent(context, R.string.transition_initialize));
+                SensorControlBackgroundChecker.restartFSMIfStartState(context);
             } else {
                 Log.d(context, TAG, "Airplane mode was turned on.");
             }

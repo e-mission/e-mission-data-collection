@@ -64,8 +64,13 @@ public class DataCollectionPlugin extends CordovaPlugin {
     @Override
     public void onResume(boolean multitasking){
       Context ctxt = cordova.getActivity();
-      Log.d(ctxt, TAG, "On resume, check for foreground service.");
-      TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+      Log.d(ctxt, TAG, "On resume, check for foreground service only if user has conesented.");
+
+      String reqConsent = ConfigManager.getReqConsent(ctxt);
+      if (ConfigManager.isConsented(ctxt, reqConsent)) {
+          Log.d(ctxt, TAG, "User has consented, proceed with foreground check.");
+          TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+      } 
     }
 
     @Override
