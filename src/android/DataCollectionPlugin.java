@@ -13,6 +13,8 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -44,12 +46,31 @@ public class DataCollectionPlugin extends CordovaPlugin {
 
     @Override
     public void pluginInitialize() {
+        // Register for airplane mode intent
+        // Because of background execution limits, must register this implicit intent at runtime, not in manifest
+        Context ctxt = cordova.getActivity();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        BroadcastReceiver tripDiaryReceiver = new TripDiaryStateMachineReceiver();
+        ctxt.registerReceiver(tripDiaryReceiver, filter);
+
         mControlDelegate = new SensorControlForegroundDelegate(this, cordova);
         final Activity myActivity = cordova.getActivity();
         BuiltinUserCache.getDatabase(myActivity).putMessage(R.string.key_usercache_client_nav_event,
                 new StatsEvent(myActivity, R.string.app_launched));
 
         TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
+    }
+
+    @Override
+    public void onResume(boolean multitasking){
+      Context ctxt = cordova.getActivity();
+      Log.d(ctxt, TAG, "On resume, check for foreground service only if user has conesented.");
+
+      String reqConsent = ConfigManager.getReqConsent(ctxt);
+      if (ConfigManager.isConsented(ctxt, reqConsent)) {
+          Log.d(ctxt, TAG, "User has consented, proceed with foreground check.");
+          TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+      } 
     }
 
     @Override
