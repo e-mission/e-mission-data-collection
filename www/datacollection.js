@@ -41,6 +41,11 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isValidLocationPermissions", []);
         });
     },
+    bluetoothScanPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "bluetoothScanPermissions", []);
+        });
+    },
     fixFitnessPermissions: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "fixFitnessPermissions", []);

@@ -420,6 +420,16 @@ public class SensorControlForegroundDelegate {
         }
     }
 
+    public void checkAndPromptBluetoothScanPermissions(CallbackContext cordovaCallback) {
+      this.cordovaCallback = cordovaCallback;
+      this.permissionChecker = getPermissionChecker(
+        SensorControlConstants.ENABLE_BLUETOOTH,
+        SensorControlConstants.BLUETOOTH_SCAN,
+        "You can now use the scanner.",
+        "You can't use the scanner!");
+      this.permissionChecker.requestPermission();
+    }
+
     public void checkMotionActivityPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
       if(validPerms) {
