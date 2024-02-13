@@ -22,7 +22,7 @@ public class SensorControlConstants {
     public static final int OPEN_BATTERY_OPTIMIZATION_PAGE = 362253745;
     public static final int IGNORE_BATTERY_OPTIMIZATIONS = 362253746;
     public static final int LOCATION_INTERMEDIARY = 362253747;
-    public static final int ENABLE_BLUETOOTH = 362253748;
+    public static final int ENABLE_BLUETOOTH_SCAN = 362253748;
 
     public static final String ENABLE_LOCATION_PERMISSION_ACTION = "ENABLE_LOCATION_PERMISSION";
     public static final String ENABLE_BACKGROUND_LOC_PERMISSION_ACTION = "ENABLE_BACKGROUND_LOC_PERMISSION";
