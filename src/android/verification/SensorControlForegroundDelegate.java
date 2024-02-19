@@ -421,7 +421,10 @@ public class SensorControlForegroundDelegate {
     }
 
     public void checkAndPromptBluetoothScanPermissions(CallbackContext cordovaCallback) {
-      if (cordova.hasPermission(SensorControlConstants.BLUETOOTH_SCAN)){
+      if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S){
+        Log.d(cordova.getActivity(), TAG, "Older build version than API 31, return success!");
+        cordovaCallback.success();
+      } else if (cordova.hasPermission(SensorControlConstants.BLUETOOTH_SCAN)){
         Log.d(cordova.getActivity(), TAG, "User has already enabled bluetooth scan!");
         cordovaCallback.success();
       } else {
