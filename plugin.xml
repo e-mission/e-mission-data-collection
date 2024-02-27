@@ -54,10 +54,10 @@
         <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
         <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
         <!-- COARSE_LOCATION obfuscates the location to a city block, change to FINE_LOCATION for accuracy -->
-        <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/> -->
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
         <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
         <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-        <!-- <uses-permission android:name="android.permission.BLUETOOTH_SCAN" /> -->
+        <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -211,6 +211,10 @@
 
     <config-file target="*-Info.plist" parent="ITSAppUsesNonExemptEncryption">
         <false/>
+    </config-file>
+
+    <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
+      <string>We need Bluetooth access for fleet functionality functionality</string>
     </config-file>
 
     <podspec>
