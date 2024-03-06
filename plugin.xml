@@ -214,7 +214,7 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
-      <string>We need Bluetooth access for fleet functionality functionality</string>
+      <string>We need Bluetooth access to interact with BLE beacons for the fleet version of the app.</string>
     </config-file>
 
     <podspec>

@@ -150,7 +150,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
           Log.d(cordova.getActivity(), TAG, "requesting bluetooth scan permissions");
           mControlDelegate.checkAndPromptBluetoothScanPermissions(callbackContext);
           return true;
-      } else if (action.equals("storeBatteryLevel")) {
+        } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
             TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);
             callbackContext.success();
