@@ -204,7 +204,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
             callbackContext.success(retVal);
             return true;
         }
-        
         return false;
     }
 
