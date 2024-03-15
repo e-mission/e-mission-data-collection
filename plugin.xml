@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.8.2">
+        version="1.8.3">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -57,6 +57,7 @@
         <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
         <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
         <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+        <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -210,6 +211,10 @@
 
     <config-file target="*-Info.plist" parent="ITSAppUsesNonExemptEncryption">
         <false/>
+    </config-file>
+
+    <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
+      <string>We need Bluetooth access to interact with BLE beacons for the fleet version of the app.</string>
     </config-file>
 
     <podspec>

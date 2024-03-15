@@ -146,6 +146,10 @@ public class DataCollectionPlugin extends CordovaPlugin {
           Log.d(cordova.getActivity(), TAG, "checking ignored battery optimizations");
           mControlDelegate.checkIgnoreBatteryOptimizations(callbackContext);
           return true;
+        } else if (action.equals("bluetoothScanPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "requesting bluetooth scan permissions");
+          mControlDelegate.checkAndPromptBluetoothScanPermissions(callbackContext);
+          return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
             TripDiaryStateMachineReceiver.saveBatteryAndSimulateUser(ctxt);
