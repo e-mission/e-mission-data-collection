@@ -40,6 +40,7 @@
   <hook type="after_plugin_install" src="hooks/android/addResourcesClassImport.js" />
 
   <platform name="android">
+    <framework src="src/android/e-mission-datacollection.gradle" custom="true" type="gradleReference" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="DataCollection">
