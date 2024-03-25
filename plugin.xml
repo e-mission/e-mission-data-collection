@@ -40,6 +40,7 @@
   <hook type="after_plugin_install" src="hooks/android/addResourcesClassImport.js" />
 
   <platform name="android">
+    <framework src="src/android/e-mission-datacollection.gradle" custom="true" type="gradleReference" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="DataCollection">
@@ -124,6 +125,11 @@
 		    android:enabled="true"
 		    android:exported="false">
 		</service>
+    <service
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService"
+		    android:enabled="true"
+		    android:exported="false">
+		</service>
     </config-file>
 
     <framework src="com.google.code.gson:gson:2.10.1"/>
@@ -172,6 +178,7 @@
     <source-file src="src/android/wrapper/ConsentConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Timer.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/StatsEvent.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/bluetooth/BluetoothService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/bluetooth"/>
     <resource-file src="res/android/statemachine.xml" target="res/values/statemachine.xml" />
     <resource-file src="res/android/values/dc_strings.xml" target="res/values/dc_strings.xml"/>
   </platform>

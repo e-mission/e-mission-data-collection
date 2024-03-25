@@ -37,6 +37,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlForegroundDelegate;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
@@ -203,6 +204,12 @@ public class DataCollectionPlugin extends CordovaPlugin {
             retVal.put("PRIORITY_NO_POWER", LocationRequest.PRIORITY_NO_POWER);
             callbackContext.success(retVal);
             return true;
+        } else if (action.equals("bluetoothScan")) {
+          Context ctxt = cordova.getActivity();
+          Log.d(ctxt, TAG, "JS requested scan for bluetooth!");
+          Intent bluetoothServiceIntent = new Intent(ctxt, BluetoothService.class);
+          ctxt.startService(bluetoothServiceIntent);
+          return true;
         }
         return false;
     }
