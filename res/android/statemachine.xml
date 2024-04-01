@@ -12,6 +12,7 @@
     <string name="transition_stop_tracking">local.transition.stop_tracking</string>
     <string name="transition_start_tracking">local.transition.start_tracking</string>
     <string name="transition_tracking_error">local.transition.tracking_error</string>
+    <string name="transition_checking_for_beacon">local.transition.checking_for_beacon</string>
 <!--    <string name="transition_actions_started">local.transition.actions_started</string>
     <string name="transition_actions_complete">local.transition.actions_complete</string> -->
 

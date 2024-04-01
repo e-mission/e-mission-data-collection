@@ -74,7 +74,7 @@
         <receiver
             android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="local.transition.initialize"></action>
                 <action android:name="local.transition.exited_geofence"></action>
@@ -82,6 +82,7 @@
                 <action android:name="local.transition.stop_tracking"></action>
                 <action android:name="local.transition.start_tracking"></action>
                 <action android:name="local.transition.tracking_error"></action>
+                <action android:name="local.transition.checking_for_beacon"></action>
             </intent-filter>
         </receiver>
         <service
