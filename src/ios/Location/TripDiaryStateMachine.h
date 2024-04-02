@@ -38,7 +38,10 @@
 #define CFCTransitionVisitStarted @"T_VISIT_STARTED"
 #define CFCTransitionVisitEnded @"T_VISIT_ENDED"
 #define CFCTransitionNOP @"T_NOP"
-
+// The following transitions are utilized only within the fleet implementation of OpenPATH
+#define CFCTransitionScanBLE @"T_SCAN_FOR_BLE"
+#define CFCTransitionBLEFound @"T_BLE_FOUND"
+#define CFCTransitionBLENotFound @"T_BLE_NOT_FOUND"
 /*
  * We need to decide the format of the notifications. From what I can see, there are two main options:
  * - we have a standard name for the notifications from this machine, and use the "object" field to indicate with transition it is, or
@@ -53,7 +56,8 @@ typedef enum : NSUInteger {
     kStartState,
     kWaitingForTripStartState,
     kOngoingTripState,
-    kTrackingStoppedState
+    kTrackingStoppedState,
+    kScanningForBLEState
 } TripDiaryStates;
 
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);

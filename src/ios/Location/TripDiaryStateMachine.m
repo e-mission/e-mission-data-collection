@@ -44,6 +44,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         return @"STATE_ONGOING_TRIP";
     } else if (state == kTrackingStoppedState) {
         return @"STATE_TRACKING_STOPPED";
+    } else if (state == kScanningForBLEState) {
+        return @"STATE_SCANNING_FOR_BLE";
     } else {
         return @"UNKNOWN";
     }
@@ -179,6 +181,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         [self handleOngoingTrip:transition withUserInfo:userInfo];
     } else if (self.currState == kTrackingStoppedState) {
         [self handleTrackingStopped:transition withUserInfo:userInfo];
+    } else if (self.currState == kScanningForBLEState) {
+        [self handleBLEScan:transition withUserInfo:userInfo];
     } else {
         NSLog(@"Ignoring invalid transition %@ in state %@", transition,
               [TripDiaryStateMachine getStateName:self.currState]);
@@ -279,12 +283,20 @@ static NSString * const kCurrState = @"CURR_STATE";
     
     // TODO: Make removing the geofence conditional on the type of service
     if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
-        // We first start tracking and then delete the geofence to make sure that we are always tracking something
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
-        [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionTripStarted];
-    } else if ([transition isEqualToString:CFCTransitionVisitEnded]) {
+                                                            object:CFCTransitionScanBLE];
+         
+        // TODO: We need to make this conditional.  E.g., replace `false` with `!isFleetConfig`, or something along those lines
+        // For now, this will only build to BLE Deployment for testing (as above)
+        /*
+        if(!isFleetConfig) {
+            // We first start tracking and then delete the geofence to make sure that we are always tracking something
+            [TripDiaryActions deleteGeofence:self.locMgr];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionTripStarted];
+        }
+        */
+    } else if ([transition isEqualToString:CFCTransitionVisitEnded]) { // KNOTE: When does this happen?
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             // We first start tracking and then delete the geofence to make sure that we are always tracking something
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
@@ -312,6 +324,32 @@ static NSString * const kCurrState = @"CURR_STATE";
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
         [self setState:kTrackingStoppedState withChecks:TRUE];
+    } else  {
+        NSLog(@"Got unexpected transition %@ in state %@, ignoring",
+              transition,
+              [TripDiaryStateMachine getStateName:self.currState]);
+    }
+}
+
+- (void) handleBLEScan:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
+    if ([transition isEqualToString:CFCTransitionScanBLE]) {
+        // TODO: Initial Scanning logic: e.g., monitor, then range
+
+        if (true) { // TODO: replace with "if BLEFound"
+            // We first start tracking and then delete the geofence to make sure that we are always tracking something
+            [TripDiaryActions deleteGeofence:self.locMgr];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionBLEFound];
+        } else if (false) { // TODO: replace with "if BLENotFound"
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionBLENotFound];
+        }
+    } else if ([transition isEqualToString:CFCTransitionBLEFound]) {
+        [self setState:kOngoingTripState withChecks:TRUE];
+    } else if ([transition isEqualToString:CFCTransitionBLENotFound]) {
+        // TODO: Clean up BLE Scanning here
+
+        [self setState:kWaitingForTripStartState withChecks:TRUE];
     } else  {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
