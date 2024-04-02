@@ -32,6 +32,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrack
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
 
 /**
  * Created by shankari on 9/12/15.
@@ -163,7 +164,20 @@ public class TripDiaryStateMachineService extends Service {
             Log.i(this, TAG, "JSONException while accessing geofence cfg "+
                 " skipping delete");
         }
-        if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
+
+        if (actionString.equals(ctxt.getString(R.string.transition_checking_for_beacon))) {
+            Log.d(this, TAG, "Checking for beacons!");
+            // Start up the bluetooth service to check for beacons
+            Intent bluetoothService = new Intent(ctxt, BluetoothService.class);
+            ctxt.startService(bluetoothService);
+        } else if (actionString.equals(ctxt.getString(R.string.transition_beacon_found))) {
+            Log.d(this, TAG, "Beacons found, start the trip!");
+            // Can now send to handleTripStart
+            handleTripStart(ctxt, actionString);
+        } else if (actionString.equals(ctxt.getString(R.string.transition_beacon_not_found))) {
+            Log.d(this, TAG, "Beacons not found, do nothing!");
+            // For now we won't do anything if no beacon exists. Further thought is needed for edge cases where this may not work.
+        } else if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, actionString);
@@ -221,7 +235,19 @@ public class TripDiaryStateMachineService extends Service {
     public void handleTripStart(Context ctxt, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripStart(" + actionString + ") called");
 
-        if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
+        if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence)) || actionString.equals(ctxt.getString(R.string.transition_beacon_found)) ) {
+            
+            // Handle new bluetooth functionality. IF we have found a beacon, continue with starting the trip.
+            // If we are just normally exiting the geofence AND fleet mode, then transition to checking for beacons.
+            if (actionString.equals(ctxt.getString(R.string.transition_beacon_found))){
+                Log.d(this, TAG, "In handleTripStart, beacon has been found so continue.");
+            } else if (true){ // Change the true to fleet mode config check
+                Log.d(this, TAG, "Detected exited_geofence, but are in fleet mode so redirect to check for beacons!");
+                // Transition to checking for beacon state
+                ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_checking_for_beacon));
+                return;
+            }
+
             // Delete geofence
             // we cannot add null elements to the token list.
             // the LocationTracking start action can now return null

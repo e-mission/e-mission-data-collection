@@ -17,13 +17,16 @@ import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Beacon;
 
 // Other plugin imports
+import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 
 
 public class BluetoothService extends Service {
     private static String TAG = "BluetoothService";
     private BeaconManager beaconManager;
     private Set<Beacon> scanned = new HashSet<>();
+    private String uuid = "426c7565-4368-6172-6d42-6561636f6e73";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -31,6 +34,8 @@ public class BluetoothService extends Service {
 
         // Define the beacon manager
         beaconManager = BeaconManager.getInstanceForApplication(this);
+
+        // Add in check to see if we can scan at all, otherwise we will be stuck here
         
         // Start scanning for BLE beacons
         startBeaconScan();
@@ -55,9 +60,13 @@ public class BluetoothService extends Service {
         if (scanned.size() > 0) {
             Log.d(this, TAG, "Found something!");
             Log.d(this, TAG, scanned.toString());
+            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_beacon_found));
         } else {
             Log.d(this, TAG, "Did not find anything!");
+            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_beacon_not_found));
         }
+
+        onDestroy();
     }
 
     private void startBeaconScan() {
@@ -76,7 +85,11 @@ public class BluetoothService extends Service {
 
                     for (Beacon beacon : beacons) {
                         Log.d(BluetoothService.this, TAG, beacon.toString());
-                        scanned.add(beacon);
+                        // Even though we are scanning for beacons in a certain region, beacons with different UUID's still come up.
+                        // Until we figure out why that is the case, put this check in place so we only save the ones with the right UUID.
+                        if (beacon.getId1().toString().equals(uuid)) {
+                            scanned.add(beacon);
+                        }
                     }
                 }
 
@@ -89,18 +102,18 @@ public class BluetoothService extends Service {
             }
         });
     
-        beaconManager.startRangingBeacons(new Region("426C7565-4368-6172-6D42-6561636F6E73", null, null, null));
+        beaconManager.startRangingBeacons(new Region(uuid, null, null, null));
     }
 
     @Override
     public void onDestroy() {
-        stopBeaconScan();
+        // stopBeaconScan();
         super.onDestroy();
     }
 
     private void stopBeaconScan() {
         Log.d(this, TAG, "Stopping monitoring for the beacon.");
-        beaconManager.stopRangingBeacons(new Region("426C7565-4368-6172-6D42-6561636F6E73", null, null, null));
+        beaconManager.stopRangingBeacons(new Region(uuid, null, null, null));
         beaconManager.removeAllRangeNotifiers();
     }
 }
