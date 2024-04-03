@@ -33,6 +33,7 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
 import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 
 /**
  * Created by shankari on 9/12/15.
@@ -168,8 +169,9 @@ public class TripDiaryStateMachineService extends Service {
         if (actionString.equals(ctxt.getString(R.string.transition_checking_for_beacon))) {
             Log.d(this, TAG, "Checking for beacons!");
             // Start up the bluetooth service to check for beacons
-            Intent bluetoothService = new Intent(ctxt, BluetoothService.class);
-            ctxt.startService(bluetoothService);
+            Intent foregroundStartBluetooth = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
+            foregroundStartBluetooth.setAction("foreground_start_bluetooth");
+            ctxt.startService(foregroundStartBluetooth);
         } else if (actionString.equals(ctxt.getString(R.string.transition_beacon_found))) {
             Log.d(this, TAG, "Beacons found, start the trip!");
             // Can now send to handleTripStart

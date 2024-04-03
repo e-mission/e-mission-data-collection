@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBackgroundChecker;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -79,6 +80,13 @@ public class TripDiaryStateMachineForegroundService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(this, TAG, "onStartCommand called with intent = "+intent+
           " flags = " + flags +  " and startId = " + startId);
+          
+        if (intent.getAction() != null && intent.getAction().equals("foreground_start_bluetooth")) {
+          Intent bluetoothService = new Intent(this, BluetoothService.class);
+          this.startService(bluetoothService);
+          return START_STICKY;
+        }
+
         String message  = humanizeState(this, TripDiaryStateMachineService.getState(this));
         if (intent == null) {
           SensorControlBackgroundChecker.checkAppState(this);
