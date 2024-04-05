@@ -49,6 +49,24 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
                                                         object:CFCTransitionTripEnded];
 }
 
++ (void)startBLEMonitoring:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
+    // Note: We don't need to run `RequestAlwaysAuthorization`, already set in SensorControlForegroundDelegate.m.
+    if ([CLLocationManager isMonitoringAvailableForClass:[CLBeaconRegion class]]) {
+        // Match all beacons with the specified UUID (This _must_ be same for all OpenPATH Deployments)
+        NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+        
+        // Create the region and begin monitoring it.
+        CLBeaconRegion *region = [[CLBeaconRegion alloc] initWithUUID:proximityUUID identifier:OpenPATHBeaconIdentifier];
+        [locMgr startMonitoringForRegion:region];
+
+        // Are these redundant? It appears the notificaitons are sent in the TDSM as well, after these methods are called...
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionScanBLE];
+        return;
+    }
+
+}
+
 + (void)printGeofences:(CLLocationManager*)manager {
     CLCircularRegion* currRegion = NULL;
     

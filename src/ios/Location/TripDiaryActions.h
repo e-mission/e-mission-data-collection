@@ -27,6 +27,8 @@
 + (void) stopTracking:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
 + (void) stopTrackingLocation:(CLLocationManager*) manager;
 
++ (void)startBLEMonitoring:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr;
+
 + (void)createGeofenceHere:(CLLocationManager *)manager withGeofenceLocator:(GeofenceActions *)locator
                    inState:(TripDiaryStates)currState;
 + (void)createGeofenceAtLocation:(CLLocationManager *)manager atLocation:(CLLocation*)currLoc;

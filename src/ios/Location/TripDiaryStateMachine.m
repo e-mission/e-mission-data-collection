@@ -283,6 +283,15 @@ static NSString * const kCurrState = @"CURR_STATE";
     
     // TODO: Make removing the geofence conditional on the type of service
     if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
+        /* 
+            CLLocationMonitor supposedly has a ~20 second window where it will monitor for an iBeacon 
+            Region, but times out shortly therafter.  Since there is no notification/callback for
+            a region monitor "timing out" (it seems `monitoringDidFailForRegion` is not called), 
+            we need to manually check the status of the region with `didDetermineState`
+         */
+
+        [TripDiaryActions startBLEMonitoring:transition withLocationMgr:self.locMgr];
+
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionScanBLE];
          
@@ -296,7 +305,10 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                                 object:CFCTransitionTripStarted];
         }
         */
-    } else if ([transition isEqualToString:CFCTransitionVisitEnded]) { // KNOTE: When does this happen?
+    }  else if ([transition isEqualToString:CFCTransitionScanBLE]) {
+        [self setState:kScanningForBLEState withChecks:TRUE];
+    }
+    else if ([transition isEqualToString:CFCTransitionVisitEnded]) { 
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             // We first start tracking and then delete the geofence to make sure that we are always tracking something
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];

@@ -125,7 +125,6 @@
                                                @"Location tracking failed with error %@", error]];
 }
 
-
 - (void)locationManager:(CLLocationManager *)manager
           didExitRegion:(CLRegion *)region {
     if([region.identifier compare:kCurrGeofenceID] != NSOrderedSame) {
@@ -302,6 +301,34 @@
 - (void)locationManager:(CLLocationManager *)manager didUpdateHeading:(CLHeading *)newHeading {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Got new heading %@", newHeading]];
+}
+
+// After scanning is set up (as above), this will be called when a given beacon is in range
+- (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
+    // We only monitor the entrance of BLE Regions...
+    if([region.identifier compare:OpenPATHBeaconIdentifier] != NSOrderedSame) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                              object:CFCTransitionBLEFound];
+       return;
+    }
+     [LocalNotificationManager addNotification:
+        [NSString stringWithFormat:@"Received enterance for region %@ in state %@, ignoring",
+            region.identifier, 
+            [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                showUI:TRUE];
+}
+
+/* 
+ * TODO: Implement 2nd step to range beacons, making sure they stay
+ * within range for the duration of the trip
+ */
+
+// Ranging for beacons: "Step 2"
+- (void)locationManager:(CLLocationManager *)manager 
+        didRangeBeacons:(NSArray<CLBeacon *> *)beacons 
+        satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
+    // TODO 
+    return;
 }
 
 @end

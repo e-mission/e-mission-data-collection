@@ -42,6 +42,11 @@
 #define CFCTransitionScanBLE @"T_SCAN_FOR_BLE"
 #define CFCTransitionBLEFound @"T_BLE_FOUND"
 #define CFCTransitionBLENotFound @"T_BLE_NOT_FOUND"
+
+// The UUID & Identifier for BLE Beacons used in OpenPATH Fleet deployments
+#define OpenPATHBeaconUUID @"426C7565-4368-6172-6D42-6561636F6E73"
+#define OpenPATHBeaconIdentifier @"nrel.emission"
+
 /*
  * We need to decide the format of the notifications. From what I can see, there are two main options:
  * - we have a standard name for the notifications from this machine, and use the "object" field to indicate with transition it is, or
