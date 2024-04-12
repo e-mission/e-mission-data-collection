@@ -39,12 +39,12 @@
 #define CFCTransitionVisitEnded @"T_VISIT_ENDED"
 #define CFCTransitionNOP @"T_NOP"
 // The following transitions are utilized only within the fleet implementation of OpenPATH
-#define CFCTransitionScanBLE @"T_SCAN_FOR_BLE"
-#define CFCTransitionBLEFound @"T_BLE_FOUND"
+#define CFCTransitionEnteredBLERange @"T_ENTERED_BLE_RANGE"
+#define CFCTransitionExitedBLERange @"T_EXITED_BLE_RANGE" // Different from "Failed to Find" -- this is when it's left range
 #define CFCTransitionBLENotFound @"T_BLE_NOT_FOUND"
 
 // The UUID & Identifier for BLE Beacons used in OpenPATH Fleet deployments
-#define OpenPATHBeaconUUID @"426C7565-4368-6172-6D42-6561636F6E73"
+#define OpenPATHBeaconUUID @"bf3df3b1-6e46-35fa-86e5-927c95dd096c"
 #define OpenPATHBeaconIdentifier @"nrel.emission"
 
 /*
@@ -62,7 +62,6 @@ typedef enum : NSUInteger {
     kWaitingForTripStartState,
     kOngoingTripState,
     kTrackingStoppedState,
-    kScanningForBLEState
 } TripDiaryStates;
 
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);

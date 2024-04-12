@@ -134,6 +134,22 @@
                             showUI:TRUE];
 
     }
+    // FOR FLEET VERSION: Check BLE Region exit 
+    if([region.identifier compare:OpenPATHBeaconIdentifier] == NSOrderedSame) {
+        NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+        CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
+        
+        [manager stopRangingBeaconsSatisfyingConstraint:constraint];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionExitedBLERange];
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Exited range of beacon: %@ in state %@",
+                                    region.identifier, 
+                                    [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                        showUI:TRUE];
+        return; 
+    }
+
     // Since we are going to keep the geofence around during ongoing tracking to ensure that
     // we are re-initalized, we will keep getting exit messages. We need to ignore if we are not
     // in the "waiting_for_trip_start" state.
@@ -306,10 +322,24 @@
 // After scanning is set up (as above), this will be called when a given beacon is in range
 - (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
     // We only monitor the entrance of BLE Regions...
-    if([region.identifier compare:OpenPATHBeaconIdentifier] != NSOrderedSame) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                              object:CFCTransitionBLEFound];
-       return;
+    if([region.identifier compare:OpenPATHBeaconIdentifier] == NSOrderedSame) {
+        if ([region isKindOfClass:[CLBeaconRegion class]]) {
+            if ([CLLocationManager isRangingAvailable]) {
+                NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+                CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
+                // Begin RangingBeacons -- if the beacon is found, then we'll transition to start tracking
+                [manager startRangingBeaconsSatisfyingConstraint:constraint];
+
+                return;
+            }
+            else {
+                [LocalNotificationManager addNotification:
+                    [NSString stringWithFormat:@"Ranging not available for Beacon Region %@ in state %@",
+                        region.identifier, 
+                        [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                            showUI:TRUE];
+            }
+        }
     }
      [LocalNotificationManager addNotification:
         [NSString stringWithFormat:@"Received enterance for region %@ in state %@, ignoring",
@@ -318,17 +348,20 @@
                                 showUI:TRUE];
 }
 
-/* 
- * TODO: Implement 2nd step to range beacons, making sure they stay
- * within range for the duration of the trip
- */
-
-// Ranging for beacons: "Step 2"
 - (void)locationManager:(CLLocationManager *)manager 
         didRangeBeacons:(NSArray<CLBeacon *> *)beacons 
         satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
-    // TODO 
-    return;
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                        object:CFCTransitionEnteredBLERange];
+
+    [LocalNotificationManager addNotification:
+        [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
+                                beacons, 
+                                [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                    showUI:TRUE];
+
 }
+
 
 @end

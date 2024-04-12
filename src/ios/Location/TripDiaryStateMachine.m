@@ -44,8 +44,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         return @"STATE_ONGOING_TRIP";
     } else if (state == kTrackingStoppedState) {
         return @"STATE_TRACKING_STOPPED";
-    } else if (state == kScanningForBLEState) {
-        return @"STATE_SCANNING_FOR_BLE";
     } else {
         return @"UNKNOWN";
     }
@@ -80,7 +78,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     self.locMgr = [[CLLocationManager alloc] init];
     self.locMgr.pausesLocationUpdatesAutomatically = NO;
     if([self.locMgr respondsToSelector:@selector(setAllowsBackgroundLocationUpdates:)]) {
-    self.locMgr.allowsBackgroundLocationUpdates = YES;
+        self.locMgr.allowsBackgroundLocationUpdates = YES;
     }
     _locDelegate = [[TripDiaryDelegate alloc] initWithMachine:self];
     self.locMgr.delegate = _locDelegate;
@@ -98,6 +96,10 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                [TripDiaryStateMachine getStateName:self.currState]]];
     
     if (self.currState == kOngoingTripState) {
+        // TODO: Add restart for BLE Version
+        
+        /* StandardVERSION:*/
+
         // If we restarted, we recreate the location manager, but then it won't have
         // the fine location turned on, since that is not carried through over restarts.
         // So let's restart the tracking
@@ -181,8 +183,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         [self handleOngoingTrip:transition withUserInfo:userInfo];
     } else if (self.currState == kTrackingStoppedState) {
         [self handleTrackingStopped:transition withUserInfo:userInfo];
-    } else if (self.currState == kScanningForBLEState) {
-        [self handleBLEScan:transition withUserInfo:userInfo];
     } else {
         NSLog(@"Ignoring invalid transition %@ in state %@", transition,
               [TripDiaryStateMachine getStateName:self.currState]);
@@ -237,6 +237,10 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionNOP];
+    } else if ([transition isEqualToString:CFCTransitionEnteredBLERange]) {
+        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
@@ -249,10 +253,16 @@ static NSString * const kCurrState = @"CURR_STATE";
               [TripDiaryStateMachine getStateName:self.currState]);
         [self setState:kStartState withChecks:FALSE];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
+        /* TODO: ADD BACK FOR FLEET CONFIG
         [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
         [TripDiaryActions deleteGeofence:self.locMgr];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
+        */
+        NSLog(@"IN FLEET CONFIG: ignoring transition %@ in state %@",
+            transition,
+            [TripDiaryStateMachine getStateName:self.currState]);
+
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
@@ -289,12 +299,10 @@ static NSString * const kCurrState = @"CURR_STATE";
             a region monitor "timing out" (it seems `monitoringDidFailForRegion` is not called), 
             we need to manually check the status of the region with `didDetermineState`
          */
+         NSLog(@"Got transition %@ in in FLEET config at state %@, ignoring",
+              transition,
+              [TripDiaryStateMachine getStateName:self.currState]);
 
-        [TripDiaryActions startBLEMonitoring:transition withLocationMgr:self.locMgr];
-
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionScanBLE];
-         
         // TODO: We need to make this conditional.  E.g., replace `false` with `!isFleetConfig`, or something along those lines
         // For now, this will only build to BLE Deployment for testing (as above)
         /*
@@ -305,10 +313,12 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                                 object:CFCTransitionTripStarted];
         }
         */
-    }  else if ([transition isEqualToString:CFCTransitionScanBLE]) {
-        [self setState:kScanningForBLEState withChecks:TRUE];
-    }
-    else if ([transition isEqualToString:CFCTransitionVisitEnded]) { 
+    } else if ([transition isEqualToString:CFCTransitionEnteredBLERange]) { 
+        // [TripDiaryActions deleteGeofence:self.locMgr]; // we technically don't use the geofence right now, 
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionTripStarted];
+
+    } else if ([transition isEqualToString:CFCTransitionVisitEnded]) { 
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
             // We first start tracking and then delete the geofence to make sure that we are always tracking something
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
@@ -336,32 +346,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         [TripDiaryActions resetFSM:transition withLocationMgr:self.locMgr];
     } else if ([transition isEqualToString:CFCTransitionTrackingStopped]) {
         [self setState:kTrackingStoppedState withChecks:TRUE];
-    } else  {
-        NSLog(@"Got unexpected transition %@ in state %@, ignoring",
-              transition,
-              [TripDiaryStateMachine getStateName:self.currState]);
-    }
-}
-
-- (void) handleBLEScan:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
-    if ([transition isEqualToString:CFCTransitionScanBLE]) {
-        // TODO: Initial Scanning logic: e.g., monitor, then range
-
-        if (true) { // TODO: replace with "if BLEFound"
-            // We first start tracking and then delete the geofence to make sure that we are always tracking something
-            [TripDiaryActions deleteGeofence:self.locMgr];
-            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                                object:CFCTransitionBLEFound];
-        } else if (false) { // TODO: replace with "if BLENotFound"
-            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                                object:CFCTransitionBLENotFound];
-        }
-    } else if ([transition isEqualToString:CFCTransitionBLEFound]) {
-        [self setState:kOngoingTripState withChecks:TRUE];
-    } else if ([transition isEqualToString:CFCTransitionBLENotFound]) {
-        // TODO: Clean up BLE Scanning here
-
-        [self setState:kWaitingForTripStartState withChecks:TRUE];
     } else  {
         NSLog(@"Got unexpected transition %@ in state %@, ignoring",
               transition,
@@ -416,9 +400,14 @@ static NSString * const kCurrState = @"CURR_STATE";
             [self syncAndNotify];
         }
     } else if ([transition isEqualToString:CFCTransitionTripEndDetected]) {
-        [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
+        // For fleet version, ignore this
+        // [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
+        NSLog(@"In FLEET Config, ignoring");
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
         NSLog(@"Restarted trip, continuing tracking");
+    } else if ([transition isEqualToString:CFCTransitionExitedBLERange]) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionEndTripTracking];
     } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
         // [TripDiaryActions pushTripToServer];
         [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
