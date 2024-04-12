@@ -60,6 +60,10 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 new StatsEvent(myActivity, R.string.app_launched));
 
         TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
+
+        // Ask for bluetooth permissions
+        // We will change this with future releases, we just ran out of time implementing this into the front end
+        mControlDelegate.checkAndPromptBluetoothScanPermissions();
     }
 
     @Override

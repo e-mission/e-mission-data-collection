@@ -81,15 +81,17 @@ public class TripDiaryStateMachineForegroundService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(this, TAG, "onStartCommand called with intent = "+intent+
           " flags = " + flags +  " and startId = " + startId);
-          
-        if (intent.getAction() != null && intent.getAction().equals("foreground_start_bluetooth")) {
-          Intent bluetoothService = new Intent(this, BluetoothService.class);
-          this.startService(bluetoothService);
-          return START_STICKY;
-        } else if (intent.getAction() != null && intent.getAction().equals("foreground_start_bluetooth_monitoring")) {
-          Intent bluetoothService = new Intent(this, BluetoothMonitoringService.class);
-          this.startService(bluetoothService);
-          return START_STICKY;
+        
+        if (intent != null && intent.getAction() != null) {
+          if (intent.getAction().equals("foreground_start_bluetooth")) {
+            Intent bluetoothService = new Intent(this, BluetoothService.class);
+            this.startService(bluetoothService);
+            return START_STICKY;
+          } else if (intent.getAction().equals("foreground_start_bluetooth_monitoring")) {
+            Intent bluetoothService = new Intent(this, BluetoothMonitoringService.class);
+            this.startService(bluetoothService);
+            return START_STICKY;
+          }
         }
 
         String message  = humanizeState(this, TripDiaryStateMachineService.getState(this));
