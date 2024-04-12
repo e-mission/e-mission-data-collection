@@ -214,6 +214,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
         retVal.put("STOPPED_MOVING", ctxt.getString(R.string.transition_stopped_moving));
         retVal.put("STOP_TRACKING", ctxt.getString(R.string.transition_stop_tracking));
         retVal.put("START_TRACKING", ctxt.getString(R.string.transition_start_tracking));
+        retVal.put("BLE_BEACON_FOUND", ctxt.getString(R.string.ble_beacon_found));
+        retVal.put("BLE_BEACON_LOST", ctxt.getString(R.string.ble_beacon_lost));
         return retVal;
     }
 

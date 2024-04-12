@@ -367,6 +367,8 @@
     retVal[@"RECEIVED_SILENT_PUSH"] = CFCTransitionRecievedSilentPush;
     retVal[@"VISIT_STARTED"] = CFCTransitionVisitStarted;
     retVal[@"VISIT_ENDED"] = CFCTransitionVisitEnded;
+    retVal[@"BLE_BEACON_FOUND"] = CFCTransitionBeaconFound;
+    retVal[@"BLE_BEACON_LOST"] = CFCTransitionBeaconLost;
     return retVal;
 }
 

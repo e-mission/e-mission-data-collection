@@ -37,6 +37,8 @@
 #define CFCTransitionStartTracking @"T_START_TRACKING"
 #define CFCTransitionVisitStarted @"T_VISIT_STARTED"
 #define CFCTransitionVisitEnded @"T_VISIT_ENDED"
+#define CFCTransitionBeaconFound @"T_BLE_BEACON_FOUND"
+#define CFCTransitionBeaconLost @"T_BLE_BEACON_LOST"
 #define CFCTransitionNOP @"T_NOP"
 
 /*
