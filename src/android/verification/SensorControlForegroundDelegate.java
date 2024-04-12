@@ -420,6 +420,11 @@ public class SensorControlForegroundDelegate {
         }
     }
 
+    /**
+     * Check to see if the user has the ability to scan for bluetooth devices, if not prompt them asking for it.
+     * 
+     * @param cordovaCallback
+     */
     public void checkAndPromptBluetoothScanPermissions(CallbackContext cordovaCallback) {
       if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S){
         Log.d(cordova.getActivity(), TAG, "Older build version than API 31, return success!");

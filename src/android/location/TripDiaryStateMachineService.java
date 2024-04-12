@@ -49,6 +49,7 @@ public class TripDiaryStateMachineService extends Service {
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
     private ForegroundServiceComm mComm = null;
+    private JSONObject config;
 
     public TripDiaryStateMachineService() {
         super();
@@ -61,6 +62,12 @@ public class TripDiaryStateMachineService extends Service {
         /*
          * Need to initialize once per create.
          */
+        try {
+            JSONObject c = (JSONObject) UserCacheFactory.getUserCache(this).getDocument("config/app_ui_config", false);   
+            config = c;
+        } catch (JSONException e) {
+            Log.d(this, TAG, "Error reading config! " + e);
+        }
     }
 
     @Override
@@ -202,6 +209,21 @@ public class TripDiaryStateMachineService extends Service {
             // create the significant motion callback first since it is
             // synchronous and the geofence is not
             createGeofenceInThread(ctxt, actionString);
+
+            // // Comment this out for now as this interferes with our beacon ranging function
+            // // Check to see if we are in fleet mode, if we are then start monitoring for beacons
+            // try {
+            //     if (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only")){
+            //         // Send intent to foreground service to start monitoring service
+            //         Log.d(this, TAG, "Starting the bluetooth monitoring!");
+            //         Intent foregroundBluetoothMonitoring = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
+            //         foregroundBluetoothMonitoring.setAction("foreground_start_bluetooth_monitoring");
+            //         ctxt.startService(foregroundBluetoothMonitoring);
+            //     }
+            // } catch (JSONException e) {
+            //     Log.d(this, TAG, "Error trying to read config to monitor for beacons!");
+            // }
+
             return;
             // we will wait for async geofence creation to complete
         }
@@ -243,11 +265,19 @@ public class TripDiaryStateMachineService extends Service {
             // If we are just normally exiting the geofence AND fleet mode, then transition to checking for beacons.
             if (actionString.equals(ctxt.getString(R.string.transition_beacon_found))){
                 Log.d(this, TAG, "In handleTripStart, beacon has been found so continue.");
-            } else if (true){ // Change the true to fleet mode config check
-                Log.d(this, TAG, "Detected exited_geofence, but are in fleet mode so redirect to check for beacons!");
-                // Transition to checking for beacon state
-                ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_checking_for_beacon));
-                return;
+            } else  {
+                // If we are in fleet mode, redirect to scan for beacons
+                try {
+                    if (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only")){
+                        Log.d(this, TAG, "Detected exited_geofence, but are in fleet mode so redirect to check for beacons!");
+    
+                        // Transition to checking for beacon state
+                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_checking_for_beacon));
+                        return;
+                    }
+                } catch (JSONException e) {
+                    Log.d(this, TAG, "Error trying to read config to check for beacons.");
+                }
             }
 
             // Delete geofence

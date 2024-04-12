@@ -5,13 +5,11 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
 import java.util.Set;
 import java.util.HashSet;
 
 // Altbeacon imports
 import org.altbeacon.beacon.BeaconManager;
-import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.Region;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Beacon;
@@ -20,23 +18,33 @@ import org.altbeacon.beacon.Beacon;
 import edu.berkeley.eecs.emission.R;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlChecks;
 
 
 public class BluetoothService extends Service {
     private static String TAG = "BluetoothService";
     private BeaconManager beaconManager;
-    private Set<Beacon> scanned = new HashSet<>();
-    private String uuid = "426c7565-4368-6172-6d42-6561636f6e73";
+    private Set<Beacon> scanned;
+    private String uuid = "bf3df3b1-6e46-35fa-86e5-927c95dd096c";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(this, TAG, "onStartCommand called!!!!");
 
-        // Define the beacon manager
+        // Instantiate variables
         beaconManager = BeaconManager.getInstanceForApplication(this);
+        scanned = new HashSet<>();
 
-        // Add in check to see if we can scan at all, otherwise we will be stuck here
-        
+        // Check to see if we even have permission to scan at all
+        boolean bluetoothPermissions = SensorControlChecks.checkBluetoothScanningPermissions(this);
+
+        if (!bluetoothPermissions) {
+            // If we aren't allowed, just say we found no beacons
+            Log.d(this, TAG, "Wanted to scan, but no bluetooth permissions!");
+            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_beacon_not_found));
+            return 1;
+        }
+
         // Start scanning for BLE beacons
         startBeaconScan();
 
@@ -74,17 +82,17 @@ public class BluetoothService extends Service {
         Log.d(this, TAG, "startBeaconScan called!!!!");
 
         // Keep track of how many times we have scanned
-
         beaconManager.addRangeNotifier(new RangeNotifier() {
             int numScans = 0;
 
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
+                Log.d(BluetoothService.this, TAG, "Range notifier called...");
+
                 if (beacons.size() > 0) {
-                    Log.d(BluetoothService.this, TAG, "The first beacon I see is about "+beacons.iterator().next().getDistance()+" meters away.");
+                    Log.d(BluetoothService.this, TAG, "Found beacons " + beacons.toString());
 
                     for (Beacon beacon : beacons) {
-                        Log.d(BluetoothService.this, TAG, beacon.toString());
                         // Even though we are scanning for beacons in a certain region, beacons with different UUID's still come up.
                         // Until we figure out why that is the case, put this check in place so we only save the ones with the right UUID.
                         if (beacon.getId1().toString().equals(uuid)) {

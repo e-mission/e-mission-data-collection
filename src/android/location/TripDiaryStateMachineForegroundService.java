@@ -30,6 +30,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlBack
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
 import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothMonitoringService;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -83,6 +84,10 @@ public class TripDiaryStateMachineForegroundService extends Service {
           
         if (intent.getAction() != null && intent.getAction().equals("foreground_start_bluetooth")) {
           Intent bluetoothService = new Intent(this, BluetoothService.class);
+          this.startService(bluetoothService);
+          return START_STICKY;
+        } else if (intent.getAction() != null && intent.getAction().equals("foreground_start_bluetooth_monitoring")) {
+          Intent bluetoothService = new Intent(this, BluetoothMonitoringService.class);
           this.startService(bluetoothService);
           return START_STICKY;
         }
