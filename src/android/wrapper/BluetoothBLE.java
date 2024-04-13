@@ -1,7 +1,5 @@
 package edu.berkeley.eecs.emission.cordova.tracker.wrapper;
 
-import java.util.UUID;
-
 /**
  * Created by shankari on 3/30/24.
  */
@@ -78,17 +76,22 @@ public class BluetoothBLE {
 	return rangeEvent;
     }
 
-    public static BluetoothBLE initFakeWithEventType(String eventType) {
+    public static BluetoothBLE initFake(String eventType, String uuid, int major, int minor) {
         BluetoothBLE fakeEvent = new BluetoothBLE();
-        fakeEvent.uuid = UUID.randomUUID().toString();
-        fakeEvent.major = 4538;
-        fakeEvent.minor = 1256;
-        fakeEvent.proximity = "ProximityNear";
-        fakeEvent.accuracy = 100;
-        fakeEvent.rssi = 10;
-        
+        fakeEvent.uuid = uuid;
         fakeEvent.eventType = eventType;
         fakeEvent.ts = System.currentTimeMillis() / 1000; // time is in seconds for us
+
+        // we assume that we don't have major and minor entries for the
+        // "monitor" responses
+        if (eventType == "RANGE_UPDATE") {
+            fakeEvent.major = major;
+            fakeEvent.minor = minor;
+            fakeEvent.proximity = "ProximityNear";
+            fakeEvent.accuracy = (int)(Math.random() * 100);
+            fakeEvent.rssi = (int)(Math.random() * 10);
+        }
+        
         return fakeEvent;
     }
 }

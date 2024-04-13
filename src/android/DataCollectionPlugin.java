@@ -36,9 +36,11 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.BluetoothBLE;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlForegroundDelegate;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 public class DataCollectionPlugin extends CordovaPlugin {
     public static final String TAG = "DataCollectionPlugin";
@@ -189,6 +191,34 @@ public class DataCollectionPlugin extends CordovaPlugin {
                         callbackContext.success(androidTransition);
                     } else {
                         callbackContext.error(generalTransition + " not supported, ignoring");
+                    }
+                }
+            });
+            return true;
+        } else if (action.equals("mockBLEObjects")) {
+            // we want to run this in a background thread because it might sometimes wait to get
+            // the current location
+            final String eventType = data.getString(0);
+            final String uuid = data.getString(1);
+            final int major = data.getInt(2);
+            final int minor = data.getInt(3);
+            final int nObjects = data.getInt(4);
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    Context ctxt = cordova.getActivity();
+                    for (int i = 0; i < nObjects; i++) {
+                        BluetoothBLE currWrapper = BluetoothBLE.initFake(eventType, uuid, major, minor);
+                        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_bluetooth_ble,
+                            currWrapper);
+                    }
+                    BluetoothBLE[] justAddedEntries = UserCacheFactory.getUserCache(ctxt).getLastSensorData(
+                        R.string.key_usercache_bluetooth_ble, nObjects, BluetoothBLE.class);
+                    for(BluetoothBLE currEntry : justAddedEntries) {
+                        if (!currEntry.getEventType().equals(eventType)) {
+                            callbackContext.error(currEntry.getEventType()+ " found in last "+nObjects+" objects, expected all "+eventType);
+                        }
+                        callbackContext.success(eventType);
                     }
                 }
             });

@@ -12,7 +12,7 @@
 @interface BluetoothBLE : NSObject
 
 - (instancetype)initWithCLBeacon:(CLBeacon *)beacon andEventType:(NSString *) eventType;
-- (instancetype)initFakeWithEventType:(NSString *)eventType;
+- (instancetype)initFake:(NSString *)eventType anduuid:(NSString*) uuid andmajor:(int) major andminor:(int) minor;
 
 // fields from CLBeacon, modified to be easy to serialize and restore
 @property NSString* uuid;

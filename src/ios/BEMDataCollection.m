@@ -1,6 +1,7 @@
 #import "BEMDataCollection.h"
 #import "LocalNotificationManager.h"
 #import "Wrapper/LocationTrackingConfig.h"
+#import "Wrapper/BluetoothBLE.h"
 #import "BEMAppDelegate.h"
 #import "ConfigManager.h"
 #import "DataUtils.h"
@@ -294,6 +295,54 @@
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
 }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+    @catch (NSException *exception) {
+        NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_ERROR
+                                   messageAsString:msg];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
+}
+
+- (void)mockBLEObjects:(CDVInvokedUrlCommand *)command
+{
+    NSString* callbackId = [command callbackId];
+    
+    @try {
+        NSString* eventType = [[command arguments] objectAtIndex:0];
+        NSString* uuid = [[command arguments] objectAtIndex:1];
+        int major = [[[command arguments] objectAtIndex:2] intValue];
+        int minor = [[[command arguments] objectAtIndex:3] intValue];
+        int nObjects = [[[command arguments] objectAtIndex:4] intValue];
+        for (int i = 0; i < nObjects; i++) {
+            BluetoothBLE* currWrapper = [[BluetoothBLE new] initFake:@"RANGE_UPDATE" anduuid: uuid andmajor: major  andminor: minor];
+            [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currWrapper];
+        }
+        NSArray* justAddedEntries = [[BuiltinUserCache database] getLastSensorData:@"key.usercache.bluetooth_ble"
+            nEntries:nObjects
+            wrapperClass:BluetoothBLE.class];
+        for (int i = 0; i < justAddedEntries.count; i++) {
+            BluetoothBLE* currEntry = [justAddedEntries objectAtIndex:i];
+            if (![currEntry.eventType isEqualToString:eventType]) {
+                NSString* msg = [NSString stringWithFormat: @"%@ found in last %d objects, expected all %@", currEntry.eventType, nObjects, eventType];
+                CDVPluginResult* result = [CDVPluginResult
+                                       resultWithStatus:CDVCommandStatus_ERROR
+                                       messageAsString:msg];
+                [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+            }
+        }
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK
+                                       messageAsString:eventType];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    }
     @catch (NSException *exception) {
         NSString* msg = [NSString stringWithFormat: @"While getting settings, error %@", exception];
         CDVPluginResult* result = [CDVPluginResult
