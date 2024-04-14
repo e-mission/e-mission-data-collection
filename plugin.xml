@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.8.3">
+        version="1.8.4">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -81,6 +81,8 @@
                 <action android:name="local.transition.stopped_moving"></action>
                 <action android:name="local.transition.stop_tracking"></action>
                 <action android:name="local.transition.start_tracking"></action>
+                <action android:name="local.transition.ble_beacon_found"></action>
+                <action android:name="local.transition.ble_beacon_lost"></action>
                 <action android:name="local.transition.tracking_error"></action>
                 <action android:name="local.transition.checking_for_beacon"></action>
                 <action android:name="local.transition.beacon_found"></action>
@@ -183,6 +185,7 @@
     <source-file src="src/android/wrapper/Transition.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/LocationTrackingConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Battery.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/BluetoothBLE.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/ConsentConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Timer.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/StatsEvent.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
@@ -263,6 +266,7 @@
     <header-file src="src/ios/Wrapper/Transition.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/LocationTrackingConfig.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/Battery.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/BluetoothBLE.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/ConsentConfig.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/Timer.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/StatsEvent.h" target-dir="Wrapper"/>
@@ -285,6 +289,7 @@
     <source-file src="src/ios/Wrapper/Transition.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/LocationTrackingConfig.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Battery.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/BluetoothBLE.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/ConsentConfig.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Timer.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/StatsEvent.m" target-dir="Wrapper"/>

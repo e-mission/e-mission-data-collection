@@ -11,6 +11,8 @@
     <string name="transition_stopped_moving">local.transition.stopped_moving</string>
     <string name="transition_stop_tracking">local.transition.stop_tracking</string>
     <string name="transition_start_tracking">local.transition.start_tracking</string>
+    <string name="transition_ble_beacon_found">local.transition.ble_beacon_found</string>
+    <string name="transition_ble_beacon_lost">local.transition.ble_beacon_lost</string>
     <string name="transition_tracking_error">local.transition.tracking_error</string>
     <string name="transition_checking_for_beacon">local.transition.checking_for_beacon</string>
     <string name="transition_beacon_found">local.transition.beacon_found</string>
