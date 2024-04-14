@@ -22,6 +22,7 @@
 #import "DataUtils.h"
 
 #import <CoreMotion/CoreMotion.h>
+#import <Foundation/Foundation.h>
 
 @interface TripDiaryStateMachine() {
     TripDiaryDelegate* _locDelegate;
@@ -73,8 +74,14 @@ static NSString * const kCurrState = @"CURR_STATE";
     // TODO: clean this up. Put it into a separate class and potentially write a wrapper for it.
     // This is particularly important if we initialize the plugin before we have the consent
     // in that case, this needs to be a singleton that is initalized dynamically
-    NSObject* dynamicConfig = [[BuiltinUserCache database] getDocument:@"config/app_ui_config" withMetadata:false];
-    self.isFleet = false;//
+    NSDictionary* dynamicConfig = [[BuiltinUserCache database] getDocument:@"config/app_ui_config" withMetadata:false];
+    self.isFleet = false;
+    if (dynamicConfig != NULL && [[dynamicConfig allKeys] containsObject:@"tracking"]) {
+        NSDictionary* trackingObj = [dynamicConfig valueForKey:@"tracking"];
+        if ([[trackingObj allKeys] containsObject:@"bluetooth_only"]) {
+            self.isFleet = [trackingObj valueForKey:@"bluetooth_only"];
+        }
+    }
 
     
     /*
