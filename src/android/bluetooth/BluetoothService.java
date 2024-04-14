@@ -20,6 +20,9 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlChecks;
 
+// Saving data
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.BluetoothBLE;
 
 public class BluetoothService extends Service {
     private static String TAG = "BluetoothService";
@@ -90,6 +93,20 @@ public class BluetoothService extends Service {
                         // Until we figure out why that is the case, put this check in place so we only save the ones with the right UUID.
                         if (beacon.getId1().toString().equals(uuid)) {
                             scanned.add(beacon);
+                            BluetoothBLE currWrapper = BluetoothBLE.initRangeUpdate(
+                                beacon.getId1().toString(),
+                                System.currentTimeMillis() / 1000, // timestamp in always in secs for us
+                                beacon.getId2().toInt(),
+                                beacon.getId3().toInt(),
+// TODO: Figure out what to do with the distance calculations
+                                "ProximityNear",
+// accuracy = rough distance estimate limited to two decimal places (in metres)
+// NO NOT ASSUME THIS IS ACCURATE - it is effected by radio interference and obstacles
+// from https://github.com/petermetz/cordova-plugin-ibeacon
+                                Math.round((beacon.getDistance() * 100)/100),
+                                beacon.getRssi());
+                            UserCacheFactory.getUserCache(BluetoothService.this)
+                                .putSensorData(R.string.key_usercache_bluetooth_ble, currWrapper);
                         }
                     }
                 }
