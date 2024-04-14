@@ -85,6 +85,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_stopped_moving),
                 context.getString(R.string.transition_stop_tracking),
                 context.getString(R.string.transition_start_tracking),
+                context.getString(R.string.transition_ble_beacon_found),
+                context.getString(R.string.transition_ble_beacon_lost),
                 context.getString(R.string.transition_tracking_error)
         }));
 

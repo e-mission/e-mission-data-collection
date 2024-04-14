@@ -7,6 +7,7 @@ import android.content.Context;
 import android.location.Location;
 import android.os.Build;
 import android.os.PowerManager;
+import android.content.pm.PackageManager;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
@@ -129,5 +130,15 @@ public class SensorControlChecks {
   public static boolean checkIgnoreBatteryOptimizations(final Context ctxt) {
     PowerManager pm = (PowerManager)ctxt.getSystemService(Context.POWER_SERVICE);
     return pm.isIgnoringBatteryOptimizations(ctxt.getPackageName());
+  }
+
+  public static boolean checkBluetoothScanningPermissions(final Context ctxt) {
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S){
+      // If its an older build version than API 31, we don't have to worry about scanning permissions
+      return true;
+    } else {
+      int permissionState = ctxt.checkSelfPermission("android.permission.BLUETOOTH_SCAN");
+      return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
   }
 }
