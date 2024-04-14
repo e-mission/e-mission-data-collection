@@ -141,7 +141,7 @@
         
         [manager stopRangingBeaconsSatisfyingConstraint:constraint];
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionExitedBLERange];
+                                                            object:CFCTransitionBeaconLost];
         [LocalNotificationManager addNotification:
             [NSString stringWithFormat:@"Exited range of beacon: %@ in state %@",
                                     region.identifier, 
@@ -353,7 +353,7 @@
         satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
     
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                        object:CFCTransitionEnteredBLERange];
+                                                        object:CFCTransitionBeaconFound];
 
     [LocalNotificationManager addNotification:
         [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",

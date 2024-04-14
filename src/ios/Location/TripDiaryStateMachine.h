@@ -40,10 +40,6 @@
 #define CFCTransitionBeaconFound @"T_BLE_BEACON_FOUND"
 #define CFCTransitionBeaconLost @"T_BLE_BEACON_LOST"
 #define CFCTransitionNOP @"T_NOP"
-// The following transitions are utilized only within the fleet implementation of OpenPATH
-#define CFCTransitionEnteredBLERange @"T_ENTERED_BLE_RANGE"
-#define CFCTransitionExitedBLERange @"T_EXITED_BLE_RANGE" // Different from "Failed to Find" -- this is when it's left range
-#define CFCTransitionBLENotFound @"T_BLE_NOT_FOUND"
 
 // The UUID & Identifier for BLE Beacons used in OpenPATH Fleet deployments
 #define OpenPATHBeaconUUID @"bf3df3b1-6e46-35fa-86e5-927c95dd096c"
@@ -77,6 +73,7 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 @property CLLocationManager *locMgr;
 @property CMMotionActivityManager *activityMgr;
 @property TripDiaryStates currState;
+@property bool isFleet;
 
 + (NSString*)getStateName:(TripDiaryStates) state;
 

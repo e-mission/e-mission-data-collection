@@ -69,6 +69,13 @@ static NSString * const kCurrState = @"CURR_STATE";
 
 - (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+    // TODO: clean this up. Put it into a separate class and potentially write a wrapper for it.
+    // This is particularly important if we initialize the plugin before we have the consent
+    // in that case, this needs to be a singleton that is initalized dynamically
+    NSObject* dynamicConfig = [[BuiltinUserCache database] getDocument:@"config/app_ui_config" withMetadata:false];
+    self.isFleet = false;//
+
     
     /*
      * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager first
@@ -237,8 +244,21 @@ static NSString * const kCurrState = @"CURR_STATE";
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionNOP];
-    } else if ([transition isEqualToString:CFCTransitionEnteredBLERange]) {
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+    } else if ([transition isEqualToString:CFCTransitionBeaconFound]) {
+        if (self.isFleet) {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, starting location tracking",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+            [TripDiaryActions deleteGeofence:self.locMgr];
+        } else {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, not sure why this happened, starting location tracking anyway",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+            [TripDiaryActions deleteGeofence:self.locMgr];
+
+        }
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
@@ -253,16 +273,21 @@ static NSString * const kCurrState = @"CURR_STATE";
               [TripDiaryStateMachine getStateName:self.currState]);
         [self setState:kStartState withChecks:FALSE];
     } else if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
-        /* TODO: ADD BACK FOR FLEET CONFIG
-        [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
-        [TripDiaryActions deleteGeofence:self.locMgr];
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionTripStarted];
-        */
-        NSLog(@"IN FLEET CONFIG: ignoring transition %@ in state %@",
-            transition,
-            [TripDiaryStateMachine getStateName:self.currState]);
+        if (self.isFleet) {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, checking for beacons before starting location tracking",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+        } else {
+            NSLog(@"Got transition %@ in state %@ in non-fleet mode, starting location tracking",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+            // We first start tracking and then delete the geofence to make sure that we are always tracking something
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+            [TripDiaryActions deleteGeofence:self.locMgr];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionTripStarted];
 
+        }
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState withChecks:TRUE];
     } else if ([transition isEqualToString:CFCTransitionForceStopTracking]) {
@@ -290,8 +315,6 @@ static NSString * const kCurrState = @"CURR_STATE";
         However, it turns out that keeping the geofence around is not good enough because iOS does not assume that we
         start within the geofence. So it won't restart until it detects an actual in -> out transition, which will only happen again when we visit the start of the trip. So let's delete the geofence and start both types of location services.
      */
-    
-    // TODO: Make removing the geofence conditional on the type of service
     if ([transition isEqualToString:CFCTransitionExitedGeofence]) {
         /* 
             CLLocationMonitor supposedly has a ~20 second window where it will monitor for an iBeacon 
@@ -299,22 +322,37 @@ static NSString * const kCurrState = @"CURR_STATE";
             a region monitor "timing out" (it seems `monitoringDidFailForRegion` is not called), 
             we need to manually check the status of the region with `didDetermineState`
          */
-         NSLog(@"Got transition %@ in in FLEET config at state %@, ignoring",
-              transition,
-              [TripDiaryStateMachine getStateName:self.currState]);
 
-        // TODO: We need to make this conditional.  E.g., replace `false` with `!isFleetConfig`, or something along those lines
-        // For now, this will only build to BLE Deployment for testing (as above)
-        /*
-        if(!isFleetConfig) {
+        if (self.isFleet) {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, checking for beacons before starting location tracking",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+        } else {
+            NSLog(@"Got transition %@ in state %@ in non-fleet mode, starting location tracking",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
             // We first start tracking and then delete the geofence to make sure that we are always tracking something
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
             [TripDiaryActions deleteGeofence:self.locMgr];
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripStarted];
+
         }
-        */
-    } else if ([transition isEqualToString:CFCTransitionEnteredBLERange]) { 
-        // [TripDiaryActions deleteGeofence:self.locMgr]; // we technically don't use the geofence right now, 
+    } else if ([transition isEqualToString:CFCTransitionBeaconFound]) {
+        if (self.isFleet) {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, starting location tracking",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+            [TripDiaryActions deleteGeofence:self.locMgr];
+        } else {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, not sure why this happened, starting location tracking anyway",
+                  transition,
+                  [TripDiaryStateMachine getStateName:self.currState]);
+            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+            [TripDiaryActions deleteGeofence:self.locMgr];
+
+        }
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionTripStarted];
 
@@ -400,14 +438,31 @@ static NSString * const kCurrState = @"CURR_STATE";
             [self syncAndNotify];
         }
     } else if ([transition isEqualToString:CFCTransitionTripEndDetected]) {
-        // For fleet version, ignore this
-        // [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
-        NSLog(@"In FLEET Config, ignoring");
+        if (self.isFleet) {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, still seeing beacon but no location updates, ignoring",
+                  transition,  [TripDiaryStateMachine getStateName:self.currState]);
+        } else {
+            [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
+        }
     } else if ([transition isEqualToString:CFCTransitionTripRestarted]) {
         NSLog(@"Restarted trip, continuing tracking");
-    } else if ([transition isEqualToString:CFCTransitionExitedBLERange]) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+    } else if ([transition isEqualToString:CFCTransitionBeaconLost]) {
+        // this is another way in which the trip end is detected. so let's create a geofence just for completeness
+        // TODO: Determine whether we should just call `TripEndDetected` instead. Am a bit concerned that then if there are
+        // errors with the location trip, will end tracking too early
+        // createGeofecneHere will automatically generate `CFCTransitionTripEnded` so we shouldn't need to create it here
+        // on the other hand, maybe createGeofence will find that we are outside the geofence, so will generate CFCTransitionTripRestarted
+        // so let's try to create the geofence here for consistency, but also force the EndTripTracking
+        if (self.isFleet) {
+            NSLog(@"Got transition %@ in state %@ with fleet mode, beacon is gone, we need to stop tracking",
+                  transition,  [TripDiaryStateMachine getStateName:self.currState]);
+            [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionEndTripTracking];
+        } else {
+            NSLog(@"Got transition %@ in state %@ with non-fleet mode, beacon is gone, ignoring",
+                  transition,  [TripDiaryStateMachine getStateName:self.currState]);
+        }
     } else if ([transition isEqualToString:CFCTransitionEndTripTracking]) {
         // [TripDiaryActions pushTripToServer];
         [TripDiaryActions stopTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
