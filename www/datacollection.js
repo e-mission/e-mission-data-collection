@@ -141,6 +141,11 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "handleSilentPush",
                  []);
         })
+    },
+    bluetoothScan: function() {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "bluetoothScan", []);
+        });
     }
 }
 
