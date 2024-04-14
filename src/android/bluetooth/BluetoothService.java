@@ -39,9 +39,6 @@ public class BluetoothService extends Service {
         boolean bluetoothPermissions = SensorControlChecks.checkBluetoothScanningPermissions(this);
 
         if (!bluetoothPermissions) {
-            // If we aren't allowed, just say we found no beacons
-            Log.d(this, TAG, "Wanted to scan, but no bluetooth permissions!");
-            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_beacon_not_found));
             return 1;
         }
 
@@ -68,12 +65,8 @@ public class BluetoothService extends Service {
         if (scanned.size() > 0) {
             Log.d(this, TAG, "Found something!");
             Log.d(this, TAG, scanned.toString());
-            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_beacon_found));
-        } else {
-            Log.d(this, TAG, "Did not find anything!");
-            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_beacon_not_found));
+            this.sendBroadcast(new ExplicitIntent(this, R.string.transition_ble_beacon_found));
         }
-
         onDestroy();
     }
 

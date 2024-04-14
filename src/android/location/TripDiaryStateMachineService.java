@@ -50,6 +50,7 @@ public class TripDiaryStateMachineService extends Service {
     private SharedPreferences mPrefs = null;
     private ForegroundServiceComm mComm = null;
     private JSONObject config;
+    private boolean isFleet = false;
 
     public TripDiaryStateMachineService() {
         super();
@@ -65,8 +66,11 @@ public class TripDiaryStateMachineService extends Service {
         try {
             JSONObject c = (JSONObject) UserCacheFactory.getUserCache(this).getDocument("config/app_ui_config", false);   
             config = c;
+            isFleet = (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only"));
         } catch (JSONException e) {
             Log.d(this, TAG, "Error reading config! " + e);
+            // TODO: Need to figure out what to do about the fleet flag when the config is invalid
+            // Original implementation by @louisg1337 had isFleet = true in that case (location tracking would not stop)
         }
     }
 
@@ -173,20 +177,7 @@ public class TripDiaryStateMachineService extends Service {
                 " skipping delete");
         }
 
-        if (actionString.equals(ctxt.getString(R.string.transition_checking_for_beacon))) {
-            Log.d(this, TAG, "Checking for beacons!");
-            // Start up the bluetooth service to check for beacons
-            Intent foregroundStartBluetooth = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
-            foregroundStartBluetooth.setAction("foreground_start_bluetooth");
-            ctxt.startService(foregroundStartBluetooth);
-        } else if (actionString.equals(ctxt.getString(R.string.transition_beacon_found))) {
-            Log.d(this, TAG, "Beacons found, start the trip!");
-            // Can now send to handleTripStart
-            handleTripStart(ctxt, actionString);
-        } else if (actionString.equals(ctxt.getString(R.string.transition_beacon_not_found))) {
-            Log.d(this, TAG, "Beacons not found, do nothing!");
-            // For now we won't do anything if no beacon exists. Further thought is needed for edge cases where this may not work.
-        } else if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
+        if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, actionString);
@@ -259,26 +250,44 @@ public class TripDiaryStateMachineService extends Service {
     public void handleTripStart(Context ctxt, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripStart(" + actionString + ") called");
 
-        if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence)) || actionString.equals(ctxt.getString(R.string.transition_beacon_found)) ) {
-            
-            // Handle new bluetooth functionality. IF we have found a beacon, continue with starting the trip.
-            // If we are just normally exiting the geofence AND fleet mode, then transition to checking for beacons.
-            if (actionString.equals(ctxt.getString(R.string.transition_beacon_found))){
-                Log.d(this, TAG, "In handleTripStart, beacon has been found so continue.");
-            } else  {
-                // If we are in fleet mode, redirect to scan for beacons
-                try {
-                    if (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only")){
-                        Log.d(this, TAG, "Detected exited_geofence, but are in fleet mode so redirect to check for beacons!");
-    
-                        // Transition to checking for beacon state
-                        ctxt.sendBroadcast(new ExplicitIntent(ctxt, R.string.transition_checking_for_beacon));
-                        return;
-                    }
-                } catch (JSONException e) {
-                    Log.d(this, TAG, "Error trying to read config to check for beacons.");
+        /*
+         * The logic here is simple.
+         * If we get a geofence exit, we have started moving. Since we are
+         * currently only addressing the uncommon case, we will check to see if
+         * we find a beacon. If so, we start location tracking. If not, we don't.
+         */
+
+        if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence)) || actionString.equals(ctxt.getString(R.string.transition_ble_beacon_found))) {
+            // Since we only start bluetooth scanning after geofence exit now,
+            // we will never get a ble_beacon_found before the geofence exit
+            if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
+                // we have a geofence exit, so we have started moving
+                if (isFleet) {
+                    // fleet version, so we start ranging for bluetooth
+                    Log.d(this, TAG, "Geofence exit in fleet mode, checking for beacons before starting location tracking");
+                    // Start up the bluetooth service to check for beacons
+                    Intent foregroundStartBluetooth = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
+                    foregroundStartBluetooth.setAction("foreground_start_bluetooth");
+                    ctxt.startService(foregroundStartBluetooth);
+                    return;
+                } else {
+                    Log.d(this, TAG, "Geofence exit in non-fleet mode, starting location tracking");
                 }
             }
+
+            if (actionString.equals(ctxt.getString(R.string.transition_ble_beacon_found))) {
+                // we have found a BLE beacon. we only start ranging for BLE beacons in fleet mode
+                // so we should be in fleet mode here
+                if (isFleet) {
+                    Log.d(this, TAG, "Found beacon in fleet mode, starting location tracking");
+                } else {
+                    Log.e(this, TAG, "Found beacon in non-fleet mode, not sure why this happened, starting location tracking anyway");
+                }
+            }
+
+            // we will get here as long as we don't return, so all the "starting location tracking" will work properly
+            // but this is ugly
+            // TODO: Pull this out to a separate function and call the function from the if/then blocks
 
             // Delete geofence
             // we cannot add null elements to the token list.
@@ -337,7 +346,7 @@ public class TripDiaryStateMachineService extends Service {
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 null, fCtxt.getString(R.string.failed_moving_new_state,newState));
-              } // both branches have called setState or are waiting for sth else
+                        } // both branches have called setState or are waiting for sth else
             }); // listener end
             return; // handled the transition, returning
         }
