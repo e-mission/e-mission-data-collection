@@ -32,6 +32,8 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrack
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Transition;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
+import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 
 /**
  * Created by shankari on 9/12/15.
@@ -47,6 +49,8 @@ public class TripDiaryStateMachineService extends Service {
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
     private ForegroundServiceComm mComm = null;
+    private JSONObject config;
+    private boolean isFleet = false;
 
     public TripDiaryStateMachineService() {
         super();
@@ -59,6 +63,15 @@ public class TripDiaryStateMachineService extends Service {
         /*
          * Need to initialize once per create.
          */
+        try {
+            JSONObject c = (JSONObject) UserCacheFactory.getUserCache(this).getDocument("config/app_ui_config", false);   
+            config = c;
+            isFleet = (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only"));
+        } catch (JSONException e) {
+            Log.d(this, TAG, "Error reading config! " + e);
+            // TODO: Need to figure out what to do about the fleet flag when the config is invalid
+            // Original implementation by @louisg1337 had isFleet = true in that case (location tracking would not stop)
+        }
     }
 
     @Override
@@ -163,6 +176,7 @@ public class TripDiaryStateMachineService extends Service {
             Log.i(this, TAG, "JSONException while accessing geofence cfg "+
                 " skipping delete");
         }
+
         if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
@@ -186,6 +200,21 @@ public class TripDiaryStateMachineService extends Service {
             // create the significant motion callback first since it is
             // synchronous and the geofence is not
             createGeofenceInThread(ctxt, actionString);
+
+            // // Comment this out for now as this interferes with our beacon ranging function
+            // // Check to see if we are in fleet mode, if we are then start monitoring for beacons
+            // try {
+            //     if (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only")){
+            //         // Send intent to foreground service to start monitoring service
+            //         Log.d(this, TAG, "Starting the bluetooth monitoring!");
+            //         Intent foregroundBluetoothMonitoring = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
+            //         foregroundBluetoothMonitoring.setAction("foreground_start_bluetooth_monitoring");
+            //         ctxt.startService(foregroundBluetoothMonitoring);
+            //     }
+            // } catch (JSONException e) {
+            //     Log.d(this, TAG, "Error trying to read config to monitor for beacons!");
+            // }
+
             return;
             // we will wait for async geofence creation to complete
         }
@@ -221,7 +250,45 @@ public class TripDiaryStateMachineService extends Service {
     public void handleTripStart(Context ctxt, final String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTripStart(" + actionString + ") called");
 
-        if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
+        /*
+         * The logic here is simple.
+         * If we get a geofence exit, we have started moving. Since we are
+         * currently only addressing the uncommon case, we will check to see if
+         * we find a beacon. If so, we start location tracking. If not, we don't.
+         */
+
+        if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence)) || actionString.equals(ctxt.getString(R.string.transition_ble_beacon_found))) {
+            // Since we only start bluetooth scanning after geofence exit now,
+            // we will never get a ble_beacon_found before the geofence exit
+            if (actionString.equals(ctxt.getString(R.string.transition_exited_geofence))) {
+                // we have a geofence exit, so we have started moving
+                if (isFleet) {
+                    // fleet version, so we start ranging for bluetooth
+                    Log.d(this, TAG, "Geofence exit in fleet mode, checking for beacons before starting location tracking");
+                    // Start up the bluetooth service to check for beacons
+                    Intent foregroundStartBluetooth = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
+                    foregroundStartBluetooth.setAction("foreground_start_bluetooth");
+                    ctxt.startService(foregroundStartBluetooth);
+                    return;
+                } else {
+                    Log.d(this, TAG, "Geofence exit in non-fleet mode, starting location tracking");
+                }
+            }
+
+            if (actionString.equals(ctxt.getString(R.string.transition_ble_beacon_found))) {
+                // we have found a BLE beacon. we only start ranging for BLE beacons in fleet mode
+                // so we should be in fleet mode here
+                if (isFleet) {
+                    Log.d(this, TAG, "Found beacon in fleet mode, starting location tracking");
+                } else {
+                    Log.e(this, TAG, "Found beacon in non-fleet mode, not sure why this happened, starting location tracking anyway");
+                }
+            }
+
+            // we will get here as long as we don't return, so all the "starting location tracking" will work properly
+            // but this is ugly
+            // TODO: Pull this out to a separate function and call the function from the if/then blocks
+
             // Delete geofence
             // we cannot add null elements to the token list.
             // the LocationTracking start action can now return null
@@ -279,7 +346,7 @@ public class TripDiaryStateMachineService extends Service {
                         if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 null, fCtxt.getString(R.string.failed_moving_new_state,newState));
-              } // both branches have called setState or are waiting for sth else
+                        } // both branches have called setState or are waiting for sth else
             }); // listener end
             return; // handled the transition, returning
         }

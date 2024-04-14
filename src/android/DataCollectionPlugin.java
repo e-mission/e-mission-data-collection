@@ -36,9 +36,12 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.BluetoothBLE;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlForegroundDelegate;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 public class DataCollectionPlugin extends CordovaPlugin {
     public static final String TAG = "DataCollectionPlugin";
@@ -59,6 +62,10 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 new StatsEvent(myActivity, R.string.app_launched));
 
         TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
+
+        // Ask for bluetooth permissions
+        // We will change this with future releases, we just ran out of time implementing this into the front end
+        mControlDelegate.checkAndPromptBluetoothScanPermissions();
     }
 
     @Override
@@ -193,6 +200,34 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 }
             });
             return true;
+        } else if (action.equals("mockBLEObjects")) {
+            // we want to run this in a background thread because it might sometimes wait to get
+            // the current location
+            final String eventType = data.getString(0);
+            final String uuid = data.getString(1);
+            final int major = data.getInt(2);
+            final int minor = data.getInt(3);
+            final int nObjects = data.getInt(4);
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    Context ctxt = cordova.getActivity();
+                    for (int i = 0; i < nObjects; i++) {
+                        BluetoothBLE currWrapper = BluetoothBLE.initFake(eventType, uuid, major, minor);
+                        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_bluetooth_ble,
+                            currWrapper);
+                    }
+                    BluetoothBLE[] justAddedEntries = UserCacheFactory.getUserCache(ctxt).getLastSensorData(
+                        R.string.key_usercache_bluetooth_ble, nObjects, BluetoothBLE.class);
+                    for(BluetoothBLE currEntry : justAddedEntries) {
+                        if (!currEntry.getEventType().equals(eventType)) {
+                            callbackContext.error(currEntry.getEventType()+ " found in last "+nObjects+" objects, expected all "+eventType);
+                        }
+                        callbackContext.success(eventType);
+                    }
+                }
+            });
+            return true;
         } else if (action.equals("handleSilentPush")) {
             throw new UnsupportedOperationException("silent push handling not supported for android");
         } else if (action.equals("getAccuracyOptions")) {
@@ -203,6 +238,12 @@ public class DataCollectionPlugin extends CordovaPlugin {
             retVal.put("PRIORITY_NO_POWER", LocationRequest.PRIORITY_NO_POWER);
             callbackContext.success(retVal);
             return true;
+        } else if (action.equals("bluetoothScan")) {
+          Context ctxt = cordova.getActivity();
+          Log.d(ctxt, TAG, "JS requested scan for bluetooth!");
+          Intent bluetoothServiceIntent = new Intent(ctxt, BluetoothService.class);
+          ctxt.startService(bluetoothServiceIntent);
+          return true;
         }
         return false;
     }
@@ -214,6 +255,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
         retVal.put("STOPPED_MOVING", ctxt.getString(R.string.transition_stopped_moving));
         retVal.put("STOP_TRACKING", ctxt.getString(R.string.transition_stop_tracking));
         retVal.put("START_TRACKING", ctxt.getString(R.string.transition_start_tracking));
+        retVal.put("BLE_BEACON_FOUND", ctxt.getString(R.string.transition_ble_beacon_found));
+        retVal.put("BLE_BEACON_LOST", ctxt.getString(R.string.transition_ble_beacon_lost));
         return retVal;
     }
 
