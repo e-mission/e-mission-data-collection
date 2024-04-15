@@ -12,16 +12,31 @@
 
 @implementation BluetoothBLE
 
--(id) initWithCLBeacon:(CLBeacon*) beacon andEventType:(NSString*) eventType {
+-(id) initWithCLBeaconRegion:(CLBeaconRegion*) beaconRegion andEventType:(NSString*) eventType {
+    assert([eventType isEqualToString:@"REGION_ENTER"] || [eventType isEqualToString:@"REGION_EXIT"]);
     self = [super init];
-    self.uuid = beacon.UUID;
+    self.uuid = beaconRegion.UUID.UUIDString;
+    self.major = beaconRegion.major.integerValue;
+    self.minor = beaconRegion.minor.integerValue;
+    self.proximity = [BluetoothBLE proximityToString:CLProximityUnknown];
+    self.accuracy = -1;
+    self.rssi = -1;
+    
+    self.eventType = eventType;
+    self.ts = [DataUtils dateToTs:[NSDate now]];
+    return self;
+}
+
+-(id) initWithCLBeacon:(CLBeacon*) beacon {
+    self = [super init];
+    self.uuid = beacon.UUID.UUIDString;
     self.major = beacon.major.integerValue;
     self.minor = beacon.minor.integerValue;
     self.proximity = [BluetoothBLE proximityToString:beacon.proximity];
     self.accuracy = beacon.accuracy;
     self.rssi = beacon.rssi;
     
-    self.eventType = eventType;
+    self.eventType = @"RANGE_UPDATE"; // we only get CLBeacon objects on range updates
     self.ts = [DataUtils dateToTs:beacon.timestamp];
     return self;
 }
