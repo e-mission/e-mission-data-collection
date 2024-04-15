@@ -12,6 +12,7 @@
 #import "TripDiaryActions.h"
 #import "LocalNotificationManager.h"
 #import "SimpleLocation.h"
+#import "BluetoothBLE.h"
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
 #import "BEMAppDelegate.h"
@@ -136,6 +137,10 @@
     }
     // FOR FLEET VERSION: Check BLE Region exit 
     if([region.identifier compare:OpenPATHBeaconIdentifier] == NSOrderedSame) {
+        // Save the exit data before stopping ranging and generating event
+        BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeaconRegion:(CLBeaconRegion*) region andEventType:@"REGION_EXIT"];
+        [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+
         NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
         CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
         
@@ -323,7 +328,12 @@
 - (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
     // We only monitor the entrance of BLE Regions...
     if([region.identifier compare:OpenPATHBeaconIdentifier] == NSOrderedSame) {
+        // Save the entry data before starting ranging and generating event
+        // TODO: unify the checks here and in the exit region. Why are we checking for isKindOFClass here but not in the exit code?
         if ([region isKindOfClass:[CLBeaconRegion class]]) {
+            BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeaconRegion:(CLBeaconRegion*) region andEventType:@"REGION_ENTER"];
+            [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+
             if ([CLLocationManager isRangingAvailable]) {
                 NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
                 CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
@@ -351,7 +361,12 @@
 - (void)locationManager:(CLLocationManager *)manager 
         didRangeBeacons:(NSArray<CLBeacon *> *)beacons 
         satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
-    
+
+    for (int i = 0; i < beacons.count; i++) {
+        BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeacon:beacons[i]];
+        [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+    }
+
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionBeaconFound];
 
