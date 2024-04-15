@@ -1,6 +1,8 @@
-package edu.berkeley.eecs.emission.cordova.tracker.verification;
-// Auto fixed by post-plugin hook
+package edu.berkeley.eecs.emission.cordova.tracker.verification; 
+// Auto fixed by post-plugin hook 
 import edu.berkeley.eecs.emission.R;
+// Auto fixed by post-plugin hook
+
 // Auto fixed by post-plugin hook
 import android.app.PendingIntent;
 import android.content.Context;
@@ -35,6 +37,7 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.location.actions.LocationTrackingActions;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 
 
@@ -89,6 +92,15 @@ public class SensorControlBackgroundChecker {
           // requests here.
           Log.i(ctxt, TAG, "All settings are valid, checking current state");
           Log.i(ctxt, TAG, "Current location settings are "+response);
+          boolean isFleet = false;
+          try {
+              JSONObject config = (JSONObject) UserCacheFactory.getUserCache(ctxt).getDocument("config/app_ui_config", false);   
+              isFleet = (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only"));
+          } catch (JSONException e) {
+              Log.d(ctxt, TAG, "Error reading config! " + e);
+              // TODO: Need to figure out what to do about the fleet flag when the config is invalid
+              // Original implementation by @louisg1337 had isFleet = true in that case (location tracking would not stop)
+          }
 
           // Now that we know that the location settings are correct, we start the permission checks
       boolean[] allOtherChecks = new boolean[]{
@@ -100,7 +112,11 @@ public class SensorControlBackgroundChecker {
       boolean allOtherChecksPass = true;
       for (boolean check: allOtherChecks) {
         allOtherChecksPass = allOtherChecksPass && check;
-            }
+      }
+      if (isFleet) {
+        allOtherChecksPass = allOtherChecksPass &&
+            SensorControlChecks.checkBluetoothPermissions(ctxt);
+      }
 
       /*
        Using index-based iteration since we need to start from index 1 instead of 0 and array slices

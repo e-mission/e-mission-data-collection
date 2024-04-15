@@ -77,6 +77,16 @@ public class SensorControlChecks {
       return version29Check || permCheck;
     }
 
+    // TODO: Figure out how to integrate this with the background code
+    // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-953403832
+    public static boolean checkBluetoothPermissions(final Context ctxt) {
+      // apps before version 31 did not need to prompt for bluetooth permissions
+      boolean version32Check = Build.VERSION.SDK_INT < Build.VERSION_CODES.S;
+      boolean permCheck = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.BLUETOOTH_SCAN) == PermissionChecker.PERMISSION_GRANTED;
+      Log.i(ctxt, TAG, "version32Check "+version32Check+" permCheck "+permCheck+" retVal = "+(version32Check || permCheck));
+      return version32Check || permCheck;
+    }
+
     public static boolean checkNotificationsEnabled(final Context ctxt) {
       NotificationManagerCompat nMgr = NotificationManagerCompat.from(ctxt);
       boolean appDisabled = nMgr.areNotificationsEnabled();

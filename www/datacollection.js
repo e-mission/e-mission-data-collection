@@ -41,11 +41,6 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isValidLocationPermissions", []);
         });
     },
-    bluetoothScanPermissions: function () {
-        return new Promise(function(resolve, reject) {
-            exec(resolve, reject, "DataCollection", "bluetoothScanPermissions", []);
-        });
-    },
     fixFitnessPermissions: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "fixFitnessPermissions", []);
@@ -54,6 +49,16 @@ var DataCollection = {
     isValidFitnessPermissions: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "isValidFitnessPermissions", []);
+        });
+    },
+    fixBluetoothPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixBluetoothPermissions", []);
+        });
+    },
+    isValidBluetoothPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isValidBluetoothPermissions", []);
         });
     },
     fixShowNotifications: function () {
