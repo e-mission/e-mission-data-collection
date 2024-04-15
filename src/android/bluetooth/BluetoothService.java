@@ -107,13 +107,15 @@ public class BluetoothService extends Service {
                                 beacon.getRssi());
                             UserCacheFactory.getUserCache(BluetoothService.this)
                                 .putSensorData(R.string.key_usercache_bluetooth_ble, currWrapper);
+                            // End scanning early
+                            numScans = 5;
                         }
                     }
                 }
 
                 numScans++;
 
-                if (numScans >= 10 * 60) {
+                if (numScans >= 5) {
                     // Once we have hit certain number of scans, stop and determine if any beacons are in range
                     isInRange();
                 }
