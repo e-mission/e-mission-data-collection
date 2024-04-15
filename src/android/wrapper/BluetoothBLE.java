@@ -84,7 +84,7 @@ public class BluetoothBLE {
 
         // we assume that we don't have major and minor entries for the
         // "monitor" responses
-        if (eventType == "RANGE_UPDATE") {
+        if (eventType.equals("RANGE_UPDATE")) {
             fakeEvent.major = major;
             fakeEvent.minor = minor;
             fakeEvent.proximity = "ProximityNear";
