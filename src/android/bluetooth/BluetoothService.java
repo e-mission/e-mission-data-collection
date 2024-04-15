@@ -113,7 +113,7 @@ public class BluetoothService extends Service {
 
                 numScans++;
 
-                if (numScans >= 4) {
+                if (numScans >= 10 * 60) {
                     // Once we have hit certain number of scans, stop and determine if any beacons are in range
                     isInRange();
                 }
