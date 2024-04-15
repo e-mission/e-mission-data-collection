@@ -62,10 +62,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 new StatsEvent(myActivity, R.string.app_launched));
 
         TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
-
-        // Ask for bluetooth permissions
-        // We will change this with future releases, we just ran out of time implementing this into the front end
-        mControlDelegate.checkAndPromptBluetoothScanPermissions();
     }
 
     @Override
@@ -125,6 +121,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
           Log.d(cordova.getActivity(), TAG, "checking fitness permissions");
           mControlDelegate.checkMotionActivityPermissions(callbackContext);
           return true;
+        } else if (action.equals("fixBluetoothPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing bluetooth permissions");
+          mControlDelegate.checkAndPromptBluetoothScanPermissions(callbackContext);
+          return true;
+        } else if (action.equals("isValidBluetoothPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "checking bluetooth permissions");
+          mControlDelegate.checkBluetoothPermissions(callbackContext);
+          return true;
         } else if (action.equals("fixShowNotifications")) {
           Log.d(cordova.getActivity(), TAG, "fixing notification enable");
           mControlDelegate.checkAndPromptShowNotificationsEnabled(callbackContext);
@@ -152,10 +156,6 @@ public class DataCollectionPlugin extends CordovaPlugin {
         } else if (action.equals("isIgnoreBatteryOptimizations")) {
           Log.d(cordova.getActivity(), TAG, "checking ignored battery optimizations");
           mControlDelegate.checkIgnoreBatteryOptimizations(callbackContext);
-          return true;
-        } else if (action.equals("bluetoothScanPermissions")) {
-          Log.d(cordova.getActivity(), TAG, "requesting bluetooth scan permissions");
-          mControlDelegate.checkAndPromptBluetoothScanPermissions(callbackContext);
           return true;
         } else if (action.equals("storeBatteryLevel")) {
             Context ctxt = cordova.getActivity();
