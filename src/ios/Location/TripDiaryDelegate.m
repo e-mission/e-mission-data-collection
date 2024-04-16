@@ -367,8 +367,10 @@
         [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
     }
 
-    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                        object:CFCTransitionBeaconFound];
+    if (_tdsm.currState != kOngoingTripState) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionBeaconFound];
+    }
 
     [LocalNotificationManager addNotification:
         [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
