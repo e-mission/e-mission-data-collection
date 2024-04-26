@@ -7,6 +7,7 @@ import android.content.Context;
 import android.location.Location;
 import android.os.Build;
 import android.os.PowerManager;
+import android.content.pm.PackageManager;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
@@ -76,6 +77,16 @@ public class SensorControlChecks {
       return version29Check || permCheck;
     }
 
+    // TODO: Figure out how to integrate this with the background code
+    // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-953403832
+    public static boolean checkBluetoothPermissions(final Context ctxt) {
+      // apps before version 31 did not need to prompt for bluetooth permissions
+      boolean version32Check = Build.VERSION.SDK_INT < Build.VERSION_CODES.S;
+      boolean permCheck = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.BLUETOOTH_SCAN) == PermissionChecker.PERMISSION_GRANTED;
+      Log.i(ctxt, TAG, "version32Check "+version32Check+" permCheck "+permCheck+" retVal = "+(version32Check || permCheck));
+      return version32Check || permCheck;
+    }
+
     public static boolean checkNotificationsEnabled(final Context ctxt) {
       NotificationManagerCompat nMgr = NotificationManagerCompat.from(ctxt);
       boolean appDisabled = nMgr.areNotificationsEnabled();
@@ -110,7 +121,7 @@ public class SensorControlChecks {
       Integer appRestrictionStatus = future.get();
       Log.i(ctxt, TAG, "Received "+appRestrictionStatus+" from future.get");
       switch(appRestrictionStatus) {
-        case UnusedAppRestrictionsConstants.ERROR: return false;
+        case UnusedAppRestrictionsConstants.ERROR: return true;
         case UnusedAppRestrictionsConstants.FEATURE_NOT_AVAILABLE: return true;
         case UnusedAppRestrictionsConstants.DISABLED: return true;
         case UnusedAppRestrictionsConstants.API_30_BACKPORT:
@@ -129,5 +140,15 @@ public class SensorControlChecks {
   public static boolean checkIgnoreBatteryOptimizations(final Context ctxt) {
     PowerManager pm = (PowerManager)ctxt.getSystemService(Context.POWER_SERVICE);
     return pm.isIgnoringBatteryOptimizations(ctxt.getPackageName());
+  }
+
+  public static boolean checkBluetoothScanningPermissions(final Context ctxt) {
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S){
+      // If its an older build version than API 31, we don't have to worry about scanning permissions
+      return true;
+    } else {
+      int permissionState = ctxt.checkSelfPermission("android.permission.BLUETOOTH_SCAN");
+      return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
   }
 }

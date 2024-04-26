@@ -37,7 +37,13 @@
 #define CFCTransitionStartTracking @"T_START_TRACKING"
 #define CFCTransitionVisitStarted @"T_VISIT_STARTED"
 #define CFCTransitionVisitEnded @"T_VISIT_ENDED"
+#define CFCTransitionBeaconFound @"T_BLE_BEACON_FOUND"
+#define CFCTransitionBeaconLost @"T_BLE_BEACON_LOST"
 #define CFCTransitionNOP @"T_NOP"
+
+// The UUID & Identifier for BLE Beacons used in OpenPATH Fleet deployments
+#define OpenPATHBeaconUUID @"bf3df3b1-6e46-35fa-86e5-927c95dd096c"
+#define OpenPATHBeaconIdentifier @"nrel.emission"
 
 /*
  * We need to decide the format of the notifications. From what I can see, there are two main options:
@@ -53,7 +59,7 @@ typedef enum : NSUInteger {
     kStartState,
     kWaitingForTripStartState,
     kOngoingTripState,
-    kTrackingStoppedState
+    kTrackingStoppedState,
 } TripDiaryStates;
 
 typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
@@ -67,6 +73,7 @@ typedef void(^GeofenceStatusCallback)(NSString* geofenceStatus);
 @property CLLocationManager *locMgr;
 @property CMMotionActivityManager *activityMgr;
 @property TripDiaryStates currState;
+@property bool isFleet;
 
 + (NSString*)getStateName:(TripDiaryStates) state;
 

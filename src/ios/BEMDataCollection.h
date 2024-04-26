@@ -20,6 +20,7 @@
 - (void) setConfig:(CDVInvokedUrlCommand*)command;
 - (void) getState:(CDVInvokedUrlCommand*)command;
 - (void) forceTransition:(CDVInvokedUrlCommand *)command;
+- (void) mockBLEObjects:(CDVInvokedUrlCommand *)command;
 - (void) handleSilentPush:(CDVInvokedUrlCommand *)command;
 - (void)getAccuracyOptions:(CDVInvokedUrlCommand *)command;
 
