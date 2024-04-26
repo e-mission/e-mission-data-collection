@@ -17,6 +17,9 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlChecks;
 
+// Saving data
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.BluetoothBLE;
 
 public class BluetoothMonitoringService extends Service {
     private static String TAG = "BluetoothMonitoringService";
@@ -53,6 +56,14 @@ public class BluetoothMonitoringService extends Service {
             @Override
             public void didEnterRegion(Region region) {
                 Log.d(BluetoothMonitoringService.this, TAG, "I just saw a beacon for the first time!");
+                // hack to use `R` so that we will rewrite it
+                if (region.getUniqueId().toString().equals(uuid)) {
+                    BluetoothBLE currWrapper = BluetoothBLE.initRegionEnter(
+                        region.getUniqueId(),
+                        System.currentTimeMillis() / 1000); // timestamp in always in secs for us
+                    UserCacheFactory.getUserCache(BluetoothMonitoringService.this)
+                        .putSensorData(R.string.key_usercache_bluetooth_ble, currWrapper);
+                }
             }
     
             @Override
