@@ -358,9 +358,39 @@
                                 showUI:TRUE];
 }
 
+/* In testing, it appears that relying on ExitRegion alone is not enough
+ * to make the trick tracking stop.  Furthermore, it seems there is little to no
+ * "signal noise" when first entering a BLE region (that is, if we're ranging,
+ * we'll only fail to find if we exit the region).  As such, let's include
+ * an "end-trip" condition within the ranging. 
+ *
+ * This may mean that the `ExitRegion` block of code is redundant, but keeping
+ * both for the time being.
+ */
+
 - (void)locationManager:(CLLocationManager *)manager 
         didRangeBeacons:(NSArray<CLBeacon *> *)beacons 
         satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
+
+
+    // "exit" condition: if no beacons found, stop tracking
+    if (beacons.count == 0) { 
+        BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeaconRegion:(CLBeaconRegion*) OpenPATHBeaconIdentifier andEventType:@"REGION_EXIT"];
+        [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+
+        NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+        CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
+        
+        [manager stopRangingBeaconsSatisfyingConstraint:constraint];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionBeaconLost];
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Failed to find beacon: %@ in state %@, ending trip",
+                                    region.identifier, 
+                                    [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                        showUI:TRUE];
+        return; 
+    }
 
     for (int i = 0; i < beacons.count; i++) {
         BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeacon:beacons[i]];
@@ -370,13 +400,12 @@
     if (_tdsm.currState != kOngoingTripState) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                             object:CFCTransitionBeaconFound];
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
+                                    beacons, 
+                                    [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                        showUI:TRUE];
     }
-
-    [LocalNotificationManager addNotification:
-        [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
-                                beacons, 
-                                [TripDiaryStateMachine getStateName:_tdsm.currState]]
-                                                    showUI:TRUE];
 
 }
 
