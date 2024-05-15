@@ -8,6 +8,8 @@ import android.location.Location;
 import android.os.Build;
 import android.os.PowerManager;
 import android.content.pm.PackageManager;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
@@ -113,9 +115,37 @@ public class SensorControlChecks {
     }
     return appUnpaused;
   }
+  
+  /**
+   * Check if the app is installed on a work profile.
+   * 
+   * We need this check as Android automatically exempts apps installed on a workprofile from hibernation. 
+   * This means that the "Pause app activity if unused" option is greyed out, which blocks users from continuing
+   * past the permissions screen. 
+   */
+  public static boolean checkWorkProfile(final Context ctxt) {
+    DevicePolicyManager devicePolicyManager = (DevicePolicyManager) ctxt.getSystemService(ctxt.DEVICE_POLICY_SERVICE);
+    List<ComponentName> activeAdmins = devicePolicyManager.getActiveAdmins();
+    boolean workProfile = false;
+    if (activeAdmins != null){
+      for (ComponentName admin : activeAdmins){
+          String packageName = admin.getPackageName();
+          boolean profileOwner = devicePolicyManager.isProfileOwnerApp(packageName);
+          Log.d(ctxt, TAG, "admin: " + packageName + " profile: " + profileOwner);
+          if (profileOwner){
+            workProfile = true;
+          }
+      }
+    }
+    return workProfile;
+  }
 
   public static boolean checkUnusedAppsUnrestricted(final Context ctxt) {
-      ListenableFuture<Integer> future = PackageManagerCompat.getUnusedAppRestrictionsStatus(ctxt);
+    // Check to see if we are on a work profile first
+    if (checkWorkProfile(ctxt)){
+      return true;
+    }
+    ListenableFuture<Integer> future = PackageManagerCompat.getUnusedAppRestrictionsStatus(ctxt);
     try {
       Log.i(ctxt, TAG, "About to call future.get to read the restriction status");
       Integer appRestrictionStatus = future.get();
