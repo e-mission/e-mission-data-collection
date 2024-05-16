@@ -361,20 +361,21 @@
 - (void)locationManager:(CLLocationManager *)manager 
         didRangeBeacons:(NSArray<CLBeacon *> *)beacons 
         satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
-
+    
     for (int i = 0; i < beacons.count; i++) {
         BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeacon:beacons[i]];
         [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
     }
 
-    [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                        object:CFCTransitionBeaconFound];
-
-    [LocalNotificationManager addNotification:
-        [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
-                                beacons, 
-                                [TripDiaryStateMachine getStateName:_tdsm.currState]]
-                                                    showUI:TRUE];
+    if (_tdsm.currState != kOngoingTripState) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionBeaconFound];
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
+                                    beacons, 
+                                    [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                        showUI:TRUE];
+    }
 
 }
 
