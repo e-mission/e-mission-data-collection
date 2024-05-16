@@ -151,7 +151,7 @@ public class SensorControlChecks {
       Integer appRestrictionStatus = future.get();
       Log.i(ctxt, TAG, "Received "+appRestrictionStatus+" from future.get");
       switch(appRestrictionStatus) {
-        case UnusedAppRestrictionsConstants.ERROR: return true;
+        case UnusedAppRestrictionsConstants.ERROR: return false;
         case UnusedAppRestrictionsConstants.FEATURE_NOT_AVAILABLE: return true;
         case UnusedAppRestrictionsConstants.DISABLED: return true;
         case UnusedAppRestrictionsConstants.API_30_BACKPORT:
