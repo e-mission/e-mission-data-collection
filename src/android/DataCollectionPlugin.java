@@ -18,6 +18,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.os.Bundle;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.location.LocationRequest;
@@ -231,5 +232,29 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
         }
          */
+    }
+
+    @Override
+    public void onStop() {
+      Log.d(cordova.getActivity(), TAG, "onStop() has been called!");
+    }
+
+    @Override
+    public void onDestroy() {
+      Log.d(cordova.getActivity(), TAG, "onDestroy() has been called!");
+    }
+
+    /**
+     * Documentation states this function is...
+     * 
+     * Called when the Activity is being destroyed (e.g. if a plugin calls out to an external
+     * Activity and the OS kills the CordovaActivity in the background). 
+     * 
+     * Perfect for some log statements so that we know if the OS kills an activity it is communicating with 
+     */
+    @Override
+    public Bundle onSaveInstanceState() {
+      Log.d(cordova.getActivity(), TAG, "onSaveInstanceState() has been called, OS killed an activity!");
+      return null;  
     }
 }

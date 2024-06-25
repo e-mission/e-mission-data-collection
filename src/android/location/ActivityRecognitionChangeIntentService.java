@@ -12,6 +12,9 @@ import edu.berkeley.eecs.emission.R;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
@@ -77,6 +80,11 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			// Handle failure, if any
 			Log.d(this, TAG, "Error getting location availability: " + e.getMessage());
 		});
+		
+		// Check for current state
+		SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
+            this.getString(R.string.state_start));
 
 		Log.d(this, TAG, "Ending checks for trip dissapearance...");
 
