@@ -7,6 +7,7 @@ import com.google.android.gms.location.DetectedActivity;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.MotionActivity;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlChecks;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
@@ -22,6 +23,9 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import android.content.Context;
 
 public class ActivityRecognitionChangeIntentService extends IntentService {
@@ -58,35 +62,27 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS, null, this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
 		}
 
-		// Add in logs to check for trip dissapearance
-		Log.d(this, TAG, "Beginning checks for trip dissapearance...");
+		// Add in logs to check for trip disapearance
+		Log.d(this, TAG, "Beginning checks for trip disapearance...");
 
 		// Check to see if the foreground service is still alive
 		Context ctxt = getApplicationContext();
 		TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
 
 		// Check if can retrieve current location
-		LocationServices.getFusedLocationProviderClient(ctxt).getLocationAvailability()
-		.addOnSuccessListener(locationAvailability -> {
-			if (locationAvailability != null && locationAvailability.isLocationAvailable()) {
-				// Location is available
-				Log.d(this, TAG, "Location is available");
-			} else {
-				// Location is not available
-				Log.d(this, TAG, "Location is not available");
-			}
-		})
-		.addOnFailureListener(e -> {
-			// Handle failure, if any
-			Log.d(this, TAG, "Error getting location availability: " + e.getMessage());
-		});
+		OnCompleteListener<LocationSettingsResponse> callback = new OnCompleteListener<LocationSettingsResponse>() {
+			@Override // no-op
+			public void onComplete(Task<LocationSettingsResponse> task) { }
+		};
+		SensorControlChecks.checkLocationSettings(this, callback);
 		
 		// Check for current state
 		SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         String mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
             this.getString(R.string.state_start));
+		Log.d(this, TAG, "Checking current state: " + mCurrState);
 
-		Log.d(this, TAG, "Ending checks for trip dissapearance...");
+		Log.d(this, TAG, "Ending checks for trip disapearance...");
 
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity

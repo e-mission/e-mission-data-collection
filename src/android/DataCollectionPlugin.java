@@ -245,16 +245,11 @@ public class DataCollectionPlugin extends CordovaPlugin {
     }
 
     /**
-     * Documentation states this function is...
-     * 
-     * Called when the Activity is being destroyed (e.g. if a plugin calls out to an external
-     * Activity and the OS kills the CordovaActivity in the background). 
-     * 
-     * Perfect for some log statements so that we know if the OS kills an activity it is communicating with 
+     * This function is called when the Activity is being destroyed. 
      */
     @Override
     public Bundle onSaveInstanceState() {
-      Log.d(cordova.getActivity(), TAG, "onSaveInstanceState() has been called, OS killed an activity!");
+      Log.d(cordova.getActivity(), TAG, "onSaveInstanceState() has been called, OS killed this activity!");
       return null;  
     }
 }
