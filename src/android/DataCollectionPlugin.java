@@ -20,6 +20,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.os.Bundle;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.location.LocationRequest;
@@ -299,5 +300,24 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 Log.d(cordova.getActivity(), TAG, "Got unsupported request code "+requestCode+ " , ignoring...");
         }
          */
+    }
+
+    @Override
+    public void onStop() {
+      Log.d(cordova.getActivity(), TAG, "onStop() has been called!");
+    }
+
+    @Override
+    public void onDestroy() {
+      Log.d(cordova.getActivity(), TAG, "onDestroy() has been called!");
+    }
+
+    /**
+     * This function is called when the Activity is being destroyed. 
+     */
+    @Override
+    public Bundle onSaveInstanceState() {
+      Log.d(cordova.getActivity(), TAG, "onSaveInstanceState() has been called, OS killed this activity!");
+      return null;  
     }
 }

@@ -7,16 +7,26 @@ import com.google.android.gms.location.DetectedActivity;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.MotionActivity;
+import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlChecks;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCache;
 import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
+import com.google.android.gms.location.LocationAvailability;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import android.content.Context;
 
 public class ActivityRecognitionChangeIntentService extends IntentService {
 	private static final int ACTIVITY_IN_NUMBERS = 22848489;
@@ -50,7 +60,32 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
 			if (ConfigManager.getConfig(this).isSimulateUserInteraction()) {
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS, null, this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
+		}
+
+		// Add in logs to check for trip disappearance
+		Log.d(this, TAG, "Beginning checks for trip disappearance...");
+
+		// Check to see if the foreground service is still alive
+		Context ctxt = getApplicationContext();
+		TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+
+		// Check if can retrieve current location
+		OnCompleteListener<LocationSettingsResponse> callback = new OnCompleteListener<LocationSettingsResponse>() {
+			@Override // no-op
+			public void onComplete(Task<LocationSettingsResponse> task) {
+                           Log.d(this, TAG, "While checking location status in activity response, received callback with : " + task);
 			}
+		};
+		SensorControlChecks.checkLocationSettings(this, callback);
+		
+		// Check for current state
+		SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String mCurrState = mPrefs.getString(this.getString(R.string.curr_state_key),
+            this.getString(R.string.state_start));
+		Log.d(this, TAG, "Checking current state: " + mCurrState);
+
+		Log.d(this, TAG, "Ending checks for trip disappearance...");
+
 			// TODO: Do we want to compare activity and only store when different?
             // Can easily do that by getting the last activity
             // Let's suck everything up to the server for now and optimize later
