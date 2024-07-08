@@ -66,6 +66,17 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
         Log.i(context, TAG, "TripDiaryStateMachineReciever onReceive(" + context + ", " + intent + ") called");
 
+        // Check to see if the user came out of airplane mode as the FSM needs to be restarted if they did
+        if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+            boolean isAirplaneModeOn = intent.getBooleanExtra("state", false);
+            if (!isAirplaneModeOn) {
+                Log.d(context, TAG, "Airplane mode was turned off, restart FSM.");
+                SensorControlBackgroundChecker.restartFSMIfStartState(context);
+            } else {
+                Log.d(context, TAG, "Airplane mode was turned on.");
+            }
+        }
+
         // Next two calls copied over from the constructor, figure out if this is the best place to
         // put them
         validTransitions = new HashSet<String>(Arrays.asList(new String[]{
@@ -74,6 +85,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
                 context.getString(R.string.transition_stopped_moving),
                 context.getString(R.string.transition_stop_tracking),
                 context.getString(R.string.transition_start_tracking),
+                context.getString(R.string.transition_ble_beacon_found),
+                context.getString(R.string.transition_ble_beacon_lost),
                 context.getString(R.string.transition_tracking_error)
         }));
 

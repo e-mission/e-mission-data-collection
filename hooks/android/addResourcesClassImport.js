@@ -77,6 +77,12 @@ module.exports = function (ctx) {
                             reject();
                         }
 
+                        /*
+                        console.log("For file "+file
+                                        + " Results of match checks: R = "+contents.match(R_RE)
+                                        + " BUILDCONFIG = "+contents.match(BUILDCONFIG_RE)
+                                        + " MAINACT = "+contents.match(MAINACT_RE));
+                        */
                         if (contents.match(R_RE) || contents.match(BUILDCONFIG_RE) || contents.match(MAINACT_RE)) {
                             console.log('file '+filename+' needs to be rewritten, checking package');
                             const packages = contents.match(PACKAGE_RE);
@@ -136,6 +142,7 @@ module.exports = function (ctx) {
                             // since we re-check for the imports before re-writing them
                             // but it avoid unnecessary file rewrites, so we retain
                             // it for now
+                            console.log("file "+file+" does not need to be rewritten");
                             resolve();
                         }
                     });

@@ -7,6 +7,9 @@ import android.content.Context;
 import android.location.Location;
 import android.os.Build;
 import android.os.PowerManager;
+import android.content.pm.PackageManager;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
@@ -76,6 +79,16 @@ public class SensorControlChecks {
       return version29Check || permCheck;
     }
 
+    // TODO: Figure out how to integrate this with the background code
+    // https://github.com/e-mission/e-mission-docs/issues/680#issuecomment-953403832
+    public static boolean checkBluetoothPermissions(final Context ctxt) {
+      // apps before version 31 did not need to prompt for bluetooth permissions
+      boolean version32Check = Build.VERSION.SDK_INT < Build.VERSION_CODES.S;
+      boolean permCheck = ContextCompat.checkSelfPermission(ctxt, SensorControlConstants.BLUETOOTH_SCAN) == PermissionChecker.PERMISSION_GRANTED;
+      Log.i(ctxt, TAG, "version32Check "+version32Check+" permCheck "+permCheck+" retVal = "+(version32Check || permCheck));
+      return version32Check || permCheck;
+    }
+
     public static boolean checkNotificationsEnabled(final Context ctxt) {
       NotificationManagerCompat nMgr = NotificationManagerCompat.from(ctxt);
       boolean appDisabled = nMgr.areNotificationsEnabled();
@@ -102,9 +115,37 @@ public class SensorControlChecks {
     }
     return appUnpaused;
   }
+  
+  /**
+   * Check if the app is installed on a work profile.
+   * 
+   * We need this check as Android automatically exempts apps installed on a workprofile from hibernation. 
+   * This means that the "Pause app activity if unused" option is greyed out, which blocks users from continuing
+   * past the permissions screen. 
+   */
+  public static boolean checkWorkProfile(final Context ctxt) {
+    DevicePolicyManager devicePolicyManager = (DevicePolicyManager) ctxt.getSystemService(ctxt.DEVICE_POLICY_SERVICE);
+    List<ComponentName> activeAdmins = devicePolicyManager.getActiveAdmins();
+    boolean workProfile = false;
+    if (activeAdmins != null){
+      for (ComponentName admin : activeAdmins){
+          String packageName = admin.getPackageName();
+          boolean profileOwner = devicePolicyManager.isProfileOwnerApp(packageName);
+          Log.d(ctxt, TAG, "admin: " + packageName + " profile: " + profileOwner);
+          if (profileOwner){
+            workProfile = true;
+          }
+      }
+    }
+    return workProfile;
+  }
 
   public static boolean checkUnusedAppsUnrestricted(final Context ctxt) {
-      ListenableFuture<Integer> future = PackageManagerCompat.getUnusedAppRestrictionsStatus(ctxt);
+    // Check to see if we are on a work profile first
+    if (checkWorkProfile(ctxt)){
+      return true;
+    }
+    ListenableFuture<Integer> future = PackageManagerCompat.getUnusedAppRestrictionsStatus(ctxt);
     try {
       Log.i(ctxt, TAG, "About to call future.get to read the restriction status");
       Integer appRestrictionStatus = future.get();
@@ -129,5 +170,15 @@ public class SensorControlChecks {
   public static boolean checkIgnoreBatteryOptimizations(final Context ctxt) {
     PowerManager pm = (PowerManager)ctxt.getSystemService(Context.POWER_SERVICE);
     return pm.isIgnoringBatteryOptimizations(ctxt.getPackageName());
+  }
+
+  public static boolean checkBluetoothScanningPermissions(final Context ctxt) {
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S){
+      // If its an older build version than API 31, we don't have to worry about scanning permissions
+      return true;
+    } else {
+      int permissionState = ctxt.checkSelfPermission("android.permission.BLUETOOTH_SCAN");
+      return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
   }
 }

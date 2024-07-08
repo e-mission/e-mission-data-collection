@@ -8,6 +8,7 @@ public class SensorControlConstants {
     public static String BACKGROUND_LOC_PERMISSION = Manifest.permission.ACCESS_BACKGROUND_LOCATION;
     public static String MOTION_ACTIVITY_PERMISSION = Manifest.permission.ACTIVITY_RECOGNITION;
     public static String REQUEST_BATTERY_PERMISSION = Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS;
+    public static String BLUETOOTH_SCAN = Manifest.permission.BLUETOOTH_SCAN;
 
     public static final int ENABLE_LOCATION_SETTINGS = 362253738;
     public static final int ENABLE_LOCATION_SETTINGS_MANUAL = 362253736;
@@ -21,6 +22,7 @@ public class SensorControlConstants {
     public static final int OPEN_BATTERY_OPTIMIZATION_PAGE = 362253745;
     public static final int IGNORE_BATTERY_OPTIMIZATIONS = 362253746;
     public static final int LOCATION_INTERMEDIARY = 362253747;
+    public static final int ENABLE_BLUETOOTH_SCAN = 362253748;
 
     public static final String ENABLE_LOCATION_PERMISSION_ACTION = "ENABLE_LOCATION_PERMISSION";
     public static final String ENABLE_BACKGROUND_LOC_PERMISSION_ACTION = "ENABLE_BACKGROUND_LOC_PERMISSION";

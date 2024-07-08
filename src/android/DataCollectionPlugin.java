@@ -13,6 +13,8 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -35,9 +37,12 @@ import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachine
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.ConsentConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.StatsEvent;
+import edu.berkeley.eecs.emission.cordova.tracker.wrapper.BluetoothBLE;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlForegroundDelegate;
+import edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.usercache.BuiltinUserCache;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 public class DataCollectionPlugin extends CordovaPlugin {
     public static final String TAG = "DataCollectionPlugin";
@@ -45,12 +50,31 @@ public class DataCollectionPlugin extends CordovaPlugin {
 
     @Override
     public void pluginInitialize() {
+        // Register for airplane mode intent
+        // Because of background execution limits, must register this implicit intent at runtime, not in manifest
+        Context ctxt = cordova.getActivity();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+        BroadcastReceiver tripDiaryReceiver = new TripDiaryStateMachineReceiver();
+        ctxt.registerReceiver(tripDiaryReceiver, filter);
+
         mControlDelegate = new SensorControlForegroundDelegate(this, cordova);
         final Activity myActivity = cordova.getActivity();
         BuiltinUserCache.getDatabase(myActivity).putMessage(R.string.key_usercache_client_nav_event,
                 new StatsEvent(myActivity, R.string.app_launched));
 
         TripDiaryStateMachineReceiver.initOnUpgrade(myActivity);
+    }
+
+    @Override
+    public void onResume(boolean multitasking){
+      Context ctxt = cordova.getActivity();
+      Log.d(ctxt, TAG, "On resume, check for foreground service only if user has conesented.");
+
+      String reqConsent = ConfigManager.getReqConsent(ctxt);
+      if (ConfigManager.isConsented(ctxt, reqConsent)) {
+          Log.d(ctxt, TAG, "User has consented, proceed with foreground check.");
+          TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
+      } 
     }
 
     @Override
@@ -97,6 +121,14 @@ public class DataCollectionPlugin extends CordovaPlugin {
         } else if (action.equals("isValidFitnessPermissions")) {
           Log.d(cordova.getActivity(), TAG, "checking fitness permissions");
           mControlDelegate.checkMotionActivityPermissions(callbackContext);
+          return true;
+        } else if (action.equals("fixBluetoothPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "fixing bluetooth permissions");
+          mControlDelegate.checkAndPromptBluetoothScanPermissions(callbackContext);
+          return true;
+        } else if (action.equals("isValidBluetoothPermissions")) {
+          Log.d(cordova.getActivity(), TAG, "checking bluetooth permissions");
+          mControlDelegate.checkBluetoothPermissions(callbackContext);
           return true;
         } else if (action.equals("fixShowNotifications")) {
           Log.d(cordova.getActivity(), TAG, "fixing notification enable");
@@ -169,6 +201,34 @@ public class DataCollectionPlugin extends CordovaPlugin {
                 }
             });
             return true;
+        } else if (action.equals("mockBLEObjects")) {
+            // we want to run this in a background thread because it might sometimes wait to get
+            // the current location
+            final String eventType = data.getString(0);
+            final String uuid = data.getString(1);
+            final int major = data.getInt(2);
+            final int minor = data.getInt(3);
+            final int nObjects = data.getInt(4);
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    Context ctxt = cordova.getActivity();
+                    for (int i = 0; i < nObjects; i++) {
+                        BluetoothBLE currWrapper = BluetoothBLE.initFake(eventType, uuid, major, minor);
+                        UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_bluetooth_ble,
+                            currWrapper);
+                    }
+                    BluetoothBLE[] justAddedEntries = UserCacheFactory.getUserCache(ctxt).getLastSensorData(
+                        R.string.key_usercache_bluetooth_ble, nObjects, BluetoothBLE.class);
+                    for(BluetoothBLE currEntry : justAddedEntries) {
+                        if (!currEntry.getEventType().equals(eventType)) {
+                            callbackContext.error(currEntry.getEventType()+ " found in last "+nObjects+" objects, expected all "+eventType);
+                        }
+                        callbackContext.success(eventType);
+                    }
+                }
+            });
+            return true;
         } else if (action.equals("handleSilentPush")) {
             throw new UnsupportedOperationException("silent push handling not supported for android");
         } else if (action.equals("getAccuracyOptions")) {
@@ -179,6 +239,12 @@ public class DataCollectionPlugin extends CordovaPlugin {
             retVal.put("PRIORITY_NO_POWER", LocationRequest.PRIORITY_NO_POWER);
             callbackContext.success(retVal);
             return true;
+        } else if (action.equals("bluetoothScan")) {
+          Context ctxt = cordova.getActivity();
+          Log.d(ctxt, TAG, "JS requested scan for bluetooth!");
+          Intent bluetoothServiceIntent = new Intent(ctxt, BluetoothService.class);
+          ctxt.startService(bluetoothServiceIntent);
+          return true;
         }
         return false;
     }
@@ -190,6 +256,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
         retVal.put("STOPPED_MOVING", ctxt.getString(R.string.transition_stopped_moving));
         retVal.put("STOP_TRACKING", ctxt.getString(R.string.transition_stop_tracking));
         retVal.put("START_TRACKING", ctxt.getString(R.string.transition_start_tracking));
+        retVal.put("BLE_BEACON_FOUND", ctxt.getString(R.string.transition_ble_beacon_found));
+        retVal.put("BLE_BEACON_LOST", ctxt.getString(R.string.transition_ble_beacon_lost));
         return retVal;
     }
 
