@@ -72,7 +72,9 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 		// Check if can retrieve current location
 		OnCompleteListener<LocationSettingsResponse> callback = new OnCompleteListener<LocationSettingsResponse>() {
 			@Override // no-op
-			public void onComplete(Task<LocationSettingsResponse> task) { }
+			public void onComplete(Task<LocationSettingsResponse> task) {
+                           Log.d(this, TAG, "While checking location status in activity response, received callback with : " + task);
+			}
 		};
 		SensorControlChecks.checkLocationSettings(this, callback);
 		
