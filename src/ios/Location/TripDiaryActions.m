@@ -34,6 +34,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
     if ([transition isEqualToString:CFCTransitionInitialize]) {
         [self startTrackingSignificantLocationChanges:locMgr];
         [self startTrackingVisits:locMgr];
+        [self startBLEMonitoring:transition withLocationMgr:locMgr];
     }
 }
 
@@ -47,6 +48,35 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
     [self stopTrackingLocation:locMgr];
     [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                         object:CFCTransitionTripEnded];
+}
+
++ (void)startBLEMonitoring:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
+    // Note: We don't need to run `RequestAlwaysAuthorization`, already set in SensorControlForegroundDelegate.m.
+    if ([CLLocationManager isMonitoringAvailableForClass:[CLBeaconRegion class]]) { // May be unecessary
+        // Match all beacons with the specified UUID (This _must_ be same for all OpenPATH Deployments)
+        NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+        
+        // Create the region and begin monitoring it.
+        CLBeaconRegion *region = [[CLBeaconRegion alloc] initWithUUID:proximityUUID identifier:OpenPATHBeaconIdentifier];
+        [locMgr startMonitoringForRegion:region];
+        
+        NSLog(@"Started Monitoring BLE Region %@ during transition %@ ", region, transition);
+        return;
+    }
+    // TODO: Add Error Handling:
+    //[[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+    //                                                    object:CFCTransitionBLEScanStarted];
+}
+
++ (void)stopBLEMonitoring:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
+        NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+        CLBeaconRegion *region = [[CLBeaconRegion alloc] initWithUUID:proximityUUID identifier:OpenPATHBeaconIdentifier];
+        [locMgr stopMonitoringForRegion:region];
+
+        NSLog(@"Stopped Monitoring BLE Region %@ during transition %@ ", region, transition);
+        //[[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+        //                                                    object:CFCTransitionBLEScanStopped];
+        // TODO: Handle BLEScanStopped when not expected
 }
 
 + (void)printGeofences:(CLLocationManager*)manager {

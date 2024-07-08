@@ -40,6 +40,7 @@
   <hook type="after_plugin_install" src="hooks/android/addResourcesClassImport.js" />
 
   <platform name="android">
+    <framework src="src/android/e-mission-datacollection.gradle" custom="true" type="gradleReference" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="DataCollection">
@@ -57,6 +58,7 @@
         <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
         <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
         <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+        <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -72,13 +74,15 @@
         <receiver
             android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="local.transition.initialize"></action>
                 <action android:name="local.transition.exited_geofence"></action>
                 <action android:name="local.transition.stopped_moving"></action>
                 <action android:name="local.transition.stop_tracking"></action>
                 <action android:name="local.transition.start_tracking"></action>
+                <action android:name="local.transition.ble_beacon_found"></action>
+                <action android:name="local.transition.ble_beacon_lost"></action>
                 <action android:name="local.transition.tracking_error"></action>
             </intent-filter>
         </receiver>
@@ -120,6 +124,16 @@
 		</service>
 		<service
 		    android:name="edu.berkeley.eecs.emission.cordova.tracker.location.actions.GeofenceLocationIntentService"
+		    android:enabled="true"
+		    android:exported="false">
+		</service>
+    <service
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothService"
+		    android:enabled="true"
+		    android:exported="false">
+		</service>
+    <service
+		    android:name="edu.berkeley.eecs.emission.cordova.tracker.bluetooth.BluetoothMonitoringService"
 		    android:enabled="true"
 		    android:exported="false">
 		</service>
@@ -168,9 +182,12 @@
     <source-file src="src/android/wrapper/Transition.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/LocationTrackingConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Battery.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/wrapper/BluetoothBLE.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/ConsentConfig.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/Timer.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
     <source-file src="src/android/wrapper/StatsEvent.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/wrapper"/>
+    <source-file src="src/android/bluetooth/BluetoothService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/bluetooth"/>
+    <source-file src="src/android/bluetooth/BluetoothMonitoringService.java" target-dir="src/edu/berkeley/eecs/emission/cordova/tracker/bluetooth"/>
     <resource-file src="res/android/statemachine.xml" target="res/values/statemachine.xml" />
     <resource-file src="res/android/values/dc_strings.xml" target="res/values/dc_strings.xml"/>
   </platform>
@@ -212,6 +229,10 @@
         <false/>
     </config-file>
 
+    <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
+      <string>We need Bluetooth access to interact with BLE beacons for the fleet version of the app.</string>
+    </config-file>
+
     <podspec>
       <config>
         <source url="https://cdn.cocoapods.org/"/>
@@ -242,6 +263,7 @@
     <header-file src="src/ios/Wrapper/Transition.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/LocationTrackingConfig.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/Battery.h" target-dir="Wrapper"/>
+    <header-file src="src/ios/Wrapper/BluetoothBLE.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/ConsentConfig.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/Timer.h" target-dir="Wrapper"/>
     <header-file src="src/ios/Wrapper/StatsEvent.h" target-dir="Wrapper"/>
@@ -264,6 +286,7 @@
     <source-file src="src/ios/Wrapper/Transition.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/LocationTrackingConfig.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Battery.m" target-dir="Wrapper"/>
+    <source-file src="src/ios/Wrapper/BluetoothBLE.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/ConsentConfig.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/Timer.m" target-dir="Wrapper"/>
     <source-file src="src/ios/Wrapper/StatsEvent.m" target-dir="Wrapper"/>

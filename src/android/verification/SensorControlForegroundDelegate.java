@@ -420,6 +420,37 @@ public class SensorControlForegroundDelegate {
         }
     }
 
+    public void checkBluetoothPermissions(CallbackContext cordovaCallback) {
+      boolean validPerms = SensorControlChecks.checkBluetoothPermissions(cordova.getActivity());
+      if(validPerms) {
+        cordovaCallback.success();
+      } else {
+        cordovaCallback.error(cordova.getActivity().getString(R.string.activity_permission_off));
+      }
+    }
+
+    /**
+     * Check to see if the user has the ability to scan for bluetooth devices, if not prompt them asking for it.
+     * 
+     * @param cordovaCallback
+     */
+    public void checkAndPromptBluetoothScanPermissions(CallbackContext cordovaCallback) {
+      boolean validPerms = SensorControlChecks.checkBluetoothPermissions(cordova.getActivity());
+      if(validPerms) {
+        SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+        cordovaCallback.success();
+      } else {
+        Log.d(cordova.getActivity(), TAG, "User has not enabled bluetooth scan, requesting now...");
+        this.cordovaCallback = cordovaCallback;
+        this.permissionChecker = getPermissionChecker(
+          SensorControlConstants.ENABLE_BLUETOOTH_SCAN,
+          SensorControlConstants.BLUETOOTH_SCAN,
+          "Please enable \'Nearby devices\' permission to use the scanner.",
+          "Please enable \'Nearby devices\' permission to use the scanner.");
+        this.permissionChecker.requestPermission();
+      }
+    }
+
     public void checkMotionActivityPermissions(CallbackContext cordovaCallback) {
       boolean validPerms = SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity());
       if(validPerms) {
@@ -647,6 +678,22 @@ public class SensorControlForegroundDelegate {
                   this.permissionChecker.generateErrorCallback();
                 }
                 break;
+            case SensorControlConstants.ENABLE_BLUETOOTH_SCAN:
+                if (cordovaCallback == null) {
+                  this.permissionChecker = null;
+                  break;
+                }
+
+                Log.d(cordova.getActivity(), TAG, "Got return for bluetooth scanning permission...");
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                  Log.d(cordova.getActivity(), TAG, "Bluetooth scanning is allowed!");
+                  cordovaCallback.success();
+                } else if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                  Log.d(cordova.getActivity(), TAG, "Bluetooth scanning is not allowed!");
+                  this.permissionChecker.generateErrorCallback();
+                }
+                this.permissionChecker = null;
+                break;
             default:
                 Log.e(cordova.getActivity(), TAG, "Unknown permission code "+requestCode+" ignoring");
         }
@@ -709,6 +756,15 @@ public class SensorControlForegroundDelegate {
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got permission callback from launching app settings");
         if (SensorControlChecks.checkMotionActivityPermissions(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+          cordovaCallback.success();
+        } else {
+          permissionChecker.generateErrorCallback();
+        }
+        permissionChecker = null;
+        break;
+      case SensorControlConstants.ENABLE_BLUETOOTH_SCAN:
+        if (SensorControlChecks.checkBluetoothPermissions(cordova.getActivity())) {
           SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();
         } else {

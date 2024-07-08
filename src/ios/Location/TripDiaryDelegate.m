@@ -12,6 +12,7 @@
 #import "TripDiaryActions.h"
 #import "LocalNotificationManager.h"
 #import "SimpleLocation.h"
+#import "BluetoothBLE.h"
 #import "LocationTrackingConfig.h"
 #import "ConfigManager.h"
 #import "BEMAppDelegate.h"
@@ -125,7 +126,6 @@
                                                @"Location tracking failed with error %@", error]];
 }
 
-
 - (void)locationManager:(CLLocationManager *)manager
           didExitRegion:(CLRegion *)region {
     if([region.identifier compare:kCurrGeofenceID] != NSOrderedSame) {
@@ -135,6 +135,26 @@
                             showUI:TRUE];
 
     }
+    // FOR FLEET VERSION: Check BLE Region exit 
+    if([region.identifier compare:OpenPATHBeaconIdentifier] == NSOrderedSame) {
+        // Save the exit data before stopping ranging and generating event
+        BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeaconRegion:(CLBeaconRegion*) region andEventType:@"REGION_EXIT"];
+        [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+
+        NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+        CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
+        
+        [manager stopRangingBeaconsSatisfyingConstraint:constraint];
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionBeaconLost];
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Exited range of beacon: %@ in state %@",
+                                    region.identifier, 
+                                    [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                        showUI:TRUE];
+        return; 
+    }
+
     // Since we are going to keep the geofence around during ongoing tracking to ensure that
     // we are re-initalized, we will keep getting exit messages. We need to ignore if we are not
     // in the "waiting_for_trip_start" state.
@@ -303,5 +323,61 @@
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Got new heading %@", newHeading]];
 }
+
+// After scanning is set up (as above), this will be called when a given beacon is in range
+- (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
+    // We only monitor the entrance of BLE Regions...
+    if([region.identifier compare:OpenPATHBeaconIdentifier] == NSOrderedSame) {
+        // Save the entry data before starting ranging and generating event
+        // TODO: unify the checks here and in the exit region. Why are we checking for isKindOFClass here but not in the exit code?
+        if ([region isKindOfClass:[CLBeaconRegion class]]) {
+            BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeaconRegion:(CLBeaconRegion*) region andEventType:@"REGION_ENTER"];
+            [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+
+            if ([CLLocationManager isRangingAvailable]) {
+                NSUUID *UUID = [[NSUUID alloc] initWithUUIDString:OpenPATHBeaconUUID];
+                CLBeaconIdentityConstraint *constraint = [[CLBeaconIdentityConstraint alloc] initWithUUID:UUID];
+                // Begin RangingBeacons -- if the beacon is found, then we'll transition to start tracking
+                [manager startRangingBeaconsSatisfyingConstraint:constraint];
+
+                return;
+            }
+            else {
+                [LocalNotificationManager addNotification:
+                    [NSString stringWithFormat:@"Ranging not available for Beacon Region %@ in state %@",
+                        region.identifier, 
+                        [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                            showUI:TRUE];
+            }
+        }
+    }
+     [LocalNotificationManager addNotification:
+        [NSString stringWithFormat:@"Received enterance for region %@ in state %@, ignoring",
+            region.identifier, 
+            [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                showUI:TRUE];
+}
+
+- (void)locationManager:(CLLocationManager *)manager 
+        didRangeBeacons:(NSArray<CLBeacon *> *)beacons 
+        satisfyingConstraint:(CLBeaconIdentityConstraint *)beaconConstraint {
+    
+    for (int i = 0; i < beacons.count; i++) {
+        BluetoothBLE* currBeaconRegion = [[BluetoothBLE alloc] initWithCLBeacon:beacons[i]];
+        [[BuiltinUserCache database] putSensorData:@"key.usercache.bluetooth_ble" value:currBeaconRegion];
+    }
+
+    if (_tdsm.currState != kOngoingTripState) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                            object:CFCTransitionBeaconFound];
+        [LocalNotificationManager addNotification:
+            [NSString stringWithFormat:@"Successfully found Beacons: %@ in state %@",
+                                    beacons, 
+                                    [TripDiaryStateMachine getStateName:_tdsm.currState]]
+                                                        showUI:TRUE];
+    }
+
+}
+
 
 @end

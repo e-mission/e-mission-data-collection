@@ -51,6 +51,16 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "isValidFitnessPermissions", []);
         });
     },
+    fixBluetoothPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "fixBluetoothPermissions", []);
+        });
+    },
+    isValidBluetoothPermissions: function () {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "isValidBluetoothPermissions", []);
+        });
+    },
     fixShowNotifications: function () {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "fixShowNotifications", []);
@@ -122,11 +132,25 @@ var DataCollection = {
             exec(resolve, reject, "DataCollection", "forceTransition", [generalTransitionName]);
         });
     },
+    mockBLEObjects: function (eventType, uuid, major, minor, nObjects) {
+        // major and minor are optional, so we check if they are defined and
+        // put in a default value if they don't this allows us to have a nice
+        // external interface without running into null pointers internally
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "mockBLEObjects", [eventType, uuid,
+                major? major : -1, minor? minor: -1, nObjects]);
+        });
+    },
     handleSilentPush: function() {
         return new Promise(function(resolve, reject) {
             exec(resolve, reject, "DataCollection", "handleSilentPush",
                  []);
         })
+    },
+    bluetoothScan: function() {
+        return new Promise(function(resolve, reject) {
+            exec(resolve, reject, "DataCollection", "bluetoothScan", []);
+        });
     }
 }
 
