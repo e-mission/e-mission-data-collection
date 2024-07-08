@@ -24,6 +24,7 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import android.content.Context;
@@ -66,14 +67,21 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 		Log.d(this, TAG, "Beginning checks for trip disappearance...");
 
 		// Check to see if the foreground service is still alive
-		Context ctxt = getApplicationContext();
+		final Context ctxt = getApplicationContext();
 		TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
 
 		// Check if can retrieve current location
 		OnCompleteListener<LocationSettingsResponse> callback = new OnCompleteListener<LocationSettingsResponse>() {
 			@Override // no-op
 			public void onComplete(Task<LocationSettingsResponse> task) {
-                           Log.d(this, TAG, "While checking location status in activity response, received callback with : " + task);
+				if (task.isSuccessful()) {
+					LocationSettingsStates result = task.getResult().getLocationSettingsStates();
+					// Docs for what we can check using LocationSettingsStates https://developers.google.com/android/reference/com/google/android/gms/location/LocationSettingsStates
+					Log.d(ctxt, TAG, "While checking location status in activity response, got responses... isGpsUsable(): " + result.isGpsUsable() + " isLocationUsable(): " + result.isLocationUsable() + " isNetworkLocationUsable(): " + result.isNetworkLocationUsable());
+				} else {
+					Exception error = task.getException();
+					Log.d(ctxt, TAG, "While checking location status in activity response, got exception... " + error.getMessage());
+				}
 			}
 		};
 		SensorControlChecks.checkLocationSettings(this, callback);
