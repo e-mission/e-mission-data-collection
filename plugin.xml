@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.8.8">
+        version="1.8.9">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -54,6 +54,8 @@
         <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
         <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
         <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+        <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+        <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
         <!-- COARSE_LOCATION obfuscates the location to a city block, change to FINE_LOCATION for accuracy -->
         <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
         <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
@@ -109,7 +111,7 @@
         <service
             android:name="edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService"
             android:enabled="true"
-            android:foregroundServiceType="location"
+            android:foregroundServiceType="location|health"
             android:exported="false">
         </service>
         <service
