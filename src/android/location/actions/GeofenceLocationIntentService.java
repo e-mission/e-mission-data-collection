@@ -111,8 +111,7 @@ public class GeofenceLocationIntentService extends IntentService {
     }
 
     private void broadcastLoc(Location loc) {
-        Intent answerIntent = new Intent(INTENT_NAME);
-        answerIntent.setPackage(this.getPackageName());
+        Intent answerIntent = new ExplicitIntent(this, INTENT_NAME);
         answerIntent.putExtra(INTENT_RESULT_KEY, loc);
         Log.i(this, TAG, "broadcasting intent "+answerIntent);
         LocalBroadcastManager.getInstance(this).sendBroadcast(answerIntent);
