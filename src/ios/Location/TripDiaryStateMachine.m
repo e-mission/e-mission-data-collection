@@ -365,11 +365,17 @@ static NSString * const kCurrState = @"CURR_STATE";
 
     } else if ([transition isEqualToString:CFCTransitionVisitEnded]) { 
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
+            if (!self.isFleet) {
             // We first start tracking and then delete the geofence to make sure that we are always tracking something
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
             [TripDiaryActions deleteGeofence:self.locMgr];
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripStarted];
+            } else {
+                NSLog(@"Got transition %@ in state %@ with fleet mode, ignoring, no beacon found",
+                      transition,
+                      [TripDiaryStateMachine getStateName:self.currState]);
+            }
         }
     } else if ([transition isEqualToString:CFCTransitionTripStarted]) {
         [self setState:kOngoingTripState withChecks:TRUE];

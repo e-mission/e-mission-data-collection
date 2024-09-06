@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.8.9">
+        version="1.8.10">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
