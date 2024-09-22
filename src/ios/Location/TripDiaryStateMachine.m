@@ -129,7 +129,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     // currently only in `BEMDataCollection initWithConsent`
     // https://github.com/e-mission/e-mission-docs/issues/735#issuecomment-1179774103
     
-    if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState) {
+    if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState && !self.isFleet) {
         /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
          to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes
          it easier for us to ignore silent push as well as the transitions generated from here.
@@ -240,7 +240,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         // Start location services so that we can get the current location
         // We will receive the first location asynchronously
         [TripDiaryActions createGeofenceHere:self.locMgr withGeofenceLocator:_geofenceLocator inState:self.currState];
-        } else {
+        } else if (!self.isFleet) {
             // Technically, we don't need this since we move to the ongoing state in the init code.
             // but if tracking is stopped, we can skip that, and then if we turn it on again, we
             // need to turn everything on here as well
@@ -261,11 +261,9 @@ static NSString * const kCurrState = @"CURR_STATE";
             [TripDiaryActions deleteGeofence:self.locMgr];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Got transition %@ in state %@ with fleet mode, not sure why this happened, starting location tracking anyway",
+                                                       @"ERROR: Got transition %@ in state %@ without fleet mode",
                                                        transition,
                                                        [TripDiaryStateMachine getStateName:self.currState]]];
-            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
-            [TripDiaryActions deleteGeofence:self.locMgr];
 
         }
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
@@ -361,11 +359,9 @@ static NSString * const kCurrState = @"CURR_STATE";
             [TripDiaryActions deleteGeofence:self.locMgr];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                                       @"Got transition %@ in state %@ with fleet mode, not sure why this happened, starting location tracking anyway",
+                                                       @"ERROR: Got transition %@ in state %@ without fleet mode",
                                                        transition,
                                                        [TripDiaryStateMachine getStateName:self.currState]]];
-            [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
-            [TripDiaryActions deleteGeofence:self.locMgr];
 
         }
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
