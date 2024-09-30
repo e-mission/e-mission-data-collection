@@ -281,8 +281,7 @@ public class TripDiaryStateMachineService extends Service {
                 if (isFleet) {
                     Log.d(this, TAG, "Found beacon in fleet mode, starting location tracking");
                 } else {
-                    Log.e(this, TAG, "ERROR: Found beacon in non-fleet mode, not starting location tracking");
-                    return;
+                    Log.e(this, TAG, "Found beacon in non-fleet mode, not sure why this happened, starting location tracking anyway");
                 }
             }
 
