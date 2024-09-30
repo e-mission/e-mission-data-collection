@@ -13,6 +13,9 @@ import com.google.android.gms.tasks.Tasks;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
@@ -48,6 +51,8 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     private String mTransition = null;
     private SharedPreferences mPrefs = null;
     private ForegroundServiceComm mComm = null;
+    private JSONObject config;
+    private boolean isFleet = false;
 
     public TripDiaryStateMachineServiceOngoing() {
         super();
@@ -57,6 +62,16 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
         mComm = new ForegroundServiceComm(this);
+
+        try {
+            JSONObject c = (JSONObject) UserCacheFactory.getUserCache(this).getDocument("config/app_ui_config", false);   
+            config = c;
+            isFleet = (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only"));
+        } catch (JSONException e) {
+            Log.d(this, TAG, "Error reading config! " + e);
+            // TODO: Need to figure out what to do about the fleet flag when the config is invalid
+            // Original implementation by @louisg1337 had isFleet = true in that case (location tracking would not stop)
+        }
     }
 
     @Override
@@ -141,7 +156,11 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
         // - have initialize function as a reset, which stops any current stuff and starts the new one
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
                 BatteryUtils.getBatteryInfo(ctxt));
-        if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
+
+        if (isFleet) {
+            Log.d(this, TAG, "ERROR: Duty cycling turned off in fleet mode, stopping tracking");
+            stopEverything(ctxt, ctxt.getString(R.string.state_tracking_stopped));
+        } else if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, actionString);
@@ -149,7 +168,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
             handleWaitingForTripStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
             handleOngoing(ctxt, actionString);
-        } if (currState.equals(getString(R.string.state_tracking_stopped))) {
+        } else if (currState.equals(getString(R.string.state_tracking_stopped))) {
             handleTrackingStopped(ctxt, actionString);
         }
     }
