@@ -32,7 +32,7 @@
     <string name="activity_permission_off">Activity permission off, please fix</string>
     <string name="activity_permission_off_app_open">Activity permission off, please fix in app settings</string>
     <string name="activity_permission_off_enable">Activity permission off, click to enable</string>
-    <string name="notifications_blocked">Notifications blocked, please enable</string>
+    <string name="notifications_blocked">Notifications blocked, you will not be able to receive reminders or alerts</string>
     <string name="notifications_paused">Notifications paused. This can only be fixed by the app developer. Please report to your admin.</string>
     <string name="unused_apps_restricted">Please allow this app to read sensor data even if you launch it infrequently.</string>
     <string name="fix_app_status_title">Please update permissions</string>

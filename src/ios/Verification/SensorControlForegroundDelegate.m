@@ -272,8 +272,7 @@
                                    resultWithStatus:CDVCommandStatus_OK];
         [commandDelegate sendPluginResult:result callbackId:callbackId];
     } else {
-        NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked_app_open", @"DCLocalizable", nil);
-        [self openAppSettings];
+        NSString* msg = NSLocalizedStringFromTable(@"notifications_blocked", @"DCLocalizable", nil);
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_ERROR
                                    messageAsString:msg];
