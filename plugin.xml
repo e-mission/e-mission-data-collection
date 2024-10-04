@@ -212,19 +212,19 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysAndWhenInUseUsageDescription">
-        <string>We use your data to create an automatic trip diary</string>
+        <string>OpenPATH requires "Precise" location access allowed "Always" to create an automatic trip diary</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
-        <string>We use your data to create an automatic trip diary</string>
+        <string>OpenPATH also requires "Always" location access to track your trips in the background</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
-        <string>We use your data to create an automatic trip diary</string>
+        <string>OpenPATH requires "Precise" location access allowed "While Using App" to create an automatic trip diary</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSMotionUsageDescription">
-        <string>Our app uses the motion sensors to determine the transportation mode for the sections of your trip</string>
+        <string>OpenPATH uses your phone's motion sensors to determine the modes of transportation during your trips</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="ITSAppUsesNonExemptEncryption">
@@ -232,7 +232,7 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
-      <string>We need Bluetooth access to interact with BLE beacons for the fleet version of the app.</string>
+      <string>OpenPATH requires Bluetooth access to interact with BLE beacons for the fleet version of the app</string>
     </config-file>
 
     <podspec>

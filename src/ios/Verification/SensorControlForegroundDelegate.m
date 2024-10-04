@@ -153,6 +153,16 @@
             CDVPluginResult* result = [CDVPluginResult
                                        resultWithStatus:CDVCommandStatus_OK];
             [commandDelegate sendPluginResult:result callbackId:callbackId];
+        } else if (status == kCLAuthorizationStatusAuthorizedWhenInUse) {
+            if (IsAtLeastiOSVersion(@"13.4")) {
+                NSLog(@"iOS >=13.4 detected and 'whenInUse' authorized, need second step to request 'always'");
+                [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
+                [[TripDiaryStateMachine instance].locMgr requestAlwaysAuthorization];
+                if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateInactive) {
+                    NSLog(@"App is active, i.e. request did not launch (happens if the user chose 'Allow Once' in step 1). Launching app settings to manually enable 'Always'");
+                    [self openAppSettings];
+                }
+            }
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"status %d != always %d, returning error", status, kCLAuthorizationStatusAuthorizedAlways]];
             NSString* msg = NSLocalizedStringFromTable(@"location_permission_off_app_open",         @"DCLocalizable", nil);
@@ -281,25 +291,39 @@
 }
 
 -(void)promptForPermission:(CLLocationManager*)locMgr {
-    if (IsAtLeastiOSVersion(@"13.0")) {
-        NSLog(@"iOS 13+ detected, launching UI settings to easily enable always");
+    if (IsAtLeastiOSVersion(@"13.4")) {
+        NSLog(@"iOS >=13.4 detected, using two-step approach of 'when in use' first and then 'always'");
+        if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined) {
+            NSLog(@"Current location authorization = %d, when in use = %d, requesting when in use",
+                  [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedWhenInUse);
+            [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
+            [locMgr requestWhenInUseAuthorization];
+        } else if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusAuthorizedWhenInUse) {
+            NSLog(@"Current location authorization = %d, always = %d, requesting always",
+                  [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
+            [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
+            [locMgr requestAlwaysAuthorization];
+            if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateInactive) {
+                NSLog(@"App is active, i.e. request did not launch (happens if the user chose 'Allow Once' in step 1). Launching app settings to manually enable 'Always'");
+                [self openAppSettings];
+            }
+        } else {
+            [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
+            [self openAppSettings];
+        }
+    } else if (IsAtLeastiOSVersion(@"13.0")) {
+        NSLog(@"iOS >=13,<13.4 detected, launching UI settings to manually enable 'always'");
         // we want to leave the registration in the prompt for permission, since we don't want to register callbacks when we open the app settings for other reasons
         [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
         [[TripDiaryStateMachine instance].locMgr startUpdatingLocation];
         [self openAppSettings];
-    }
-    else {
+    } else {
+        NSLog(@"iOS <13 detected, simply requesting 'always'");
         if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined) {
-            if ([CLLocationManager instancesRespondToSelector:@selector(requestAlwaysAuthorization)]) {
-                NSLog(@"Current location authorization = %d, always = %d, requesting always",
-                      [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
-                [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
-                [locMgr requestAlwaysAuthorization];
-            } else {
-                // TODO: should we remove this? Not sure when it will ever be called, given that
-                // requestAlwaysAuthorization is available in iOS8+
-                [LocalNotificationManager addNotification:@"Don't need to request authorization, system will automatically prompt for it"];
-            }
+            NSLog(@"Current location authorization = %d, always = %d, requesting always",
+                  [CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
+            [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
+            [locMgr requestAlwaysAuthorization];
         } else {
             // we want to leave the registration in the prompt for permission, since we don't want to register callbacks when we open the app settings for other reasons
             [[TripDiaryStateMachine delegate] registerForegroundDelegate:self];
@@ -346,11 +370,12 @@ NSMutableArray* foregroundDelegateList;
     if (foregroundDelegateList.count > 0) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"%lu foreground delegates found, calling didChangeAuthorizationStatus to return the new value %d", (unsigned long)foregroundDelegateList.count, status]];
 
+        int originalDelegateCount = (int)foregroundDelegateList.count;
         for (id currDelegate in foregroundDelegateList) {
             [currDelegate didChangeAuthorizationStatus:(CLAuthorizationStatus)status];
         }
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Notified all foreground delegates, removing all of them"]];
-        [foregroundDelegateList removeAllObjects];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Notified all foreground delegates, removing %d delegates", originalDelegateCount]];
+        [foregroundDelegateList removeObjectsInRange:NSMakeRange(0, originalDelegateCount)];
     } else {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"No foreground delegate found, calling SensorControlBackgroundChecker from didChangeAuthorizationStatus to verify location service status and permission"]];
         [SensorControlBackgroundChecker checkAppState];
