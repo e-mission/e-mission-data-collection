@@ -17,9 +17,8 @@
     <!-- TripDiaryStateMachineService and Ongoing-->
     <string name="success_moving_new_state">Success moving to %1$s</string>
     <string name="failed_moving_new_state">Failed moving to %1$s</string>
-    <string name="location_permission_off">Insufficient location permissions, please fix</string>
-    <string name="location_permission_off_app_open">Insufficient location permissions, please fix in app settings</string>
-    <string name="location_permission_off_enable">Location permission off, click to enable</string>
+    <string name="location_permission_off">Insufficient permissions, please allow 'Always' and 'Precise' location access</string>
+    <string name="location_permission_off_app_open">Insufficient permissions, please select 'Always' and 'Precise' location access in app settings</string>
     <string name="location_permission_intermediary_title">Permissions Needed!</string>
     <string name="location_permission_intermediary_message">Further location permission needed. In order to use this app you need to click \"Allow all the time\" on the next page.</string>
     <string name="location_feedback_both_off">Please make sure \"Allow all the time\" and \"Precise Location\" are turned on in the settings.</string>
