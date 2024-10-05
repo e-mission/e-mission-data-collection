@@ -259,10 +259,17 @@
 - (void)checkAndPromptNotificationPermission {
     NSString* callbackId = [command callbackId];
     @try {
-        if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
-            UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"HasPromptedForUserNotification"]) {
+            NSLog(@"Already prompted request for user notification. Launching app settings.");
             [AppDelegate registerForegroundDelegate:self];
-            [[UIApplication sharedApplication] registerUserNotificationSettings:requestedSettings];
+            [self openAppSettings];
+        } else {
+            if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
+                NSLog(@"Requesting user notification settings");
+                UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
+                [AppDelegate registerForegroundDelegate:self];
+                [[UIApplication sharedApplication] registerUserNotificationSettings:requestedSettings];
+            }
         }
     }
     @catch (NSException *exception) {
@@ -275,6 +282,7 @@
 }
 
 - (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)newSettings {
+    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"HasPromptedForUserNotification"];
     NSString* callbackId = [command callbackId];
     UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
     if (requestedSettings.types == newSettings.types) {
