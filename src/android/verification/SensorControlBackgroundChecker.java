@@ -107,7 +107,6 @@ public class SensorControlBackgroundChecker {
         SensorControlChecks.checkLocationPermissions(ctxt),
         SensorControlChecks.checkIgnoreBatteryOptimizations(ctxt),
         SensorControlChecks.checkMotionActivityPermissions(ctxt),
-        SensorControlChecks.checkNotificationsEnabled(ctxt),
       };
       boolean allOtherChecksPass = true;
       for (boolean check: allOtherChecks) {

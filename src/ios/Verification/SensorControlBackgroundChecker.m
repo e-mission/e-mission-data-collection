@@ -47,8 +47,7 @@
       @([TripDiarySensorControlChecks checkLocationSettings]),
       @([TripDiarySensorControlChecks checkLocationPermissions]),
       @([TripDiarySensorControlChecks checkMotionActivitySettings]),
-      @([TripDiarySensorControlChecks checkMotionActivityPermissions]),
-      @([TripDiarySensorControlChecks checkNotificationsEnabled])
+      @([TripDiarySensorControlChecks checkMotionActivityPermissions])
     ];
     BOOL allChecksPass = TRUE;
     for (NSNumber* check in allChecks) {
