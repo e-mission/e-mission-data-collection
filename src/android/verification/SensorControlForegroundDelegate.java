@@ -5,6 +5,7 @@ import edu.berkeley.eecs.emission.R;
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
+import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 
 /*
@@ -775,6 +776,9 @@ public class SensorControlForegroundDelegate {
       case SensorControlConstants.ENABLE_NOTIFICATIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got notification callback from launching app settings");
+        JSONObject jo = new JSONObject();
+        jo.put("value", true);
+        UserCacheFactory.getUserCache(cordova.getActivity()).putLocalStorage("HasRequestedNotificationPermission", jo);
         if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
           SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
           cordovaCallback.success();

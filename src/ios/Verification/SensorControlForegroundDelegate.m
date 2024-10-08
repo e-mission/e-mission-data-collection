@@ -4,6 +4,7 @@
 #import "LocalNotificationManager.h"
 #import "BEMAppDelegate.h"
 #import "BEMActivitySync.h"
+#import "BEMBuiltinUserCache.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -259,7 +260,7 @@
 - (void)checkAndPromptNotificationPermission {
     NSString* callbackId = [command callbackId];
     @try {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"HasPromptedForUserNotification"]) {
+        if ([[BuiltinUserCache database] getLocalStorage:@"HasRequestedNotificationPermission" withMetadata:NO] != NULL) {
             NSLog(@"Already prompted request for user notification. Launching app settings.");
             [AppDelegate registerForegroundDelegate:self];
             [self openAppSettings];
@@ -282,7 +283,8 @@
 }
 
 - (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)newSettings {
-    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"HasPromptedForUserNotification"];
+    [[BuiltinUserCache database] putLocalStorage:@"HasRequestedNotificationPermission"
+                                      jsonValue:@{ @"value" : @(TRUE) }];
     NSString* callbackId = [command callbackId];
     UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
     if (requestedSettings.types == newSettings.types) {
