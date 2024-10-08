@@ -129,14 +129,20 @@ static NSString * const kCurrState = @"CURR_STATE";
     // currently only in `BEMDataCollection initWithConsent`
     // https://github.com/e-mission/e-mission-docs/issues/735#issuecomment-1179774103
     
-    if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState && !self.isFleet) {
-        /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
-         to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes
-         it easier for us to ignore silent push as well as the transitions generated from here.
-         */
-        [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
-        [self setState:kOngoingTripState withChecks:TRUE];
-        [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr];
+    if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState) {
+        if (!self.isFleet) {
+            /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
+             to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes
+             it easier for us to ignore silent push as well as the transitions generated from here.
+             */
+            [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
+            [self setState:kOngoingTripState withChecks:TRUE];
+            [TripDiaryActions startTracking:CFCTransitionExitedGeofence withLocationMgr:self.locMgr];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"ERROR: Duty cycling turned off in fleet mode, stopping tracking"]];
+            [self setState:kTrackingStoppedState withChecks:TRUE];
+        }
     }
 
     return [super init];
@@ -247,6 +253,10 @@ static NSString * const kCurrState = @"CURR_STATE";
             [TripDiaryActions oneTimeInitTracking:transition withLocationMgr:self.locMgr];
             [self setState:kOngoingTripState withChecks:TRUE];
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                                       @"ERROR: Duty cycling turned off in fleet mode, stopping tracking"]];
+            [self setState:kTrackingStoppedState withChecks:TRUE];
         }
     } else if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
