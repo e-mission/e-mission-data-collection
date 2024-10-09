@@ -5,7 +5,6 @@ import edu.berkeley.eecs.emission.R;
 
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
-import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 
 
 /*
@@ -777,18 +776,11 @@ public class SensorControlForegroundDelegate {
       case SensorControlConstants.ENABLE_NOTIFICATIONS:
         Log.d(mAct, TAG, requestCode + " is our code, handling callback");
         Log.d(mAct, TAG, "Got notification callback from launching app settings");
-        try {
-            JSONObject jo = new JSONObject();
-            jo.put("ts", System.currentTimeMillis() / 1000);
-            UserCacheFactory.getUserCache(cordova.getActivity()).putLocalStorage(HAS_REQUESTED_NOTIFS_KEY, jo);
-            if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
-              SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
-              cordovaCallback.success();
-            } else {
-              cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
-            }
-        } catch (JSONException e) {
-          cordovaCallback.error(e.getLocalizedMessage());
+        if (SensorControlChecks.checkNotificationsEnabled(cordova.getActivity())) {
+          SensorControlBackgroundChecker.restartFSMIfStartState(cordova.getActivity());
+          cordovaCallback.success();
+        } else {
+          cordovaCallback.error(cordova.getActivity().getString(R.string.notifications_blocked));
         }
         break;
       case SensorControlConstants.REMOVE_UNUSED_APP_RESTRICTIONS:

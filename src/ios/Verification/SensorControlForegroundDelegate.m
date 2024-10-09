@@ -4,8 +4,6 @@
 #import "LocalNotificationManager.h"
 #import "BEMAppDelegate.h"
 #import "BEMActivitySync.h"
-#import "BEMBuiltinUserCache.h"
-#import "DataUtils.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -264,11 +262,12 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
     NSString* callbackId = [command callbackId];
     @try {
         // If we have prompted in the past, the popup will not work. Instead, we'll open app settings
-        if ([[BuiltinUserCache database] getLocalStorage:HAS_REQUESTED_NOTIFS_KEY withMetadata:NO] != NULL) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:HAS_REQUESTED_NOTIFS_KEY]) {
             NSLog(@"Already prompted request for user notification. Launching app settings.");
             [AppDelegate registerForegroundDelegate:self];
             [self openAppSettings];
         } else {
+            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HAS_REQUESTED_NOTIFS_KEY];
             if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
                 NSLog(@"Requesting user notification settings");
                 UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
@@ -287,9 +286,6 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
 }
 
 - (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)newSettings {
-    NSDate* now = [NSDate date];
-    [[BuiltinUserCache database] putLocalStorage:HAS_REQUESTED_NOTIFS_KEY
-                                    jsonValue:@{ @"ts": @(now.timeIntervalSince1970) }];
     NSString* callbackId = [command callbackId];
     UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
     if (requestedSettings.types == newSettings.types) {
