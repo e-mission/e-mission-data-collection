@@ -4,6 +4,8 @@
 #import "LocalNotificationManager.h"
 #import "BEMAppDelegate.h"
 #import "BEMActivitySync.h"
+#import "BEMBuiltinUserCache.h"
+#import "DataUtils.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -12,6 +14,8 @@
     CDVInvokedUrlCommand* command;
 }
 @end
+
+static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPermission";
 
 @implementation SensorControlForegroundDelegate
 
@@ -259,7 +263,8 @@
 - (void)checkAndPromptNotificationPermission {
     NSString* callbackId = [command callbackId];
     @try {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"HasPromptedForUserNotification"]) {
+        // If we have prompted in the past, the popup will not work. Instead, we'll open app settings
+        if ([[BuiltinUserCache database] getLocalStorage:HAS_REQUESTED_NOTIFS_KEY withMetadata:NO] != NULL) {
             NSLog(@"Already prompted request for user notification. Launching app settings.");
             [AppDelegate registerForegroundDelegate:self];
             [self openAppSettings];
@@ -282,7 +287,9 @@
 }
 
 - (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)newSettings {
-    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"HasPromptedForUserNotification"];
+    NSDate* now = [NSDate date];
+    [[BuiltinUserCache database] putLocalStorage:HAS_REQUESTED_NOTIFS_KEY
+                                    jsonValue:@{ @"ts": @(now.timeIntervalSince1970) }];
     NSString* callbackId = [command callbackId];
     UIUserNotificationSettings* requestedSettings = [TripDiarySensorControlChecks REQUESTED_NOTIFICATION_TYPES];
     if (requestedSettings.types == newSettings.types) {
