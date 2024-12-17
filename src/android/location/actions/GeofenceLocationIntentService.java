@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 
 /**
@@ -111,8 +112,7 @@ public class GeofenceLocationIntentService extends IntentService {
     }
 
     private void broadcastLoc(Location loc) {
-        Intent answerIntent = new Intent(INTENT_NAME);
-        answerIntent.setPackage(this.getPackageName());
+        Intent answerIntent = new ExplicitIntent(this, INTENT_NAME);
         answerIntent.putExtra(INTENT_RESULT_KEY, loc);
         Log.i(this, TAG, "broadcasting intent "+answerIntent);
         LocalBroadcastManager.getInstance(this).sendBroadcast(answerIntent);

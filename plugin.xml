@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="cordova-plugin-em-datacollection"
-        version="1.9.2">
+        version="1.9.5">
 
   <name>DataCollection</name>
   <description>Background data collection FTW! This is the part that I really
@@ -212,19 +212,19 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysAndWhenInUseUsageDescription">
-        <string>We use your data to create an automatic trip diary</string>
+        <string>To create an automatic trip diary, "Precise" location access must be "Always" allowed</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationAlwaysUsageDescription">
-        <string>We use your data to create an automatic trip diary</string>
+        <string>To track your trips in the background, location access must be "Always" allowed</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
-        <string>We use your data to create an automatic trip diary</string>
+        <string>To create an automatic trip diary, "Precise" location access must be allowed "While Using App"</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSMotionUsageDescription">
-        <string>Our app uses the motion sensors to determine the transportation mode for the sections of your trip</string>
+        <string>To determine the modes of transportation during your trips, the app must access your phone's motion sensors</string>
     </config-file>
 
     <config-file target="*-Info.plist" parent="ITSAppUsesNonExemptEncryption">
@@ -232,7 +232,7 @@
     </config-file>
 
     <config-file target="*-Info.plist" parent="NSBluetoothAlwaysUsageDescription">
-      <string>We need Bluetooth access to interact with BLE beacons for the fleet version of the app.</string>
+      <string>To interact with BLE beacons for the fleet version of the app, Bluetooth access is required</string>
     </config-file>
 
     <podspec>

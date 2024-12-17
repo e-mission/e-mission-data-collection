@@ -53,6 +53,7 @@ import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 
 public class SensorControlForegroundDelegate {
     public static final String TAG = "SensorPermissionsAndSettingsForegroundDelegate";
+    private static final String HAS_REQUESTED_NOTIFS_KEY = "HasRequestedNotificationPermission";
 
     private CordovaPlugin plugin = null;
     private CordovaInterface cordova = null;

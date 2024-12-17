@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-em-datacollection",
-  "version": "1.7.8",
+  "version": "1.9.2",
   "description": "The main tracking for the e-mission platform",
   "license": "BSD-3-clause",
   "cordova": {

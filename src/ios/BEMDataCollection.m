@@ -11,6 +11,8 @@
 #import "SensorControlBackgroundChecker.h"
 #import <CoreLocation/CoreLocation.h>
 
+static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPermission";
+
 @implementation BEMDataCollection
 
 - (void)pluginInitialize
@@ -48,6 +50,18 @@
 
 - (void)initWithConsent {
     self.tripDiaryStateMachine = [TripDiaryStateMachine instance];
+    // Backwards compat hack to ensure that, if an existing user, with a user
+    // who installed the app before we started filling in
+    // `HasRequestedNotificationPermission` flag, and tries to re-enable
+    // notifications after disabling them through the settings
+    // https://github.com/e-mission/e-mission-docs/issues/1094#issuecomment-2403052620
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:HAS_REQUESTED_NOTIFS_KEY]) {
+        // before version 1.9.0, notifications were required. So if the user consented,
+        // we must have requested notifications
+        // after version 1.9.0, we always set it before showing the notification,
+        // so we should never get here after 1.9.0
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HAS_REQUESTED_NOTIFS_KEY];
+    }
     [SensorControlBackgroundChecker checkAppState];
     NSDictionary* emptyOptions = @{};
     [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
