@@ -156,7 +156,11 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
         // - have initialize function as a reset, which stops any current stuff and starts the new one
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery,
                 BatteryUtils.getBatteryInfo(ctxt));
-        if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
+
+        if (isFleet) {
+            Log.d(this, TAG, "ERROR: Duty cycling turned off in fleet mode, stopping tracking");
+            stopEverything(ctxt, ctxt.getString(R.string.state_tracking_stopped));
+        } else if (actionString.equals(ctxt.getString(R.string.transition_initialize))) {
             handleStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_start))) {
             handleStart(ctxt, actionString);
@@ -164,7 +168,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
             handleWaitingForTripStart(ctxt, actionString);
         } else if (currState.equals(ctxt.getString(R.string.state_ongoing_trip))) {
             handleOngoing(ctxt, actionString);
-        } if (currState.equals(getString(R.string.state_tracking_stopped))) {
+        } else if (currState.equals(getString(R.string.state_tracking_stopped))) {
             handleTrackingStopped(ctxt, actionString);
         }
     }
@@ -173,17 +177,9 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleStarted(" + actionString + ") called");
         // Get current location
         if (actionString.equals(ctxt.getString(R.string.transition_initialize)) &&
-            !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
-            if (isFleet) {
-                // Start up the bluetooth service to check for beacons
-                Intent foregroundStartBluetooth = new Intent(ctxt, TripDiaryStateMachineForegroundService.class);
-                foregroundStartBluetooth.setAction("foreground_start_bluetooth");
-                ctxt.startService(foregroundStartBluetooth);
-                setNewState(ctxt.getString(R.string.state_waiting_for_trip_start));
-            } else {
-                startEverything(ctxt, actionString);
-            }
-        }
+                !mCurrState.equals(ctxt.getString(R.string.state_tracking_stopped))) {
+            startEverything(ctxt, actionString);
+                    }
         if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Haven't started anything yet (that's why we are in the start state).
             // just move to the stop tracking state
@@ -208,11 +204,9 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     // If we stop tracking, we stop everything
     // For everything else, go to the ongoing state :)
     private void handleWaitingForTripStart(final Context ctxt, final String actionString) {
-        if (actionString.equals(getString(R.string.transition_exited_geofence)) && !isFleet) {
+        if (actionString.equals(getString(R.string.transition_exited_geofence))) {
             startEverything(ctxt, actionString);
-        } else if (actionString.equals(ctxt.getString(R.string.transition_ble_beacon_found)) && isFleet) {
-            startEverything(ctxt, actionString);
-        } else if (actionString.equals(getString(R.string.transition_start_tracking)) && !isFleet) {
+        } else if (actionString.equals(getString(R.string.transition_start_tracking))) {
             startEverything(ctxt, actionString);
         } else if (actionString.equals(ctxt.getString(R.string.transition_stop_tracking))) {
             // Haven't started anything yet (that's why we are in the start state).
@@ -245,11 +239,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     private void handleTrackingStopped(final Context ctxt, String actionString) {
         Log.d(this, TAG, "TripDiaryStateMachineReceiver handleTrackingStopped(" + actionString + ") called");
         if (actionString.equals(ctxt.getString(R.string.transition_start_tracking))) {
-            if (isFleet) {
-                setNewState(ctxt.getString(R.string.state_waiting_for_trip_start));
-            } else {
-                startEverything(ctxt, actionString);
-            }
+            startEverything(ctxt, actionString);
         }
         if (actionString.equals(ctxt.getString(R.string.transition_tracking_error))) {
             Log.i(this, TAG, "Tracking manually turned off, no need to prompt for location");
