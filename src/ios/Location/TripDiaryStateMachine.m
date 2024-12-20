@@ -259,6 +259,8 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                        [TripDiaryStateMachine getStateName:self.currState]]];
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
             [TripDiaryActions deleteGeofence:self.locMgr];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionTripStarted];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"ERROR: Got transition %@ in state %@ without fleet mode",
@@ -266,8 +268,6 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                        [TripDiaryStateMachine getStateName:self.currState]]];
 
         }
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionTripStarted];
     } else if ([transition isEqualToString:CFCTransitionInitComplete]) {
         // Geofence has been successfully created and we are inside it so we are about to move to
         // the WAITING_FOR_TRIP_START state.
@@ -357,6 +357,8 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                        [TripDiaryStateMachine getStateName:self.currState]]];
             [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
             [TripDiaryActions deleteGeofence:self.locMgr];
+            [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
+                                                                object:CFCTransitionTripStarted];
         } else {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"ERROR: Got transition %@ in state %@ without fleet mode",
@@ -364,8 +366,6 @@ static NSString * const kCurrState = @"CURR_STATE";
                                                        [TripDiaryStateMachine getStateName:self.currState]]];
 
         }
-        [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
-                                                            object:CFCTransitionTripStarted];
 
     } else if ([transition isEqualToString:CFCTransitionVisitEnded]) { 
         if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
