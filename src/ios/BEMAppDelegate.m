@@ -18,14 +18,10 @@
 #import "Cordova/CDVConfigParser.h"
 #import <objc/runtime.h>
 #import "AuthTokenCreationFactory.h"
-#import <MetricKit/MetricKit.h>
 
 @implementation AppDelegate (datacollection)
 
 + (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // set up subscriber
-    [MXMetricManager.sharedManager addSubscriber:self];
-
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
         [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
@@ -57,9 +53,6 @@
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"Application went to the background"]];
-
-    //remove subscriber for metrics
-    [MXMetricManager.sharedManager removeSubscriber:self];
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
@@ -182,14 +175,6 @@
     if (!isConsented) {
         [LocalNotificationManager showNotification:NSLocalizedStringFromTable(@"new-data-collections-terms", @"DCLocalizable", nil)];
     }
-}
-
-- (void)didReceiveMetricPayloads:(NSArray<MXMetricPayload *> *)payloads
-{
-    [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"didReceiveMetricPayloads %@",
-                                                [payloads.dictionaryRepresentation()]]
-                                       showUI:FALSE];
 }
 
 @end
