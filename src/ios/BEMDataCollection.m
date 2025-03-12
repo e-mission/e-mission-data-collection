@@ -64,7 +64,9 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
     }
     [SensorControlBackgroundChecker checkAppState];
     NSDictionary* emptyOptions = @{};
-    [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
+
+    AppDelegate *delegate = [AppDelegate new];
+    [delegate didFinishLaunchingWithOptions:emptyOptions];
 }
 
 - (void)markConsented:(CDVInvokedUrlCommand*)command
@@ -463,6 +465,11 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
 - (void) onAppTerminate {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                @"onAppTerminate called"] showUI:FALSE];    
+}
+
+- (void) onMemoryWarning {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"onMemoryWarning called"] showUI:FALSE];
 }
 
 @end
