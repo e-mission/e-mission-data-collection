@@ -187,7 +187,8 @@
 - (void)didReceiveMetricPayloads:(NSArray<MXMetricPayload *> *)payloads
 {
 //    TODO: handle payloads
-    NSLog(@"didReceiveMetricPayloads %@", payloads.firstObject.JSONRepresentation);
+    NSLog(@"didReceiveMetricPayloads %@", payloads.firstObject.dictionaryRepresentation);
+    NSLog(@"applicationExitMetrics %@", payloads.firstObject.dictionaryRepresentation[@"applicationExitMetrics"]);
 }
 
 @end
