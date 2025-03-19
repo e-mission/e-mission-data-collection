@@ -465,4 +465,9 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
                                                @"onAppTerminate called"] showUI:FALSE];    
 }
 
+- (void) onMemoryWarning {
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"onMemoryWarning called"] showUI:FALSE];    
+}
+
 @end
