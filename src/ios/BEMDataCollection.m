@@ -469,7 +469,7 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
 
 - (void) onMemoryWarning {
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
-                                               @"onMemoryWarning called"] showUI:FALSE];
+                                               @"onMemoryWarning called"] showUI:FALSE];    
 }
 
 @end
