@@ -1,9 +1,7 @@
 package edu.berkeley.eecs.emission.cordova.tracker.verification; 
-// Auto fixed by post-plugin hook 
-import edu.berkeley.eecs.emission.R;
-// Auto fixed by post-plugin hook
 
-// Auto fixed by post-plugin hook
+import edu.berkeley.eecs.emission.R;
+
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
@@ -92,16 +91,7 @@ public class SensorControlBackgroundChecker {
           // requests here.
           Log.i(ctxt, TAG, "All settings are valid, checking current state");
           Log.i(ctxt, TAG, "Current location settings are "+response);
-          boolean isFleet = false;
-          try {
-              JSONObject config = (JSONObject) UserCacheFactory.getUserCache(ctxt).getDocument("config/app_ui_config", false);   
-              isFleet = (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only"));
-          } catch (JSONException e) {
-              Log.d(ctxt, TAG, "Error reading config! " + e);
-              // TODO: Need to figure out what to do about the fleet flag when the config is invalid
-              // Original implementation by @louisg1337 had isFleet = true in that case (location tracking would not stop)
-          }
-
+          boolean isFleet = ConfigManager.isFleet(ctxt);
           // Now that we know that the location settings are correct, we start the permission checks
       boolean[] allOtherChecks = new boolean[]{
         SensorControlChecks.checkLocationPermissions(ctxt),

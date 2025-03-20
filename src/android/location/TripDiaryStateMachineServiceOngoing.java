@@ -13,7 +13,6 @@ import com.google.android.gms.tasks.Tasks;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
@@ -62,16 +61,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
         mComm = new ForegroundServiceComm(this);
-
-        try {
-            JSONObject c = (JSONObject) UserCacheFactory.getUserCache(this).getDocument("config/app_ui_config", false);   
-            config = c;
-            isFleet = (config != null && config.has("tracking") && config.getJSONObject("tracking").getBoolean("bluetooth_only"));
-        } catch (JSONException e) {
-            Log.d(this, TAG, "Error reading config! " + e);
-            // TODO: Need to figure out what to do about the fleet flag when the config is invalid
-            // Original implementation by @louisg1337 had isFleet = true in that case (location tracking would not stop)
-        }
+        isFleet = ConfigManager.isFleet(this);
     }
 
     @Override
