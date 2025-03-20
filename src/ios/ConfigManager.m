@@ -17,6 +17,9 @@
 @implementation ConfigManager
 
 static LocationTrackingConfig *_instance;
+static ConsentConfig *_consent_config;
+static NSDictionary *_dynamic_instance;
+static bool _is_fleet = false;
 
 + (LocationTrackingConfig*) instance {
     if (_instance == NULL) {
@@ -36,6 +39,31 @@ static LocationTrackingConfig *_instance;
     return _instance;
 }
 
++ (ConsentConfig*) consent_config {
+    if (_consent_config == NULL) {
+        // TODO: should we put this in a try/catch block like the instance singleton
+        _consent_config = (ConsentConfig*)[[BuiltinUserCache database] getDocument:CONSENT_CONFIG_KEY wrapperClass:[ConsentConfig class]];
+    }
+    return _consent_config;
+}
+
++ (NSDictionary*) dynamic_instance {
+    if (_dynamic_instance == NULL) {
+        // TODO: should we put this in a try/catch block like the instance singleton
+        // TODO: clean this up. Potentially write a wrapper for this instead of using
+        // a dictionary
+        _dynamic_instance = [[BuiltinUserCache database] getDocument:@"config/app_ui_config" withMetadata:false];
+        if (_dynamic_instance != NULL && [[_dynamic_instance allKeys] containsObject:@"tracking"]) {
+            NSDictionary* trackingObj = [_dynamic_instance valueForKey:@"tracking"];
+            if ([[trackingObj allKeys] containsObject:@"bluetooth_only"]) {
+                _is_fleet = [trackingObj valueForKey:@"bluetooth_only"];
+            }
+        }
+    }
+    return _dynamic_instance;
+}
+
+
 + (LocationTrackingConfig*) readFromCache {
     return (LocationTrackingConfig*)[[BuiltinUserCache database] getDocument:SENSOR_CONFIG_KEY wrapperClass:[LocationTrackingConfig class]];
 }
@@ -53,8 +81,8 @@ static LocationTrackingConfig *_instance;
 
 + (BOOL) isConsented:(NSString*)reqConsent {
     @try {
-    ConsentConfig* currConfig = (ConsentConfig*)[[BuiltinUserCache database] getDocument:CONSENT_CONFIG_KEY wrapperClass:[ConsentConfig class]];
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"reqConsent = %@, currConfig.approval_date = %@",
+    ConsentConfig* currConfig = [self consent_config];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"checking consent with reqConsent = %@, cached currConfig.approval_date = %@",
             reqConsent, currConfig.approval_date]];
 
     if ([reqConsent isEqualToString:currConfig.approval_date]) {
@@ -72,6 +100,12 @@ static LocationTrackingConfig *_instance;
 
 + (void) setConsented:(ConsentConfig*)newConsent {
     [[BuiltinUserCache database] putReadWriteDocument:CONSENT_CONFIG_KEY value:newConsent];
+}
+
++ (BOOL) isFleet {
+    // this will populate _is_fleet properly
+    NSDictionary* dynamicConfig = [self dynamic_instance];
+    return _is_fleet;
 }
 
 @end
