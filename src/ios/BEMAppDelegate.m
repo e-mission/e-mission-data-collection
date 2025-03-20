@@ -187,8 +187,10 @@
 - (void)didReceiveMetricPayloads:(NSArray<MXMetricPayload *> *)payloads
 {
 //    TODO: handle payloads
-    NSLog(@"didReceiveMetricPayloads %@", payloads.firstObject.dictionaryRepresentation);
-    NSLog(@"applicationExitMetrics %@", payloads.firstObject.dictionaryRepresentation[@"applicationExitMetrics"]);
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"didReceiveMetricPayloads %@", payloads.firstObject.dictionaryRepresentation]];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"applicationExitMetrics %@", payloads.firstObject.dictionaryRepresentation[@"applicationExitMetrics"]]];
 }
 
 @end
