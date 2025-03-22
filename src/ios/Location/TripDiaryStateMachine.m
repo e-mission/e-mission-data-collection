@@ -71,18 +71,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 - (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
-    // TODO: clean this up. Put it into a separate class and potentially write a wrapper for it.
-    // This is particularly important if we initialize the plugin before we have the consent
-    // in that case, this needs to be a singleton that is initalized dynamically
-    NSDictionary* dynamicConfig = [[BuiltinUserCache database] getDocument:@"config/app_ui_config" withMetadata:false];
-    self.isFleet = false;
-    if (dynamicConfig != NULL && [[dynamicConfig allKeys] containsObject:@"tracking"]) {
-        NSDictionary* trackingObj = [dynamicConfig valueForKey:@"tracking"];
-        if ([[trackingObj allKeys] containsObject:@"bluetooth_only"]) {
-            self.isFleet = [trackingObj valueForKey:@"bluetooth_only"];
-        }
-    }
-
+    self.isFleet = [ConfigManager isFleet];
     
     /*
      * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager first

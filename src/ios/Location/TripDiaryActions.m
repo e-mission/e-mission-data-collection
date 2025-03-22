@@ -51,6 +51,11 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
 }
 
 + (void)startBLEMonitoring:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
+    if (![ConfigManager isFleet]) {
+        [LocalNotificationManager addNotification:
+         [NSString stringWithFormat:@"Not a fleet deployment, skipping BLE monitoring!"]];
+        return;
+    }
     // Note: We don't need to run `RequestAlwaysAuthorization`, already set in SensorControlForegroundDelegate.m.
     if ([CLLocationManager isMonitoringAvailableForClass:[CLBeaconRegion class]]) { // May be unecessary
         // Match all beacons with the specified UUID (This _must_ be same for all OpenPATH Deployments)
@@ -60,7 +65,8 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
         CLBeaconRegion *region = [[CLBeaconRegion alloc] initWithUUID:proximityUUID identifier:OpenPATHBeaconIdentifier];
         [locMgr startMonitoringForRegion:region];
         
-        NSLog(@"Started Monitoring BLE Region %@ during transition %@ ", region, transition);
+        [LocalNotificationManager addNotification:
+         [NSString stringWithFormat:@"Started Monitoring BLE Region %@ during transition %@ ", region, transition]];
         return;
     }
     // TODO: Add Error Handling:
