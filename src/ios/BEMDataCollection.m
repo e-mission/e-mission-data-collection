@@ -64,7 +64,9 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
     }
     [SensorControlBackgroundChecker checkAppState];
     NSDictionary* emptyOptions = @{};
-    [AppDelegate didFinishLaunchingWithOptions:emptyOptions];
+
+    AppDelegate *delegate = [AppDelegate new];
+    [delegate didFinishLaunchingWithOptions:emptyOptions];
 }
 
 - (void)markConsented:(CDVInvokedUrlCommand*)command
