@@ -53,7 +53,9 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
 + (void)startBLEMonitoring:(NSString*) transition withLocationMgr:(CLLocationManager*)locMgr {
     if (![ConfigManager isFleet]) {
         [LocalNotificationManager addNotification:
-         [NSString stringWithFormat:@"Not a fleet deployment, skipping BLE monitoring!"]];
+         [NSString stringWithFormat:@"Not a fleet deployment, deleting existing BLE regions and skipping creation of new ones!"]];
+        // Apple docs: "If the specified region object is not currently being monitored, this method has no effect. "
+        [locMgr stopMonitoringForRegion:region];
         return;
     }
     // Note: We don't need to run `RequestAlwaysAuthorization`, already set in SensorControlForegroundDelegate.m.
