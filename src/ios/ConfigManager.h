@@ -15,12 +15,11 @@
 + (LocationTrackingConfig*) instance;
 + (void) updateConfig:(LocationTrackingConfig*) newConfig;
 
-+ (ConsentConfig*) consent_config;
++ (NSDictionary*) getDeploymentConfig;
+
++ (ConsentConfig*) getConsentConfig;
 + (ConsentConfig*) getPriorConsent;
 + (BOOL) isConsented:(NSString*)reqConsent;
 + (void) setConsented:(ConsentConfig*) newConfig;
-
-+ (NSDictionary*) dynamic_instance;
-+ (BOOL) isFleet;
 
 @end

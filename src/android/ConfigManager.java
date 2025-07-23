@@ -2,6 +2,7 @@ package edu.berkeley.eecs.emission.cordova.tracker;
 
 import android.content.Context;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 
@@ -26,39 +27,62 @@ public class ConfigManager {
     private static String TAG = "ConfigManager";
     private static LocationTrackingConfig cachedConfig;
     private static ConsentConfig cachedConsent;
-    private static JSONObject cachedDynamicConfig;
-    private static boolean cachedIsFleet = false;
+    private static JSONObject cachedDeploymentConfig;
 
     public static LocationTrackingConfig getConfig(Context context) {
         if (cachedConfig == null) {
-            try {
             cachedConfig = readFromCache(context);
             if (cachedConfig == null) {
-                // This is still NULL, which means that there is no document in the usercache.
-                // Let us set it to the default settings
-                // we don't want to save it to the database because then it will look like a user override
-                cachedConfig = new LocationTrackingConfig();
-            }
-            } catch(JsonParseException e) {
-                Log.e(context, TAG, "Found error " + e + "parsing sensing config json, resetting to defaults");
-                NotificationHelper.createNotification(context, Constants.TRACKING_ERROR_ID,
-                        null, context.getString(R.string.error_reading_stored_config));
-                cachedConfig = new LocationTrackingConfig();
-                updateConfig(context, cachedConfig);
+                // Still null, so there was no valid config in the usercache
+                // Return the default config (with deployment-specific overrides if any)
+                // Note: we do not store the default in the usercache, as it is not user-given
+                cachedConfig = getConfigDefault(context);
             }
         }
         return cachedConfig;
     }
 
     private static LocationTrackingConfig readFromCache(Context context) {
-        return UserCacheFactory.getUserCache(context)
-                .getDocument(R.string.key_usercache_sensor_config, LocationTrackingConfig.class);
+        try {
+            LocationTrackingConfig cfg = UserCacheFactory.getUserCache(context).getDocument(R.string.key_usercache_sensor_config, LocationTrackingConfig.class);
+            Log.i(context, TAG, "in readFromCache, cached tracking config = " + cfg);
+            return cfg;
+        } catch (JsonParseException e) {
+            Log.e(context, TAG, "Exception while reading sensor config json, returning null: " + e);
+            return null;
+        }
     }
 
     protected static void updateConfig(Context context, LocationTrackingConfig newConfig) {
-        UserCacheFactory.getUserCache(context)
-                .putReadWriteDocument(R.string.key_usercache_sensor_config, newConfig);
+        UserCacheFactory.getUserCache(context).putReadWriteDocument(R.string.key_usercache_sensor_config, newConfig);
         cachedConfig = newConfig;
+    }
+
+    public static JSONObject getDeploymentConfig(Context context) {
+        if (cachedDeploymentConfig == null) {
+            try {
+                cachedDeploymentConfig = (JSONObject) UserCacheFactory.getUserCache(context).getDocument("config/app_ui_config", false);
+                Log.i(context, TAG, "In getDeploymentConfig, deployment config = " + cachedDeploymentConfig);
+            } catch (JSONException e) {
+                Log.e(context, TAG, "Found error " + e + "parsing deployment config json, returning null");
+            }
+        }
+        return cachedDeploymentConfig;
+    }
+
+    public static LocationTrackingConfig getConfigDefault(Context context) {
+        JSONObject deploymentConfig = getDeploymentConfig(context);
+        if (deploymentConfig != null && deploymentConfig.has("tracking")) {
+            try {
+                JSONObject tracking = deploymentConfig.getJSONObject("tracking");
+                LocationTrackingConfig cfg = new Gson().fromJson(tracking.toString(), LocationTrackingConfig.class);
+                Log.d(context, TAG, "Created default tracking config with deployment-specific values");
+                return cfg;
+            } catch (JSONException|JsonParseException e) {
+                Log.e(context, TAG, "Exception while parsing tracking config from deployment config, will return built-in default config: " + e);
+            }
+        }
+        return new LocationTrackingConfig();
     }
 
     public static String getReqConsent(Context ctxt) {
@@ -90,26 +114,5 @@ public class ConfigManager {
     public static void setConsented(Context context, ConsentConfig newConsent) {
         UserCacheFactory.getUserCache(context)
                 .putReadWriteDocument(R.string.key_usercache_consent_config, newConsent);
-    }
-
-    public static JSONObject getDynamicConfig(Context context) throws JSONException {
-        if (cachedDynamicConfig == null) {
-            cachedDynamicConfig = (JSONObject) UserCacheFactory.getUserCache(context).getDocument("config/app_ui_config", false);
-            cachedIsFleet = (cachedDynamicConfig != null &&
-                   cachedDynamicConfig.has("tracking") &&
-                   cachedDynamicConfig.getJSONObject("tracking").getBoolean("bluetooth_only"));
-        }
-        return cachedDynamicConfig;
-    }
-
-    public static boolean isFleet(Context ctxt) {
-        // this will populate the cached _is_fleet properly
-        try {
-            JSONObject dynamicConfig = getDynamicConfig(ctxt);
-        } catch (JSONException e) {
-            Log.e(ctxt, TAG, "ERROR "+e+" while reading dynamic config, returning default "+cachedIsFleet);
-        }
-        Log.d(ctxt, TAG, "found cached dynamicConfig, returning isFleet = "+cachedIsFleet);
-        return cachedIsFleet;
     }
 }

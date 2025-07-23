@@ -61,7 +61,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
         mComm = new ForegroundServiceComm(this);
-        isFleet = ConfigManager.isFleet(this);
+        isFleet = ConfigManager.getConfig(this).isFleet();
     }
 
     @Override

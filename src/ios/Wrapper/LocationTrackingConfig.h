@@ -21,6 +21,7 @@
 @property BOOL ios_use_visit_notifications_for_detection;
 // If this is false, we will use background push for sync
 @property BOOL ios_use_remote_push_for_sync;
+@property BOOL is_fleet;
 @property int android_geofence_responsiveness; // unused
 
 @end

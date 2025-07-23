@@ -91,7 +91,7 @@ public class SensorControlBackgroundChecker {
           // requests here.
           Log.i(ctxt, TAG, "All settings are valid, checking current state");
           Log.i(ctxt, TAG, "Current location settings are "+response);
-          boolean isFleet = ConfigManager.isFleet(ctxt);
+          boolean isFleet = ConfigManager.getConfig(ctxt).isFleet();
           // Now that we know that the location settings are correct, we start the permission checks
       boolean[] allOtherChecks = new boolean[]{
         SensorControlChecks.checkLocationPermissions(ctxt),
