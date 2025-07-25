@@ -56,7 +56,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
     
     // Create the region and begin monitoring it.
     CLBeaconRegion *region = [[CLBeaconRegion alloc] initWithUUID:proximityUUID identifier:OpenPATHBeaconIdentifier];
-    if (![ConfigManager isFleet]) {
+    if (![ConfigManager instance].is_fleet) {
         [LocalNotificationManager addNotification:
          [NSString stringWithFormat:@"Not a fleet deployment, deleting existing BLE regions and skipping creation of new ones!"]];
         // Apple docs: "If the specified region object is not currently being monitored, this method has no effect. "

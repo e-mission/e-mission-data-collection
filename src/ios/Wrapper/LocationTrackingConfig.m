@@ -29,6 +29,7 @@
     self.trip_end_stationary_mins = kTripEndStationaryMins;
     self.ios_use_visit_notifications_for_detection = YES;
     self.ios_use_remote_push_for_sync = YES;
+    self.is_fleet = NO;
     self.android_geofence_responsiveness = -1; // unused
     return self;
 }

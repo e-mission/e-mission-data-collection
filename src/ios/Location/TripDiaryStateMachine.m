@@ -71,7 +71,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 - (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
-    self.isFleet = [ConfigManager isFleet];
+    self.isFleet = [ConfigManager instance].is_fleet;
     
     /*
      * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager first

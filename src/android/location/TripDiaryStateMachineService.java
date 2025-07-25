@@ -63,7 +63,7 @@ public class TripDiaryStateMachineService extends Service {
         /*
          * Need to initialize once per create.
          */
-        isFleet = ConfigManager.isFleet(this);
+        isFleet = ConfigManager.getConfig(this).isFleet();
     }
 
     @Override
