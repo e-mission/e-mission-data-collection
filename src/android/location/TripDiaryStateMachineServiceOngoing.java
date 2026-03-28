@@ -15,7 +15,7 @@ import java.util.List;
 
 import org.json.JSONObject;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.R;
 
@@ -61,7 +61,7 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
     public void onCreate() {
         Log.i(this, TAG, "Service created. Initializing one-time variables!");
         mComm = new ForegroundServiceComm(this);
-        isFleet = ConfigManager.getConfig(this).isFleet();
+        isFleet = TrackingConfigManager.getTrackingConfig(this).isFleet();
     }
 
     @Override
@@ -261,12 +261,12 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
                 String newState = fCtxt.getString(R.string.state_ongoing_trip);
           if (task.isSuccessful()) {
                     setNewState(newState);
-                    if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
+                    if (TrackingConfigManager.getTrackingConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                             null, fCtxt.getString(R.string.success_moving_new_state, newState));
                     }
                 } else {
-                    if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
+                    if (TrackingConfigManager.getTrackingConfig(ctxt).isSimulateUserInteraction()) {
                     NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                             null, fCtxt.getString(R.string.failed_moving_new_state,newState));
                 }
@@ -283,12 +283,12 @@ public class TripDiaryStateMachineServiceOngoing extends Service {
                 String newState = targetState;
                 if (task.isSuccessful()) {
                     setNewState(newState);
-                    if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
+                    if (TrackingConfigManager.getTrackingConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 null, fCtxt.getString(R.string.success_moving_new_state, newState));
                     }
                 } else {
-                    if (ConfigManager.getConfig(fCtxt).isSimulateUserInteraction()) {
+                    if (TrackingConfigManager.getTrackingConfig(fCtxt).isSimulateUserInteraction()) {
                         NotificationHelper.createNotification(fCtxt, STATE_IN_NUMBERS,
                                 null, fCtxt.getString(R.string.failed_moving_new_state,newState));
                     }

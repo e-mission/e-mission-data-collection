@@ -12,7 +12,7 @@ import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.tasks.Task;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.location.OPGeofenceExitActivityIntentService;

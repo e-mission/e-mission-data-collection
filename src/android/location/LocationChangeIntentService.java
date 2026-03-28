@@ -7,7 +7,7 @@ import java.util.List;
 
 // import com.google.android.gms.location.LocationClient;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.R;
 
@@ -63,7 +63,7 @@ public class LocationChangeIntentService extends IntentService {
 		 */
 		Log.d(this, TAG, "FINALLY! Got location update, intent is "+intent);
 		Log.d(this, TAG, "Extras keys are "+Arrays.toString(intent.getExtras().keySet().toArray()));
-		int ACCURACY_THRESHOLD = ConfigManager.getConfig(this).getAccuracyThreshold();
+		int ACCURACY_THRESHOLD = TrackingConfigManager.getTrackingConfig(this).getAccuracyThreshold();
 
         UserCache uc = UserCacheFactory.getUserCache(this);
 
@@ -107,7 +107,7 @@ public class LocationChangeIntentService extends IntentService {
 		 * points. We can deal with everything exclusively on the server side.
 		 */
 
-		if (!ConfigManager.getConfig(this).isDutyCycling()) {
+		if (!TrackingConfigManager.getTrackingConfig(this).isDutyCycling()) {
 			// Server-side currently expects filtered location, but if we just put everything
 			// into filtered location, it won't be filtered any more.
 			// Let's just assume that we will have to generate filtered_location on the server side
@@ -125,9 +125,9 @@ public class LocationChangeIntentService extends IntentService {
 		 * sure that the algorithm is correct. So we store both the raw location and the filtered
 		 * location and use the filtered location for our calculations.
 		 */
-		int tripEndSecs = ConfigManager.getConfig(this).getTripEndStationaryMins() * 60;
+		int tripEndSecs = TrackingConfigManager.getTrackingConfig(this).getTripEndStationaryMins() * 60;
         int pointsToQuery = tripEndSecs * 1000 /
-				ConfigManager.getConfig(this).getFilterTime();
+				TrackingConfigManager.getTrackingConfig(this).getFilterTime();
         Log.d(this, TAG, "Finding the last "+pointsToQuery+" points");
 
         SimpleLocation[] last10Points = uc.getLastSensorData(R.string.key_usercache_filtered_location, pointsToQuery , SimpleLocation.class);

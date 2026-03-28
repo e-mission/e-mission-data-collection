@@ -17,7 +17,7 @@
 #import "Transition.h"
 
 #import "LocationTrackingConfig.h"
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 #import "AuthTokenCreationFactory.h"
 #import "DataUtils.h"
 
@@ -71,7 +71,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 - (id) init {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
-    self.isFleet = [ConfigManager instance].is_fleet;
+    self.isFleet = [BEMTrackingConfigManager instance].is_fleet;
     
     /*
      * We are going to perform actions on the locMgr after this. So let us ensure that we create the loc manager first
@@ -90,7 +90,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     _geofenceLocator = [GeofenceActions new];
     
     // The operations in the one time init tracking are idempotent, so let's start them anyway
-    if ([ConfigManager getPriorConsent] != NULL) {
+    if ([BEMTrackingConfigManager getPriorConsent] != NULL) {
         [TripDiaryActions oneTimeInitTracking:CFCTransitionInitialize withLocationMgr:self.locMgr];
     }
     
@@ -118,7 +118,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     // currently only in `BEMDataCollection initWithConsent`
     // https://github.com/e-mission/e-mission-docs/issues/735#issuecomment-1179774103
     
-    if (![ConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState && !self.isFleet) {
+    if (![BEMTrackingConfigManager instance].is_duty_cycling && self.currState != kTrackingStoppedState && !self.isFleet) {
         /* If we are not using geofencing, and the tracking is not manually turned off, then we don't need to listen
          to any transitions. We just turn on the tracking here and never stop. Turning off all transitions makes
          it easier for us to ignore silent push as well as the transitions generated from here.
@@ -164,7 +164,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     // 4) visit started -> as backup for broken remote push
     // this means that these transitions are the only ones for which we need to consider whether we are geofenced
     // or not while handling them
-    if (![ConfigManager instance].is_duty_cycling &&
+    if (![BEMTrackingConfigManager instance].is_duty_cycling &&
         ![transition isEqualToString:CFCTransitionInitialize] &&
         ![transition isEqualToString:CFCTransitionRecievedSilentPush] &&
         ![transition isEqualToString:CFCTransitionForceStopTracking] &&
@@ -220,7 +220,7 @@ static NSString * const kCurrState = @"CURR_STATE";
     // If we are already in the start state, there's nothing much that we need
     // to do, except if we are initialized
     if ([transition isEqualToString:CFCTransitionInitialize]) {
-        if([ConfigManager instance].is_duty_cycling) {
+        if([BEMTrackingConfigManager instance].is_duty_cycling) {
         // TODO: Stop all actions in order to cleanup
         
         // Start monitoring significant location changes at start and never stop
@@ -357,7 +357,7 @@ static NSString * const kCurrState = @"CURR_STATE";
         }
 
     } else if ([transition isEqualToString:CFCTransitionVisitEnded]) { 
-        if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
+        if ([BEMTrackingConfigManager instance].ios_use_visit_notifications_for_detection) {
             if (!self.isFleet) {
                 // We first start tracking and then delete the geofence to make sure that we are always tracking something
                 [TripDiaryActions startTracking:transition withLocationMgr:self.locMgr];
@@ -400,7 +400,7 @@ static NSString * const kCurrState = @"CURR_STATE";
 
 - (void) handleOngoingTrip:(NSString*) transition withUserInfo:(NSDictionary*) userInfo {
     if ([transition isEqualToString:CFCTransitionRecievedSilentPush]) {
-        if([ConfigManager instance].is_duty_cycling) {
+        if([BEMTrackingConfigManager instance].is_duty_cycling) {
         if ([TripDiaryActions hasTripEnded]) {
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripEndDetected];
@@ -432,8 +432,8 @@ static NSString * const kCurrState = @"CURR_STATE";
         if ([self isProblematicVisitStart]) {
             return;
         }
-        if ([ConfigManager instance].is_duty_cycling) {
-        if ([ConfigManager instance].ios_use_visit_notifications_for_detection) {
+        if ([BEMTrackingConfigManager instance].is_duty_cycling) {
+        if ([BEMTrackingConfigManager instance].ios_use_visit_notifications_for_detection) {
             [self forceRefreshToken];
             [[NSNotificationCenter defaultCenter] postNotificationName:CFCTransitionNotificationName
                                                                 object:CFCTransitionTripEndDetected];
@@ -610,7 +610,7 @@ static NSString * const kCurrState = @"CURR_STATE";
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Potentially invalid visit started transition: visitStartT.transition = %@, visitEndT.transition = %@,deltaTs = %f", visitStartT.transition, visitEndT.transition, deltaTs]
                                                showUI:FALSE];
-            int trip_end_mins = [ConfigManager instance].trip_end_stationary_mins;
+            int trip_end_mins = [BEMTrackingConfigManager instance].trip_end_stationary_mins;
             [LocalNotificationManager addNotification:[NSString stringWithFormat:
                                                        @"Scheduling check in %d mins", trip_end_mins]
                                                showUI:TRUE];

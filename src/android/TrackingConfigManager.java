@@ -23,23 +23,23 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
 /**
  * Created by shankari on 3/25/16.
  */
-public class ConfigManager {
-    private static String TAG = "ConfigManager";
-    private static LocationTrackingConfig cachedConfig;
+public class TrackingConfigManager {
+    private static String TAG = "TrackingConfigManager";
+    private static LocationTrackingConfig cachedTrackingConfig;
     private static ConsentConfig cachedConsent;
     private static JSONObject cachedDeploymentConfig;
 
-    public static LocationTrackingConfig getConfig(Context context) {
-        if (cachedConfig == null) {
-            cachedConfig = readFromCache(context);
-            if (cachedConfig == null) {
+    public static LocationTrackingConfig getTrackingConfig(Context context) {
+        if (cachedTrackingConfig == null) {
+            cachedTrackingConfig = readFromCache(context);
+            if (cachedTrackingConfig == null) {
                 // Still null, so there was no valid config in the usercache
                 // Return the default config (with deployment-specific overrides if any)
                 // Note: we do not store the default in the usercache, as it is not user-given
-                cachedConfig = getConfigDefault(context);
+                cachedTrackingConfig = getTrackingConfigDefault(context);
             }
         }
-        return cachedConfig;
+        return cachedTrackingConfig;
     }
 
     private static LocationTrackingConfig readFromCache(Context context) {
@@ -53,9 +53,9 @@ public class ConfigManager {
         }
     }
 
-    protected static void updateConfig(Context context, LocationTrackingConfig newConfig) {
-        UserCacheFactory.getUserCache(context).putReadWriteDocument(R.string.key_usercache_sensor_config, newConfig);
-        cachedConfig = newConfig;
+    protected static void updateTrackingConfig(Context context, LocationTrackingConfig newTrackingConfig) {
+        UserCacheFactory.getUserCache(context).putReadWriteDocument(R.string.key_usercache_sensor_config, newTrackingConfig);
+        cachedTrackingConfig = newTrackingConfig;
     }
 
     public static JSONObject getDeploymentConfig(Context context) {
@@ -70,7 +70,7 @@ public class ConfigManager {
         return cachedDeploymentConfig;
     }
 
-    public static LocationTrackingConfig getConfigDefault(Context context) {
+    public static LocationTrackingConfig getTrackingConfigDefault(Context context) {
         JSONObject deploymentConfig = getDeploymentConfig(context);
         if (deploymentConfig != null && deploymentConfig.has("tracking")) {
             try {
