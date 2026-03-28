@@ -1,12 +1,12 @@
 //
-//  ConfigManager.m
+//  BEMTrackingConfigManager.m
 //  emission
 //
 //  Created by Kalyanaraman Shankari on 3/25/16.
 //
 //
 
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 #import "BEMBuiltinUserCache.h"
 #import "ConsentConfig.h"
 #import "LocalNotificationManager.h"
@@ -14,40 +14,40 @@
 #define SENSOR_CONFIG_KEY @"key.usercache.sensor_config"
 #define CONSENT_CONFIG_KEY @"key.usercache.consent_config"
 
-@implementation ConfigManager
+@implementation BEMTrackingConfigManager
 
-static LocationTrackingConfig *cachedConfig;
+static LocationTrackingConfig *cachedTrackingConfig;
 static ConsentConfig *cachedConsentConfig;
 static NSDictionary *cachedDeploymentConfig;
 
-// corresponds to getConfig in ConfigManager.java
+// corresponds to getTrackingConfig in TrackingConfigManager.java
 + (LocationTrackingConfig*) instance {
-    if (cachedConfig == NULL) {
-        cachedConfig = [self readFromCache];
-        if (cachedConfig == NULL) {
+    if (cachedTrackingConfig == NULL) {
+        cachedTrackingConfig = [self readFromCache];
+        if (cachedTrackingConfig == NULL) {
             // This is still NULL, which means that there is no document in the usercache.
             // Let us add a dummy one based on the default settings
             // we don't want to save it to the database because then it will look like a user override
-            cachedConfig = [self getConfigDefault];
+            cachedTrackingConfig = [self getTrackingConfigDefault];
         }
     }
-    return cachedConfig;
+    return cachedTrackingConfig;
 }
 
 + (LocationTrackingConfig*) readFromCache {
     @try {
-        LocationTrackingConfig* cachedConfig = (LocationTrackingConfig*)[[BuiltinUserCache database] getDocument:SENSOR_CONFIG_KEY wrapperClass:[LocationTrackingConfig class]];
-        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"in readFromCache, cached tracking config = %@", cachedConfig]];
-        return cachedConfig;
+        LocationTrackingConfig* cfg = (LocationTrackingConfig*)[[BuiltinUserCache database] getDocument:SENSOR_CONFIG_KEY wrapperClass:[LocationTrackingConfig class]];
+        [LocalNotificationManager addNotification:[NSString stringWithFormat:@"in readFromCache, cached tracking config = %@", cfg]];
+        return cfg;
     } @catch (NSException *exception) {
         [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Exception while reading sensor config, returning NULL: %@", exception]];
         return NULL;
     }
 }
 
-+ (void) updateConfig:(LocationTrackingConfig*) newConfig {
-    [[BuiltinUserCache database] putReadWriteDocument:SENSOR_CONFIG_KEY value:newConfig];
-    cachedConfig = newConfig;
++ (void) updateTrackingConfig:(LocationTrackingConfig*) newTrackingConfig {
+    [[BuiltinUserCache database] putReadWriteDocument:SENSOR_CONFIG_KEY value:newTrackingConfig];
+    cachedTrackingConfig = newTrackingConfig;
 }
 
 + (NSDictionary*) getDeploymentConfig {
@@ -62,7 +62,7 @@ static NSDictionary *cachedDeploymentConfig;
     return cachedDeploymentConfig;
 }
 
-+ (LocationTrackingConfig*) getConfigDefault {
++ (LocationTrackingConfig*) getTrackingConfigDefault {
     NSDictionary* deploymentConfig = [self getDeploymentConfig];
     if (deploymentConfig != NULL && [[deploymentConfig allKeys] containsObject:@"tracking"]) {
         @try {

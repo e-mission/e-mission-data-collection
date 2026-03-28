@@ -9,7 +9,7 @@ import android.location.Location;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
@@ -175,7 +175,7 @@ public class GeofenceActions {
         if (testLoc == null) {
             return false; // Duh!
         }
-        LocationTrackingConfig cfg = ConfigManager.getConfig(mCtxt);
+        LocationTrackingConfig cfg = TrackingConfigManager.getTrackingConfig(mCtxt);
         if (testLoc.getAccuracy() > cfg.getAccuracyThreshold()) {
             Log.i(mCtxt, TAG, "testLoc.getAccuracy "+testLoc.getAccuracy()+
                     " > " + cfg.getAccuracyThreshold() + " isValidLocation = false");
@@ -236,7 +236,7 @@ public class GeofenceActions {
      */
     public GeofencingRequest createGeofenceRequest(double lat, double lng) {
         Log.d(mCtxt, TAG, "creating geofence at location "+lat+", "+lng);
-        LocationTrackingConfig cfg = ConfigManager.getConfig(this.mCtxt);
+        LocationTrackingConfig cfg = TrackingConfigManager.getTrackingConfig(this.mCtxt);
         Geofence currGeofence =
                 new Geofence.Builder().setRequestId(GEOFENCE_REQUEST_ID)
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)

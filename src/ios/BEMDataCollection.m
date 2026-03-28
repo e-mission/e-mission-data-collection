@@ -3,7 +3,7 @@
 #import "Wrapper/LocationTrackingConfig.h"
 #import "Wrapper/BluetoothBLE.h"
 #import "BEMAppDelegate.h"
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 #import "DataUtils.h"
 #import "StatsEvent.h"
 #import "BEMBuiltinUserCache.h"
@@ -31,7 +31,7 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
     // to revert it because even visit notification, which had been the bedrock of my existence so far, stopped
     // working although I made an explicit stop at the education library on the way to Soda.
     NSString* reqConsent = [self settingForKey:@"emSensorDataCollectionProtocolApprovalDate"];
-    BOOL isConsented = [ConfigManager isConsented:reqConsent];
+    BOOL isConsented = [BEMTrackingConfigManager isConsented:reqConsent];
     if (isConsented) {
         [self initWithConsent];
     } else {
@@ -74,7 +74,7 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
         NSDictionary* newDict = [[command arguments] objectAtIndex:0];
         ConsentConfig* newCfg = [ConsentConfig new];
         [DataUtils dictToWrapper:newDict wrapper:newCfg];
-        [ConfigManager setConsented:newCfg];
+        [BEMTrackingConfigManager setConsented:newCfg];
         
         // Refactored code for simplicity
         // for the motion activity code, we just call checkMotionSettingsAndPermission directly
@@ -228,7 +228,7 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
     NSString* callbackId = [command callbackId];
     
     @try {
-        LocationTrackingConfig* cfg = [ConfigManager instance];
+        LocationTrackingConfig* cfg = [BEMTrackingConfigManager instance];
         NSDictionary* retDict = [DataUtils wrapperToDict:cfg];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK
@@ -251,7 +251,7 @@ static NSString* const HAS_REQUESTED_NOTIFS_KEY = @"HasRequestedNotificationPerm
         NSDictionary* newDict = [[command arguments] objectAtIndex:0];
         LocationTrackingConfig* newCfg = [LocationTrackingConfig new];
         [DataUtils dictToWrapper:newDict wrapper:newCfg];
-        [ConfigManager updateConfig:newCfg];
+        [BEMTrackingConfigManager updateTrackingConfig:newCfg];
         [self restartCollection];
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_OK];

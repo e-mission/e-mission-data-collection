@@ -10,7 +10,7 @@
 #import "TripDiaryStateMachine.h"
 #import "LocalNotificationManager.h"
 #import "LocationTrackingConfig.h"
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 #import "GeofenceActions.h"
 #import "DataUtils.h"
 #import "BEMBuiltinUserCache.h"
@@ -56,7 +56,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
     
     // Create the region and begin monitoring it.
     CLBeaconRegion *region = [[CLBeaconRegion alloc] initWithUUID:proximityUUID identifier:OpenPATHBeaconIdentifier];
-    if (![ConfigManager instance].is_fleet) {
+    if (![BEMTrackingConfigManager instance].is_fleet) {
         [LocalNotificationManager addNotification:
          [NSString stringWithFormat:@"Not a fleet deployment, deleting existing BLE regions and skipping creation of new ones!"]];
         // Apple docs: "If the specified region object is not currently being monitored, this method has no effect. "
@@ -118,7 +118,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
     CLLocation* currLoc = manager.location;
     // If there is no current location, or it's accuracy is too low, or it is the start state, and the location is too old
     if (currLoc == nil || (currLoc.horizontalAccuracy > 200) ||
-            (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [ConfigManager instance].trip_end_stationary_mins * 60)) {
+            (currState == kStartState && fabs(currLoc.timestamp.timeIntervalSinceNow) > [BEMTrackingConfigManager instance].trip_end_stationary_mins * 60)) {
         [LocalNotificationManager addNotification:[NSString
                                                    stringWithFormat:@"currLoc = %@, which is stale, need to read a new location", currLoc]];
         [locator getLocationForGeofence:manager withCallback:^(CLLocation *locationToUse) {
@@ -144,7 +144,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
     // We shouldn't need to check the timestamp on the location here since we expect that a "fresh"
     // location will be passed in.
     CLCircularRegion *geofenceRegion = [[CLCircularRegion alloc] initWithCenter:currLoc.coordinate
-                                                                         radius:[ConfigManager instance].geofence_radius
+                                                                         radius:[BEMTrackingConfigManager instance].geofence_radius
                                                                      identifier:kCurrGeofenceID];
     [[BuiltinUserCache database] putLocalStorage:GEOFENCE_LOC_KEY
         jsonValue:@{ @"type" : @"Point",
@@ -207,7 +207,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
  */
 
 + (void)startTrackingLocation:(CLLocationManager*) manager {
-    LocationTrackingConfig* cfg = [ConfigManager instance];
+    LocationTrackingConfig* cfg = [BEMTrackingConfigManager instance];
     [LocalNotificationManager addNotification:[NSString stringWithFormat:
         @"started fine location tracking with accuracy = %@ and distanceFilter = %@ ",
                                                @(cfg.accuracy), @(cfg.filter_distance)]];
@@ -270,7 +270,7 @@ static NSString* const GEOFENCE_LOC_KEY = @"CURR_GEOFENCE_LOCATION";
  */
 
 + (BOOL) hasTripEnded {
-    return [DataUtils hasTripEnded:[ConfigManager instance].trip_end_stationary_mins];
+    return [DataUtils hasTripEnded:[BEMTrackingConfigManager instance].trip_end_stationary_mins];
 }
 
 + (BFTask*) pushTripToServer {

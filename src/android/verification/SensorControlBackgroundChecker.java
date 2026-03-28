@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.Constants;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
@@ -91,7 +91,7 @@ public class SensorControlBackgroundChecker {
           // requests here.
           Log.i(ctxt, TAG, "All settings are valid, checking current state");
           Log.i(ctxt, TAG, "Current location settings are "+response);
-          boolean isFleet = ConfigManager.getConfig(ctxt).isFleet();
+          boolean isFleet = TrackingConfigManager.getTrackingConfig(ctxt).isFleet();
           // Now that we know that the location settings are correct, we start the permission checks
       boolean[] allOtherChecks = new boolean[]{
         SensorControlChecks.checkLocationPermissions(ctxt),
