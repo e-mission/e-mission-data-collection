@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
