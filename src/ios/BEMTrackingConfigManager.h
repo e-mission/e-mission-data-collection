@@ -16,6 +16,7 @@
 + (void) updateTrackingConfig:(LocationTrackingConfig*) newTrackingConfig;
 
 + (NSDictionary*) getDeploymentConfig;
++ (BOOL) upgradeDeploymentConfig:(NSDictionary*)newDeploymentConfig;
 
 + (ConsentConfig*) getConsentConfig;
 + (ConsentConfig*) getPriorConsent;

@@ -13,6 +13,10 @@
 
 #define SENSOR_CONFIG_KEY @"key.usercache.sensor_config"
 #define CONSENT_CONFIG_KEY @"key.usercache.consent_config"
+#define APP_CONFIG_KEY @"key.usercache.app_config"
+
+static NSString* const CONFIG_APP_UI_CONFIG = @"config/app_ui_config";
+static NSString* const CONFIG_PHONE_UI = @"CONFIG_PHONE_UI";
 
 @implementation BEMTrackingConfigManager
 
@@ -50,10 +54,36 @@ static NSDictionary *cachedDeploymentConfig;
     cachedTrackingConfig = newTrackingConfig;
 }
 
++ (BOOL) upgradeDeploymentConfig:(NSDictionary*)newDeploymentConfig {
+    NSDictionary *existingDeploymentConfig = [self getDeploymentConfig];
+
+    if (existingDeploymentConfig != NULL && newDeploymentConfig != NULL && [[existingDeploymentConfig allKeys] containsObject:@"version"] && [[newDeploymentConfig allKeys] containsObject:@"version"]) {
+        int cachedVersion = [[existingDeploymentConfig valueForKey:@"version"] intValue];
+        int newVersion = [[newDeploymentConfig valueForKey:@"version"] intValue];
+        if (newVersion > cachedVersion) {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Upgrading deployment config from version %d to version %d", cachedVersion, newVersion]];
+        } else {
+            [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Not upgrading deployment config; new version %d is not newer than cached version %d", newVersion, cachedVersion]];
+            return NO;
+        }
+    } else {
+        [LocalNotificationManager addNotification:@"Not upgrading deployment config because cached config or new config is null or does not have version key"];
+        return NO;
+    }
+    [[BuiltinUserCache database] putReadWriteDocument:APP_CONFIG_KEY value:newDeploymentConfig];
+    [[BuiltinUserCache database] putLocalStorage:CONFIG_PHONE_UI jsonValue:newDeploymentConfig];
+
+    // clear cached values that could depend on deployment config changes
+    cachedDeploymentConfig = NULL;
+    cachedTrackingConfig = NULL;
+
+    return YES;
+}
+
 + (NSDictionary*) getDeploymentConfig {
     if (cachedDeploymentConfig == NULL) {
         @try {
-            cachedDeploymentConfig = [[BuiltinUserCache database] getDocument:@"config/app_ui_config" withMetadata:false];
+            cachedDeploymentConfig = [[BuiltinUserCache database] getDocument:CONFIG_APP_UI_CONFIG withMetadata:false];
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"in getDeploymentConfig, deployment config = %@", cachedDeploymentConfig]];
         } @catch (NSException *exception) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Exception while reading deployment config, returning NULL: %@", exception]];

@@ -24,7 +24,9 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
  * Created by shankari on 3/25/16.
  */
 public class TrackingConfigManager {
-    private static String TAG = "TrackingConfigManager";
+    private static final String TAG = "TrackingConfigManager";
+    private static final String CONFIG_PHONE_UI = "CONFIG_PHONE_UI";
+
     private static LocationTrackingConfig cachedTrackingConfig;
     private static ConsentConfig cachedConsent;
     private static JSONObject cachedDeploymentConfig;
@@ -68,6 +70,32 @@ public class TrackingConfigManager {
             }
         }
         return cachedDeploymentConfig;
+    }
+
+    public static boolean upgradeDeploymentConfig(Context context, JSONObject newDeploymentConfig) {
+        JSONObject existingDeploymentConfig = getDeploymentConfig(context);
+        
+        if (existingDeploymentConfig != null && newDeploymentConfig != null && existingDeploymentConfig.has("version") && newDeploymentConfig.has("version")) {
+            int cachedVersion = existingDeploymentConfig.optInt("version", -1);
+            int newVersion = newDeploymentConfig.optInt("version", -1);
+            if (newVersion > cachedVersion) {
+                Log.d(context, TAG, "Upgrading deployment config from version " + cachedVersion + " to version " + newVersion);
+            } else {
+                Log.d(context, TAG, "Not upgrading deployment config; new version " + newVersion + " is not newer than cached version " + cachedVersion);
+                return false;
+            }
+        } else {
+            Log.d(context, TAG, "Not upgrading deployment config because cached config or new config is null or does not have version key");
+            return false;
+        }
+
+        UserCacheFactory.getUserCache(context).putReadWriteDocument(R.string.key_usercache_app_config, newDeploymentConfig);
+        UserCacheFactory.getUserCache(context).putLocalStorage(CONFIG_PHONE_UI, newDeploymentConfig);
+
+        // clear cached values that could depend on deployment config changes
+        cachedDeploymentConfig = null;
+        cachedTrackingConfig = null;
+        return true;
     }
 
     public static LocationTrackingConfig getTrackingConfigDefault(Context context) {
