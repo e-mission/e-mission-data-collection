@@ -4,7 +4,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.LocationTrackingConfig;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
@@ -41,7 +41,7 @@ public class LocationTrackingActions {
     }
 
     public LocationRequest getLocationRequest() {
-        LocationTrackingConfig cfg = ConfigManager.getConfig(this.mCtxt);
+        LocationTrackingConfig cfg = TrackingConfigManager.getTrackingConfig(this.mCtxt);
         LocationRequest defaultRequest = LocationRequest.create();
         Log.d(mCtxt, TAG, "default request is " + defaultRequest);
         LocationRequest modifiedRequest = defaultRequest

@@ -7,7 +7,7 @@ import android.content.Intent;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.tasks.Task;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.Log;
 import edu.berkeley.eecs.emission.cordova.tracker.location.ActivityRecognitionChangeIntentService;
@@ -25,7 +25,7 @@ public class ActivityRecognitionActions {
 
     public ActivityRecognitionActions(Context context) {
         this.mCtxt = context;
-        ACTIVITY_DETECTION_INTERVAL = ConfigManager.getConfig(context).getFilterTime();
+        ACTIVITY_DETECTION_INTERVAL = TrackingConfigManager.getTrackingConfig(context).getFilterTime();
     }
 
     public Task<Void> start() {

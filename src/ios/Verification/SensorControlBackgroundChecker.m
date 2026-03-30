@@ -4,7 +4,7 @@
 #import "LocalNotificationManager.h"
 #import "BEMAppDelegate.h"
 #import "BEMActivitySync.h"
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 
 #import <CoreMotion/CoreMotion.h>
 #define OPEN_APP_STATUS_PAGE_ID @362253744
@@ -61,7 +61,7 @@
         [self restartFSMIfStartState];
     }
     else {
-        if ([ConfigManager getPriorConsent] == NULL) {
+        if ([BEMTrackingConfigManager getPriorConsent] == NULL) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"User has not yet consented, ignoring failed checks"]];
         } else {
             if (locChecksPass) {

@@ -17,7 +17,7 @@ import java.util.Set;
 import edu.berkeley.eecs.emission.BuildConfig;
 import edu.berkeley.eecs.emission.R;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.ExplicitIntent;
 import edu.berkeley.eecs.emission.cordova.tracker.sensors.BatteryUtils;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.Battery;
@@ -96,8 +96,8 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
         }
 
         if (intent.getAction().equals(context.getString(R.string.transition_initialize))) {
-            String reqConsent = ConfigManager.getReqConsent(context);
-            if (ConfigManager.isConsented(context, reqConsent)) {
+            String reqConsent = TrackingConfigManager.getReqConsent(context);
+            if (TrackingConfigManager.isConsented(context, reqConsent)) {
                 Log.i(context, TAG, reqConsent + " is the current consented version, sending msg to service...");
             } else {
             JSONObject introDoneResult = null;
@@ -167,7 +167,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
             } else {
                 SimpleLocation lastPoint = lastPoints[0];
                 double nowSecs = ((double)System.currentTimeMillis())/1000;
-                double filterTimeSecs = ((double)ConfigManager.getConfig(ctxt).getFilterTime())/1000;
+                double filterTimeSecs = ((double)TrackingConfigManager.getTrackingConfig(ctxt).getFilterTime())/1000;
                 double threshold = filterTimeSecs * 100;
                 // 100 * time filter
                 // https://github.com/e-mission/e-mission-docs/issues/580#issuecomment-700791309
@@ -185,7 +185,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
     public static void saveBatteryAndSimulateUser(Context ctxt) {
         Battery currInfo = BatteryUtils.getBatteryInfo(ctxt);
         UserCacheFactory.getUserCache(ctxt).putSensorData(R.string.key_usercache_battery, currInfo);
-        if (ConfigManager.getConfig(ctxt).isSimulateUserInteraction()) {
+        if (TrackingConfigManager.getTrackingConfig(ctxt).isSimulateUserInteraction()) {
             NotificationHelper.createNotification(ctxt, 1234, null, ctxt.getString(R.string.battery_level,
                     currInfo.getBatteryLevelPct()));
         }
@@ -260,7 +260,7 @@ public class TripDiaryStateMachineReceiver extends BroadcastReceiver {
     }
 
     private Intent getStateMachineServiceIntent(Context context) {
-        if (ConfigManager.getConfig(context).isDutyCycling()) {
+        if (TrackingConfigManager.getTrackingConfig(context).isDutyCycling()) {
             return new Intent(context, TripDiaryStateMachineService.class);
         } else {
             return new Intent(context, TripDiaryStateMachineServiceOngoing.class);

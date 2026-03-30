@@ -14,7 +14,7 @@
 #import "SimpleLocation.h"
 #import "BluetoothBLE.h"
 #import "LocationTrackingConfig.h"
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 #import "BEMAppDelegate.h"
 #import "SensorControlBackgroundChecker.h"
 
@@ -84,7 +84,7 @@
             SimpleLocation* currSimpleLoc = [[SimpleLocation alloc] initWithCLLocation:currLoc];
             [[BuiltinUserCache database] putSensorData:@"key.usercache.location" value:currSimpleLoc];
             
-            if (![ConfigManager instance].is_duty_cycling) {
+            if (![BEMTrackingConfigManager instance].is_duty_cycling) {
                 // We are not going to do any special filtering on the client side, so let's just return here
                 return;
             }

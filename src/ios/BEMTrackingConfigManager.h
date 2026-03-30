@@ -1,5 +1,5 @@
 //
-//  ConfigManager.h
+//  BEMTrackingConfigManager.h
 //  emission
 //
 //  Created by Kalyanaraman Shankari on 3/25/16.
@@ -10,12 +10,13 @@
 #import "LocationTrackingConfig.h"
 #import "ConsentConfig.h"
 
-@interface ConfigManager : NSObject
+@interface BEMTrackingConfigManager : NSObject
 
 + (LocationTrackingConfig*) instance;
-+ (void) updateConfig:(LocationTrackingConfig*) newConfig;
++ (void) updateTrackingConfig:(LocationTrackingConfig*) newTrackingConfig;
 
 + (NSDictionary*) getDeploymentConfig;
++ (BOOL) upgradeDeploymentConfig:(NSDictionary*)newDeploymentConfig;
 
 + (ConsentConfig*) getConsentConfig;
 + (ConsentConfig*) getPriorConsent;

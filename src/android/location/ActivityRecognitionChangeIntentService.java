@@ -5,7 +5,7 @@ import java.util.Arrays;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
-import edu.berkeley.eecs.emission.cordova.tracker.ConfigManager;
+import edu.berkeley.eecs.emission.cordova.tracker.TrackingConfigManager;
 import edu.berkeley.eecs.emission.cordova.tracker.wrapper.MotionActivity;
 import edu.berkeley.eecs.emission.cordova.tracker.verification.SensorControlChecks;
 import edu.berkeley.eecs.emission.cordova.unifiedlogger.NotificationHelper;
@@ -59,7 +59,7 @@ public class ActivityRecognitionChangeIntentService extends IntentService {
 			ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 			DetectedActivity mostProbableActivity = result.getMostProbableActivity();
 			Log.i(this, TAG, "Detected new activity "+mostProbableActivity);
-			if (ConfigManager.getConfig(this).isSimulateUserInteraction()) {
+			if (TrackingConfigManager.getTrackingConfig(this).isSimulateUserInteraction()) {
 			NotificationHelper.createNotification(this, ACTIVITY_IN_NUMBERS, null, this.getString(R.string.detected_new_activity, activityType2Name(mostProbableActivity.getType(), this)));
 		}
 

@@ -12,7 +12,7 @@
 #import "BEMRemotePushNotificationHandler.h"
 #import "DataUtils.h"
 #import "LocationTrackingConfig.h"
-#import "ConfigManager.h"
+#import "BEMTrackingConfigManager.h"
 #import "BEMServerSyncConfigManager.h"
 #import "BEMServerSyncPlugin.h"
 #import "Cordova/CDVConfigParser.h"
@@ -171,7 +171,7 @@
 }
 
 + (void) checkNativeConsent {
-    BOOL isConsented = [ConfigManager isConsented:[AppDelegate getReqConsent]];
+    BOOL isConsented = [BEMTrackingConfigManager isConsented:[AppDelegate getReqConsent]];
     if (!isConsented) {
         [LocalNotificationManager showNotification:NSLocalizedStringFromTable(@"new-data-collections-terms", @"DCLocalizable", nil)];
     }

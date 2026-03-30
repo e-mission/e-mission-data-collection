@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.berkeley.eecs.emission.*;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineService;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineForegroundService;
 import edu.berkeley.eecs.emission.cordova.tracker.location.TripDiaryStateMachineReceiver;
@@ -70,8 +69,8 @@ public class DataCollectionPlugin extends CordovaPlugin {
       Context ctxt = cordova.getActivity();
       Log.d(ctxt, TAG, "On resume, check for foreground service only if user has conesented.");
 
-      String reqConsent = ConfigManager.getReqConsent(ctxt);
-      if (ConfigManager.isConsented(ctxt, reqConsent)) {
+      String reqConsent = TrackingConfigManager.getReqConsent(ctxt);
+      if (TrackingConfigManager.isConsented(ctxt, reqConsent)) {
           Log.d(ctxt, TAG, "User has consented, proceed with foreground check.");
           TripDiaryStateMachineForegroundService.checkForegroundNotification(ctxt);
       } 
@@ -88,7 +87,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             Context ctxt = cordova.getActivity();
             JSONObject newConsent = data.getJSONObject(0);
             ConsentConfig cfg = new Gson().fromJson(newConsent.toString(), ConsentConfig.class);
-            ConfigManager.setConsented(ctxt, cfg);
+            TrackingConfigManager.setConsented(ctxt, cfg);
             // TripDiaryStateMachineForegroundService.startProperly(cordova.getActivity().getApplication());
             // Now, really initialize the state machine
             // Note that we don't call initOnUpgrade so that we can handle the case where the
@@ -164,7 +163,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             callbackContext.success();
         } else if (action.equals("getConfig")) {
             Context ctxt = cordova.getActivity();
-            LocationTrackingConfig cfg = ConfigManager.getConfig(ctxt);
+            LocationTrackingConfig cfg = TrackingConfigManager.getTrackingConfig(ctxt);
             // Gson.toJson() represents a string and we are expecting an object in the interface
             callbackContext.success(new JSONObject(new Gson().toJson(cfg)));
             return true;
@@ -172,7 +171,7 @@ public class DataCollectionPlugin extends CordovaPlugin {
             Context ctxt = cordova.getActivity();
             JSONObject newConfig = data.getJSONObject(0);
             LocationTrackingConfig cfg = new Gson().fromJson(newConfig.toString(), LocationTrackingConfig.class);
-            ConfigManager.updateConfig(ctxt, cfg);
+            TrackingConfigManager.updateTrackingConfig(ctxt, cfg);
             TripDiaryStateMachineReceiver.restartCollection(ctxt);
             callbackContext.success();
             return true;

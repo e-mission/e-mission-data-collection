@@ -41,7 +41,7 @@
     <string name="notify_curr_state">In state %1$s</string>
     <!-- TripDiaryStateMachineForegroundService -->
     <string name="killed_foreground_service_detected_restart">killed_foreground_service_detected_restart</string>
-    <!-- ConfigManager -->
+    <!-- TrackingConfigManager -->
     <string name="error_reading_stored_config">Error reading stored tracking config, reset to defaults</string>
     <!-- DataCollectionPlugin -->
     <string name="user_rejected_setting">It looks like you canceled the requested change. Please accept it instead.</string>
