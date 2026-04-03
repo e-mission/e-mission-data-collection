@@ -9,12 +9,13 @@
 #import <UIKit/UIKit.h>
 #import "TripDiaryStateMachine.h"
 #import "AppDelegate.h"
+#import <MetricKit/MXMetricManager.h>
 #import "BEMServerSyncCommunicationHelper.h"
 #define NotificationCallback @"NOTIFICATION_CALLBACK"
 
-@interface AppDelegate (datacollection)
+@interface AppDelegate (datacollection) <MXMetricManagerSubscriber>
 
-+ (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
+- (BOOL) didFinishLaunchingWithOptions:(NSDictionary *)launchOptions;
 + (NSString*) getReqConsent;
 + (void) checkNativeConsent;
 + (void) launchTripEndCheckAndRemoteSync:(void (^)(UIBackgroundFetchResult))completionHandler;
