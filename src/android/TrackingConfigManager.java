@@ -25,6 +25,7 @@ import edu.berkeley.eecs.emission.cordova.usercache.UserCacheFactory;
  */
 public class TrackingConfigManager {
     private static final String TAG = "TrackingConfigManager";
+    private static final String CONFIG_APP_UI_CONFIG = "config/app_ui_config";
     private static final String CONFIG_PHONE_UI = "CONFIG_PHONE_UI";
 
     private static LocationTrackingConfig cachedTrackingConfig;
@@ -89,7 +90,7 @@ public class TrackingConfigManager {
             return false;
         }
 
-        UserCacheFactory.getUserCache(context).putReadWriteDocument(R.string.key_usercache_app_config, newDeploymentConfig);
+        UserCacheFactory.getUserCache(context).putReadWriteDocument(CONFIG_APP_UI_CONFIG, newDeploymentConfig);
         UserCacheFactory.getUserCache(context).putLocalStorage(CONFIG_PHONE_UI, newDeploymentConfig);
 
         // clear cached values that could depend on deployment config changes
