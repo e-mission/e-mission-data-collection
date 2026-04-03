@@ -64,7 +64,7 @@ public class TrackingConfigManager {
     public static JSONObject getDeploymentConfig(Context context) {
         if (cachedDeploymentConfig == null) {
             try {
-                cachedDeploymentConfig = (JSONObject) UserCacheFactory.getUserCache(context).getDocument("config/app_ui_config", false);
+                cachedDeploymentConfig = UserCacheFactory.getUserCache(context).getLocalStorage(CONFIG_PHONE_UI, false);
                 Log.i(context, TAG, "In getDeploymentConfig, deployment config = " + cachedDeploymentConfig);
             } catch (JSONException e) {
                 Log.e(context, TAG, "Found error " + e + "parsing deployment config json, returning null");

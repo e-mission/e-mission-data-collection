@@ -83,7 +83,7 @@ static NSDictionary *cachedDeploymentConfig;
 + (NSDictionary*) getDeploymentConfig {
     if (cachedDeploymentConfig == NULL) {
         @try {
-            cachedDeploymentConfig = [[BuiltinUserCache database] getDocument:CONFIG_APP_UI_CONFIG withMetadata:false];
+            cachedDeploymentConfig = [[BuiltinUserCache database] getLocalStorage:CONFIG_PHONE_UI withMetadata:false];
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"in getDeploymentConfig, deployment config = %@", cachedDeploymentConfig]];
         } @catch (NSException *exception) {
             [LocalNotificationManager addNotification:[NSString stringWithFormat:@"Exception while reading deployment config, returning NULL: %@", exception]];
