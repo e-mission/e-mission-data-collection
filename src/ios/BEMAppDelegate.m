@@ -18,10 +18,12 @@
 #import "Cordova/CDVConfigParser.h"
 #import <objc/runtime.h>
 #import "AuthTokenCreationFactory.h"
+#import <MetricKit/MetricKit.h>
+#import <MetricKit/MXMetricManager.h>
 
 @implementation AppDelegate (datacollection)
 
-+ (BOOL)didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+ - (BOOL) didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)launchOptions{
     if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
         [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings
                 settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge
@@ -38,7 +40,10 @@
                                                @"Initialized remote push notification handler %@, finished registering for notifications ",
                                                 [BEMRemotePushNotificationHandler instance]]
                                        showUI:FALSE];
-
+     
+    //initialize the metric manager 
+    [MXMetricManager.sharedManager addSubscriber:self];
+    
     return YES;
 }
 
@@ -107,6 +112,8 @@
     [LocalNotificationManager showNotificationAfterSecs:[NSString stringWithFormat:NSLocalizedStringFromTable(@"dont-force-kill-please", @"DCLocalizable", nil)]
                                            withUserInfo:NULL
                                               secsLater:60];
+    //remove subscription for metric kit
+    [MXMetricManager.sharedManager removeSubscriber:self];
 }
 
 - (void)application:(UIApplication*)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
@@ -175,6 +182,15 @@
     if (!isConsented) {
         [LocalNotificationManager showNotification:NSLocalizedStringFromTable(@"new-data-collections-terms", @"DCLocalizable", nil)];
     }
+}
+
+- (void)didReceiveMetricPayloads:(NSArray<MXMetricPayload *> *)payloads
+{
+//    TODO: handle payloads
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"didReceiveMetricPayloads %@", payloads.firstObject.dictionaryRepresentation]];
+    [LocalNotificationManager addNotification:[NSString stringWithFormat:
+                                               @"applicationExitMetrics %@", payloads.firstObject.dictionaryRepresentation[@"applicationExitMetrics"]]];
 }
 
 @end
