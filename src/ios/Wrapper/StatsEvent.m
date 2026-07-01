@@ -7,6 +7,7 @@
 //
 
 #import "StatsEvent.h"
+#import <UIKit/UIDevice.h>
 
 static NSDictionary *statsNamesDict;
 static NSString* appVersion;
